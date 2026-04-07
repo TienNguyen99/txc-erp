@@ -72,6 +72,24 @@ Route::middleware('auth')->group(function () {
         Route::get('warehouse-transactions/{warehouseTransaction}/edit', [AdminDashboardController::class, 'warehouseTransactionsEdit'])->name('warehouse-transactions.edit');
         Route::put('warehouse-transactions/{warehouseTransaction}', [AdminDashboardController::class, 'warehouseTransactionsUpdate'])->name('warehouse-transactions.update');
         Route::delete('warehouse-transactions/{warehouseTransaction}', [AdminDashboardController::class, 'warehouseTransactionsDestroy'])->name('warehouse-transactions.destroy');
+
+        // Danh mục Hàng hóa
+        Route::get('hang-hoa', [AdminDashboardController::class, 'hangHoa'])->name('hang-hoa');
+        Route::get('hang-hoa/create', [AdminDashboardController::class, 'hangHoaCreate'])->name('hang-hoa.create');
+        Route::post('hang-hoa', [AdminDashboardController::class, 'hangHoaStore'])->name('hang-hoa.store');
+        Route::get('hang-hoa/{hangHoa}/edit', [AdminDashboardController::class, 'hangHoaEdit'])->name('hang-hoa.edit');
+        Route::put('hang-hoa/{hangHoa}', [AdminDashboardController::class, 'hangHoaUpdate'])->name('hang-hoa.update');
+        Route::delete('hang-hoa/{hangHoa}', [AdminDashboardController::class, 'hangHoaDestroy'])->name('hang-hoa.destroy');
+        Route::post('hang-hoa/import', [AdminDashboardController::class, 'hangHoaImport'])->name('hang-hoa.import');
+        Route::get('hang-hoa/export', [AdminDashboardController::class, 'hangHoaExport'])->name('hang-hoa.export');
+
+        // Danh mục Khách hàng
+        Route::get('khach-hang', [AdminDashboardController::class, 'khachHang'])->name('khach-hang');
+        Route::get('khach-hang/create', [AdminDashboardController::class, 'khachHangCreate'])->name('khach-hang.create');
+        Route::post('khach-hang', [AdminDashboardController::class, 'khachHangStore'])->name('khach-hang.store');
+        Route::get('khach-hang/{khachHang}/edit', [AdminDashboardController::class, 'khachHangEdit'])->name('khach-hang.edit');
+        Route::put('khach-hang/{khachHang}', [AdminDashboardController::class, 'khachHangUpdate'])->name('khach-hang.update');
+        Route::delete('khach-hang/{khachHang}', [AdminDashboardController::class, 'khachHangDestroy'])->name('khach-hang.destroy');
     });
 });
 require __DIR__.'/auth.php';

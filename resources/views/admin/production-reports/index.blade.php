@@ -1,13 +1,13 @@
 @extends('layouts.app')
 @section('content')
     <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="page-title mb-0"><i class="fa-solid fa-industry me-2"></i>Quản lý Báo cáo Sản xuất</h4>
+            <a href="{{ route('admin.production-reports.create') }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i>Thêm Báo cáo
+            </a>
+        </div>
         <div class="card-page">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-industry me-2"></i>Quản lý Báo cáo Sản
-                    xuất</h5>
-                <a href="{{ route('admin.production-reports.create') }}" class="btn btn-primary btn-sm"><i
-                        class="fa-solid fa-plus me-1"></i>Thêm Báo cáo</a>
-            </div>
             @include('admin.partials.alert')
             <form method="GET" class="row g-2 mb-3">
                 <div class="col-md-4">

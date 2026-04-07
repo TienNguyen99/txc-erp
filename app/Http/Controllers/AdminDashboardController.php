@@ -7,6 +7,11 @@ use App\Models\Order;
 use App\Models\OrderTracking;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
+use App\Models\DanhMucHangHoa;
+use App\Models\DanhMucKhachHang;
+use App\Imports\DanhMucHangHoaImport;
+use App\Exports\DanhMucHangHoaExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
 class AdminDashboardController extends Controller
@@ -96,12 +101,14 @@ class AdminDashboardController extends Controller
 
     public function ordersCreate()
     {
-        return view('admin.orders.form');
+        $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
+        return view('admin.orders.form', compact('khachHangs'));
     }
 
     public function ordersStore(Request $request)
     {
         $validated = $request->validate([
+            'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
             'job_no'        => 'required|string|unique:orders,job_no',
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
@@ -127,12 +134,14 @@ class AdminDashboardController extends Controller
 
     public function ordersEdit(Order $order)
     {
-        return view('admin.orders.form', compact('order'));
+        $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
+        return view('admin.orders.form', compact('order', 'khachHangs'));
     }
 
     public function ordersUpdate(Request $request, Order $order)
     {
         $validated = $request->validate([
+            'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
             'job_no'        => 'required|string|unique:orders,job_no,' . $order->id,
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
@@ -313,20 +322,23 @@ class AdminDashboardController extends Controller
 
     public function warehouseTransactionsCreate()
     {
-        return view('admin.warehouse-transactions.form');
+        $hangHoas = DanhMucHangHoa::where('active', true)->pluck('ten_hh', 'id');
+        return view('admin.warehouse-transactions.form', compact('hangHoas'));
     }
 
     public function warehouseTransactionsStore(Request $request)
     {
         $validated = $request->validate([
-            'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
-            'ngay'      => 'required|date',
-            'size'      => 'nullable|string',
-            'mau'       => 'nullable|string',
-            'so_luong'  => 'required|numeric|min:0.01',
-            'ma_nv'     => 'nullable|string',
-            'lenh_sx'   => 'nullable|string',
-            'note'      => 'nullable|string',
+            'cong_doan'   => 'required|in:NHAPKHO,XUATKHO',
+            'ma_hh'       => 'nullable|string',
+            'hang_hoa_id' => 'nullable|exists:danh_muc_hang_hoa,id',
+            'ngay'        => 'required|date',
+            'size'        => 'nullable|string',
+            'mau'         => 'nullable|string',
+            'so_luong'    => 'required|numeric|min:0.01',
+            'ma_nv'       => 'nullable|string',
+            'lenh_sx'     => 'nullable|string',
+            'note'        => 'nullable|string',
         ]);
         WarehouseTransaction::create($validated);
         return redirect()->route('admin.warehouse-transactions')->with('success', 'Thêm giao dịch kho thành công.');
@@ -334,20 +346,23 @@ class AdminDashboardController extends Controller
 
     public function warehouseTransactionsEdit(WarehouseTransaction $warehouseTransaction)
     {
-        return view('admin.warehouse-transactions.form', compact('warehouseTransaction'));
+        $hangHoas = DanhMucHangHoa::where('active', true)->pluck('ten_hh', 'id');
+        return view('admin.warehouse-transactions.form', compact('warehouseTransaction', 'hangHoas'));
     }
 
     public function warehouseTransactionsUpdate(Request $request, WarehouseTransaction $warehouseTransaction)
     {
         $validated = $request->validate([
-            'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
-            'ngay'      => 'required|date',
-            'size'      => 'nullable|string',
-            'mau'       => 'nullable|string',
-            'so_luong'  => 'required|numeric|min:0.01',
-            'ma_nv'     => 'nullable|string',
-            'lenh_sx'   => 'nullable|string',
-            'note'      => 'nullable|string',
+            'cong_doan'   => 'required|in:NHAPKHO,XUATKHO',
+            'ma_hh'       => 'nullable|string',
+            'hang_hoa_id' => 'nullable|exists:danh_muc_hang_hoa,id',
+            'ngay'        => 'required|date',
+            'size'        => 'nullable|string',
+            'mau'         => 'nullable|string',
+            'so_luong'    => 'required|numeric|min:0.01',
+            'ma_nv'       => 'nullable|string',
+            'lenh_sx'     => 'nullable|string',
+            'note'        => 'nullable|string',
         ]);
         $warehouseTransaction->update($validated);
         return redirect()->route('admin.warehouse-transactions')->with('success', 'Cập nhật giao dịch kho thành công.');
@@ -357,5 +372,153 @@ class AdminDashboardController extends Controller
     {
         $warehouseTransaction->delete();
         return redirect()->route('admin.warehouse-transactions')->with('success', 'Xóa giao dịch kho thành công.');
+    }
+
+    // ═══════════════════════════════════════
+    //  DANH MỤC HÀNG HÓA
+    // ═══════════════════════════════════════
+    public function hangHoa(Request $request)
+    {
+        $data = DanhMucHangHoa::when($request->search, fn($q, $s) => $q->where('ma_hh', 'like', "%$s%")->orWhere('ten_hh', 'like', "%$s%"))
+                    ->latest()->paginate(15)->withQueryString();
+        return view('admin.hang-hoa.index', compact('data'));
+    }
+
+    public function hangHoaCreate()
+    {
+        return view('admin.hang-hoa.form');
+    }
+
+    public function hangHoaStore(Request $request)
+    {
+        $validated = $request->validate([
+            'ma_hh'    => 'required|string|unique:danh_muc_hang_hoa,ma_hh',
+            'ten_hh'   => 'required|string|max:255',
+            'mau'      => 'nullable|string',
+            'kich_co'  => 'nullable|string',
+            'nhom_hh'  => 'nullable|string',
+            'don_vi'   => 'nullable|string',
+            'don_gia'  => 'nullable|numeric|min:0',
+            'hinh_anh' => 'nullable|image|max:2048',
+            'mo_ta'    => 'nullable|string',
+            'active'   => 'nullable|boolean',
+        ]);
+
+        if ($request->hasFile('hinh_anh')) {
+            $validated['hinh_anh'] = $request->file('hinh_anh')->store('hang-hoa', 'public');
+        }
+
+        $validated['active'] = $request->has('active');
+        DanhMucHangHoa::create($validated);
+        return redirect()->route('admin.hang-hoa')->with('success', 'Thêm hàng hóa thành công.');
+    }
+
+    public function hangHoaEdit(DanhMucHangHoa $hangHoa)
+    {
+        return view('admin.hang-hoa.form', compact('hangHoa'));
+    }
+
+    public function hangHoaUpdate(Request $request, DanhMucHangHoa $hangHoa)
+    {
+        $validated = $request->validate([
+            'ma_hh'    => 'required|string|unique:danh_muc_hang_hoa,ma_hh,' . $hangHoa->id,
+            'ten_hh'   => 'required|string|max:255',
+            'mau'      => 'nullable|string',
+            'kich_co'  => 'nullable|string',
+            'nhom_hh'  => 'nullable|string',
+            'don_vi'   => 'nullable|string',
+            'don_gia'  => 'nullable|numeric|min:0',
+            'hinh_anh' => 'nullable|image|max:2048',
+            'mo_ta'    => 'nullable|string',
+            'active'   => 'nullable|boolean',
+        ]);
+
+        if ($request->hasFile('hinh_anh')) {
+            $validated['hinh_anh'] = $request->file('hinh_anh')->store('hang-hoa', 'public');
+        }
+
+        $validated['active'] = $request->has('active');
+        $hangHoa->update($validated);
+        return redirect()->route('admin.hang-hoa')->with('success', 'Cập nhật hàng hóa thành công.');
+    }
+
+    public function hangHoaDestroy(DanhMucHangHoa $hangHoa)
+    {
+        $hangHoa->delete();
+        return redirect()->route('admin.hang-hoa')->with('success', 'Xóa hàng hóa thành công.');
+    }
+
+    public function hangHoaImport(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:5120']);
+        Excel::import(new DanhMucHangHoaImport, $request->file('file'));
+        return redirect()->route('admin.hang-hoa')->with('success', 'Import hàng hóa thành công.');
+    }
+
+    public function hangHoaExport()
+    {
+        return Excel::download(new DanhMucHangHoaExport, 'danh-muc-hang-hoa.xlsx');
+    }
+
+    // ═══════════════════════════════════════
+    //  DANH MỤC KHÁCH HÀNG
+    // ═══════════════════════════════════════
+    public function khachHang(Request $request)
+    {
+        $data = DanhMucKhachHang::when($request->search, fn($q, $s) => $q->where('ma_kh', 'like', "%$s%")->orWhere('ten_kh', 'like', "%$s%"))
+                    ->latest()->paginate(15)->withQueryString();
+        return view('admin.khach-hang.index', compact('data'));
+    }
+
+    public function khachHangCreate()
+    {
+        return view('admin.khach-hang.form');
+    }
+
+    public function khachHangStore(Request $request)
+    {
+        $validated = $request->validate([
+            'ma_kh'          => 'required|string|unique:danh_muc_khach_hang,ma_kh',
+            'ten_kh'         => 'required|string|max:255',
+            'nguoi_lien_he'  => 'nullable|string',
+            'sdt'            => 'nullable|string',
+            'email'          => 'nullable|email',
+            'dia_chi'        => 'nullable|string',
+            'ma_so_thue'     => 'nullable|string',
+            'ghi_chu'        => 'nullable|string',
+            'active'         => 'nullable|boolean',
+        ]);
+        $validated['active'] = $request->has('active');
+        DanhMucKhachHang::create($validated);
+        return redirect()->route('admin.khach-hang')->with('success', 'Thêm khách hàng thành công.');
+    }
+
+    public function khachHangEdit(DanhMucKhachHang $khachHang)
+    {
+        return view('admin.khach-hang.form', compact('khachHang'));
+    }
+
+    public function khachHangUpdate(Request $request, DanhMucKhachHang $khachHang)
+    {
+        $validated = $request->validate([
+            'ma_kh'          => 'required|string|unique:danh_muc_khach_hang,ma_kh,' . $khachHang->id,
+            'ten_kh'         => 'required|string|max:255',
+            'nguoi_lien_he'  => 'nullable|string',
+            'sdt'            => 'nullable|string',
+            'email'          => 'nullable|email',
+            'dia_chi'        => 'nullable|string',
+            'ma_so_thue'     => 'nullable|string',
+            'ghi_chu'        => 'nullable|string',
+            'active'         => 'nullable|boolean',
+        ]);
+        $validated['active'] = $request->has('active');
+        $khachHang->update($validated);
+        return redirect()->route('admin.khach-hang')->with('success', 'Cập nhật khách hàng thành công.');
+    }
+
+    public function khachHangDestroy(DanhMucKhachHang $khachHang)
+    {
+        $khachHang->delete();
+        return redirect()->route('admin.khach-hang')->with('success', 'Xóa khách hàng thành công.');
     }
 }

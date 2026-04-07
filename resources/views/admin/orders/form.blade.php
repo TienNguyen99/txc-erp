@@ -1,10 +1,16 @@
 @extends('layouts.app')
 @section('content')
     <div class="container-fluid px-4">
-        <div class="card-page">
-            <h5 class="fw-bold mb-3" style="color:#1e3a5f">
+        <div class="mb-4">
+            <a href="{{ route('admin.orders') }}" class="text-decoration-none"
+                style="font-size:.85rem;color:var(--primary);font-weight:500">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+            <h4 class="page-title mt-2 mb-0">
                 <i class="fa-solid fa-file-invoice me-2"></i>{{ isset($order) ? 'Sửa Đơn hàng' : 'Thêm Đơn hàng' }}
-            </h5>
+            </h4>
+        </div>
+        <div class="card-page">
             <form method="POST"
                 action="{{ isset($order) ? route('admin.orders.update', $order) : route('admin.orders.store') }}">
                 @csrf
@@ -12,6 +18,18 @@
                     @method('PUT')
                 @endif
                 <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Khách hàng</label>
+                        <select name="khach_hang_id" class="form-select">
+                            <option value="">-- Chọn khách hàng --</option>
+                            @foreach ($khachHangs ?? [] as $id => $ten)
+                                <option value="{{ $id }}"
+                                    {{ old('khach_hang_id', $order->khach_hang_id ?? '') == $id ? 'selected' : '' }}>
+                                    {{ $ten }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Job No <span class="text-danger">*</span></label>
                         <input type="text" name="job_no" class="form-control @error('job_no') is-invalid @enderror"
@@ -105,7 +123,8 @@
                         <select name="status" class="form-select @error('status') is-invalid @enderror" required>
                             @foreach (['pending', 'in_production', 'done', 'shipped'] as $s)
                                 <option value="{{ $s }}"
-                                    {{ old('status', $order->status ?? 'pending') == $s ? 'selected' : '' }}>{{ $s }}
+                                    {{ old('status', $order->status ?? 'pending') == $s ? 'selected' : '' }}>
+                                    {{ $s }}
                                 </option>
                             @endforeach
                         </select>

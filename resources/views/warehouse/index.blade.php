@@ -76,6 +76,7 @@
                         <tr>
                             <th>Ngày</th>
                             <th>Công đoạn</th>
+                            <th>Mã HH</th>
                             <th>Màu</th>
                             <th>Size</th>
                             <th class="text-end">Số lượng</th>
@@ -96,6 +97,7 @@
                                         <span class="badge bg-danger">XUẤT KHO</span>
                                     @endif
                                 </td>
+                                <td>{{ $t->ma_hh }}</td>
                                 <td>{{ $t->mau }}</td>
                                 <td>{{ $t->size }}</td>
                                 <td class="text-end fw-bold">{{ number_format($t->so_luong, 2) }}</td>
@@ -115,7 +117,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">Chưa có dữ liệu</td>
+                                <td colspan="10" class="text-center text-muted py-4">Chưa có dữ liệu</td>
                             </tr>
                         @endforelse
                     </tbody>

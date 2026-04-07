@@ -1,11 +1,17 @@
 @extends('layouts.app')
 @section('content')
     <div class="container-fluid px-4">
-        <div class="card-page">
-            <h5 class="fw-bold mb-3" style="color:#1e3a5f">
+        <div class="mb-4">
+            <a href="{{ route('admin.warehouse-transactions') }}" class="text-decoration-none"
+                style="font-size:.85rem;color:var(--primary);font-weight:500">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+            <h4 class="page-title mt-2 mb-0">
                 <i
                     class="fa-solid fa-warehouse me-2"></i>{{ isset($warehouseTransaction) ? 'Sửa Giao dịch Kho' : 'Thêm Giao dịch Kho' }}
-            </h5>
+            </h4>
+        </div>
+        <div class="card-page">
             <form method="POST"
                 action="{{ isset($warehouseTransaction) ? route('admin.warehouse-transactions.update', $warehouseTransaction) : route('admin.warehouse-transactions.store') }}">
                 @csrf
@@ -17,10 +23,12 @@
                         <label class="form-label fw-semibold">Loại <span class="text-danger">*</span></label>
                         <select name="cong_doan" class="form-select @error('cong_doan') is-invalid @enderror" required>
                             <option value="NHAPKHO"
-                                {{ old('cong_doan', $warehouseTransaction->cong_doan ?? '') == 'NHAPKHO' ? 'selected' : '' }}>NHẬP
+                                {{ old('cong_doan', $warehouseTransaction->cong_doan ?? '') == 'NHAPKHO' ? 'selected' : '' }}>
+                                NHẬP
                                 KHO</option>
                             <option value="XUATKHO"
-                                {{ old('cong_doan', $warehouseTransaction->cong_doan ?? '') == 'XUATKHO' ? 'selected' : '' }}>XUẤT
+                                {{ old('cong_doan', $warehouseTransaction->cong_doan ?? '') == 'XUATKHO' ? 'selected' : '' }}>
+                                XUẤT
                                 KHO</option>
                         </select>
                         @error('cong_doan')
@@ -35,6 +43,23 @@
                         @error('ngay')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Mã HH</label>
+                        <input type="text" name="ma_hh" class="form-control"
+                            value="{{ old('ma_hh', $warehouseTransaction->ma_hh ?? '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Hàng hóa (DM)</label>
+                        <select name="hang_hoa_id" class="form-select">
+                            <option value="">-- Chọn hàng hóa --</option>
+                            @foreach ($hangHoas ?? [] as $id => $ten)
+                                <option value="{{ $id }}"
+                                    {{ old('hang_hoa_id', $warehouseTransaction->hang_hoa_id ?? '') == $id ? 'selected' : '' }}>
+                                    {{ $ten }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Size</label>

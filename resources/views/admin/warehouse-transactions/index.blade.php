@@ -1,13 +1,13 @@
 @extends('layouts.app')
 @section('content')
     <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="page-title mb-0"><i class="fa-solid fa-warehouse me-2"></i>Quản lý Giao dịch Kho</h4>
+            <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i>Thêm Giao dịch
+            </a>
+        </div>
         <div class="card-page">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-warehouse me-2"></i>Quản lý Giao dịch Kho
-                </h5>
-                <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm"><i
-                        class="fa-solid fa-plus me-1"></i>Thêm Giao dịch</a>
-            </div>
             @include('admin.partials.alert')
             <form method="GET" class="row g-2 mb-3">
                 <div class="col-md-3">
@@ -32,6 +32,7 @@
                             <th>#</th>
                             <th>Ngày</th>
                             <th>Loại</th>
+                            <th>Mã HH</th>
                             <th>Size</th>
                             <th>Màu</th>
                             <th>Số lượng</th>
@@ -50,6 +51,7 @@
                                     <span
                                         class="badge bg-{{ $item->cong_doan == 'NHAPKHO' ? 'success' : 'danger' }}">{{ $item->cong_doan }}</span>
                                 </td>
+                                <td>{{ $item->ma_hh }}</td>
                                 <td>{{ $item->size }}</td>
                                 <td>{{ $item->mau }}</td>
                                 <td>{{ number_format($item->so_luong, 2) }}</td>
@@ -69,7 +71,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-muted text-center">Không có dữ liệu</td>
+                                <td colspan="11" class="text-muted text-center">Không có dữ liệu</td>
                             </tr>
                         @endforelse
                     </tbody>

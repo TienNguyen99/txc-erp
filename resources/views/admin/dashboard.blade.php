@@ -3,57 +3,95 @@
 @section('css')
     <style>
         .stat-card {
-            border-radius: 12px;
+            border-radius: var(--radius);
             padding: 1.5rem;
             color: #fff;
-            transition: transform .2s;
+            transition: all .25s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .1);
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .12);
         }
 
         .stat-card .stat-icon {
-            font-size: 2rem;
-            opacity: .7;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
         }
 
         .stat-card .stat-number {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
+            letter-spacing: -.5px;
         }
 
         .stat-card .stat-label {
-            font-size: .85rem;
+            font-size: .8rem;
             opacity: .85;
+            font-weight: 500;
         }
 
         .bg-grad-1 {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
         }
 
         .bg-grad-2 {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
         }
 
         .bg-grad-3 {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
         }
 
         .bg-grad-4 {
-            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            background: linear-gradient(135deg, #10b981, #34d399);
         }
 
         .bg-grad-5 {
-            background: linear-gradient(135deg, #fa709a, #fee140);
+            background: linear-gradient(135deg, #f59e0b, #f97316);
         }
 
-        .quick-table th {
-            font-size: .8rem;
-        }
-
-        .quick-table td {
+        .section-title {
             font-size: .85rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -.2px;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+            font-size: .9rem;
+        }
+
+        .table-modern tbody td {
+            font-size: .85rem;
+        }
+
+        .table-modern thead th {
+            font-size: .72rem;
         }
     </style>
 @endsection
@@ -63,76 +101,71 @@
 
         {{-- Header --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold mb-0" style="color:#1e3a5f">
-                <i class="fa-solid fa-gauge-high me-2"></i>Admin Dashboard
-            </h4>
-            <span class="text-muted">{{ now()->format('d/m/Y H:i') }}</span>
+            <div>
+                <h4 class="page-title mb-1">
+                    <i class="fa-solid fa-gauge-high me-2"></i>Dashboard
+                </h4>
+                <p class="text-muted mb-0" style="font-size:.85rem">Tổng quan hệ thống quản lý</p>
+            </div>
+            <span class="badge" style="background:#f1f5f9;color:var(--text);font-size:.8rem;padding:.5em 1em;">
+                <i class="fa-regular fa-calendar me-1"></i>{{ now()->format('d/m/Y H:i') }}
+            </span>
         </div>
 
         {{-- Stat Cards --}}
         <div class="row g-3 mb-4">
-            <div class="col-md col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
                 <a href="{{ route('admin.users') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="stat-number">{{ number_format($stats['users']) }}</div>
-                                <div class="stat-label">Users</div>
-                            </div>
-                            <i class="fa-solid fa-users stat-icon"></i>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
                         </div>
+                        <div class="stat-number">{{ number_format($stats['users']) }}</div>
+                        <div class="stat-label">Users</div>
                     </div>
                 </a>
             </div>
-            <div class="col-md col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
                 <a href="{{ route('admin.orders') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="stat-number">{{ number_format($stats['orders']) }}</div>
-                                <div class="stat-label">Đơn hàng</div>
-                            </div>
-                            <i class="fa-solid fa-file-invoice stat-icon"></i>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
                         </div>
+                        <div class="stat-number">{{ number_format($stats['orders']) }}</div>
+                        <div class="stat-label">Đơn hàng</div>
                     </div>
                 </a>
             </div>
-            <div class="col-md col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
                 <a href="{{ route('admin.order-tracking') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="stat-number">{{ number_format($stats['order_tracking']) }}</div>
-                                <div class="stat-label">Order Tracking</div>
-                            </div>
-                            <i class="fa-solid fa-truck-fast stat-icon"></i>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-truck-fast"></i></div>
                         </div>
+                        <div class="stat-number">{{ number_format($stats['order_tracking']) }}</div>
+                        <div class="stat-label">Order Tracking</div>
                     </div>
                 </a>
             </div>
-            <div class="col-md col-sm-6">
+            <div class="col-xl col-md-6 col-sm-6">
                 <a href="{{ route('admin.production-reports') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="stat-number">{{ number_format($stats['production_reports']) }}</div>
-                                <div class="stat-label">Báo cáo SX</div>
-                            </div>
-                            <i class="fa-solid fa-industry stat-icon"></i>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-industry"></i></div>
                         </div>
+                        <div class="stat-number">{{ number_format($stats['production_reports']) }}</div>
+                        <div class="stat-label">Báo cáo SX</div>
                     </div>
                 </a>
             </div>
-            <div class="col-md col-sm-6">
+            <div class="col-xl col-md-6 col-sm-6">
                 <a href="{{ route('admin.warehouse-transactions') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-5">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="stat-number">{{ number_format($stats['warehouse_transactions']) }}</div>
-                                <div class="stat-label">Giao dịch kho</div>
-                            </div>
-                            <i class="fa-solid fa-warehouse stat-icon"></i>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-warehouse"></i></div>
                         </div>
+                        <div class="stat-number">{{ number_format($stats['warehouse_transactions']) }}</div>
+                        <div class="stat-label">Giao dịch kho</div>
                     </div>
                 </a>
             </div>
@@ -144,12 +177,18 @@
             {{-- Recent Orders --}}
             <div class="col-lg-6">
                 <div class="card-page">
-                    <h6 class="fw-bold mb-3" style="color:#1e3a5f">
-                        <i class="fa-solid fa-file-invoice me-1"></i>Đơn hàng gần đây
-                    </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="section-title mb-0">
+                            <i class="fa-solid fa-file-invoice"></i>Đơn hàng gần đây
+                        </h6>
+                        <a href="{{ route('admin.orders') }}" class="text-decoration-none"
+                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
+                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
+                        </a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover quick-table mb-0">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-modern mb-0">
+                            <thead>
                                 <tr>
                                     <th>Job No</th>
                                     <th>Fty PO</th>
@@ -161,7 +200,7 @@
                             <tbody>
                                 @forelse($recentOrders as $o)
                                     <tr>
-                                        <td>{{ $o->job_no }}</td>
+                                        <td class="fw-semibold">{{ $o->job_no }}</td>
                                         <td>{{ $o->fty_po }}</td>
                                         <td>{{ $o->color }}</td>
                                         <td>{{ number_format($o->qty, 2) }}</td>
@@ -173,7 +212,9 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-muted text-center">Chưa có dữ liệu</td>
+                                        <td colspan="5" class="text-muted text-center py-4">
+                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -185,12 +226,18 @@
             {{-- Recent Production Reports --}}
             <div class="col-lg-6">
                 <div class="card-page">
-                    <h6 class="fw-bold mb-3" style="color:#1e3a5f">
-                        <i class="fa-solid fa-industry me-1"></i>Báo cáo SX gần đây
-                    </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="section-title mb-0">
+                            <i class="fa-solid fa-industry"></i>Báo cáo SX gần đây
+                        </h6>
+                        <a href="{{ route('admin.production-reports') }}" class="text-decoration-none"
+                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
+                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
+                        </a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover quick-table mb-0">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-modern mb-0">
+                            <thead>
                                 <tr>
                                     <th>Ngày SX</th>
                                     <th>Ca</th>
@@ -203,14 +250,17 @@
                                 @forelse($recentProduction as $p)
                                     <tr>
                                         <td>{{ $p->ngay_sx->format('d/m/Y') }}</td>
-                                        <td>{{ $p->ca }}</td>
+                                        <td><span class="badge" style="background:#eef2ff;color:var(--primary)">Ca
+                                                {{ $p->ca }}</span></td>
                                         <td>{{ $p->ma_nv }}</td>
-                                        <td>{{ $p->lenh_sx }}</td>
+                                        <td class="fw-semibold">{{ $p->lenh_sx }}</td>
                                         <td>{{ number_format($p->sl_dat, 2) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-muted text-center">Chưa có dữ liệu</td>
+                                        <td colspan="5" class="text-muted text-center py-4">
+                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -222,12 +272,18 @@
             {{-- Recent Warehouse --}}
             <div class="col-12">
                 <div class="card-page">
-                    <h6 class="fw-bold mb-3" style="color:#1e3a5f">
-                        <i class="fa-solid fa-warehouse me-1"></i>Giao dịch kho gần đây
-                    </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="section-title mb-0">
+                            <i class="fa-solid fa-warehouse"></i>Giao dịch kho gần đây
+                        </h6>
+                        <a href="{{ route('admin.warehouse-transactions') }}" class="text-decoration-none"
+                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
+                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
+                        </a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover quick-table mb-0">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-modern mb-0">
+                            <thead>
                                 <tr>
                                     <th>Ngày</th>
                                     <th>Loại</th>
@@ -248,13 +304,15 @@
                                         </td>
                                         <td>{{ $w->size }}</td>
                                         <td>{{ $w->mau }}</td>
-                                        <td>{{ number_format($w->so_luong, 2) }}</td>
+                                        <td class="fw-semibold">{{ number_format($w->so_luong, 2) }}</td>
                                         <td>{{ $w->ma_nv }}</td>
                                         <td>{{ $w->lenh_sx }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-muted text-center">Chưa có dữ liệu</td>
+                                        <td colspan="7" class="text-muted text-center py-4">
+                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>

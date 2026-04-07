@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class WarehouseTransaction extends Model
 {
     protected $fillable = [
-        'cong_doan', 'ngay', 'size', 'mau',
+        'cong_doan', 'ma_hh', 'hang_hoa_id', 'ngay', 'size', 'mau',
         'so_luong', 'ma_nv', 'lenh_sx', 'note'
     ];
 
@@ -37,5 +37,10 @@ class WarehouseTransaction extends Model
     {
         return $query->whereMonth('ngay', now()->subMonth()->month)
                      ->whereYear('ngay', now()->subMonth()->year);
+    }
+
+    public function hangHoa()
+    {
+        return $this->belongsTo(DanhMucHangHoa::class, 'hang_hoa_id');
     }
 }

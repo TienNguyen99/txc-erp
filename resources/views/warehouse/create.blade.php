@@ -74,6 +74,13 @@
                         @enderror
                     </div>
 
+                    {{-- Mã HH --}}
+                    <div class="col-md-4">
+                        <label class="form-label">Mã hàng hóa</label>
+                        <input type="text" name="ma_hh" class="form-control" value="{{ old('ma_hh') }}"
+                            placeholder="Mã hàng hóa...">
+                    </div>
+
                     {{-- Số lượng --}}
                     <div class="col-md-4">
                         <label class="form-label">Số lượng *</label>

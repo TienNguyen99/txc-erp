@@ -1,10 +1,16 @@
 @extends('layouts.app')
 @section('content')
     <div class="container-fluid px-4">
-        <div class="card-page">
-            <h5 class="fw-bold mb-3" style="color:#1e3a5f">
+        <div class="mb-4">
+            <a href="{{ route('admin.order-tracking') }}" class="text-decoration-none"
+                style="font-size:.85rem;color:var(--primary);font-weight:500">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+            <h4 class="page-title mt-2 mb-0">
                 <i class="fa-solid fa-truck-fast me-2"></i>{{ isset($orderTracking) ? 'Sửa Tracking' : 'Thêm Tracking' }}
-            </h5>
+            </h4>
+        </div>
+        <div class="card-page">
             <form method="POST"
                 action="{{ isset($orderTracking) ? route('admin.order-tracking.update', $orderTracking) : route('admin.order-tracking.store') }}">
                 @csrf
