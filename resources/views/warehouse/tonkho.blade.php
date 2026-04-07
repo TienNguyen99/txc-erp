@@ -4,7 +4,8 @@
         <div class="card-page">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-chart-bar me-2"></i>Tồn Kho — Tháng {{ $thang }}/{{ $nam }}</h5>
+                <h5 class="mb-0 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-chart-bar me-2"></i>Tồn Kho — Tháng
+                    {{ $thang }}/{{ $nam }}</h5>
                 <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fa-solid fa-arrow-left me-1"></i>Danh sách giao dịch
                 </a>

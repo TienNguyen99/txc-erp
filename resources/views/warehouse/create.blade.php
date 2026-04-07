@@ -107,7 +107,8 @@
 
                     {{-- Buttons --}}
                     <div class="col-12 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
+                        <button type="submit" class="btn btn-primary px-4"><i
+                                class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
                         <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary">Hủy</a>
                     </div>
 

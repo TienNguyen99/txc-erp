@@ -64,7 +64,8 @@
                 </div>
                 <div class="col-md-2 d-flex gap-1">
                     <button class="btn btn-primary btn-sm flex-fill">Lọc</button>
-                    <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-xmark"></i></a>
+                    <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary btn-sm"><i
+                            class="fa-solid fa-xmark"></i></a>
                 </div>
             </form>
 
@@ -102,12 +103,13 @@
                                 <td>{{ $t->lenh_sx }}</td>
                                 <td>{{ $t->note }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('warehouse.edit', $t) }}"
-                                        class="btn btn-xs btn-outline-warning"><i class="fa-solid fa-pen me-1"></i>Sửa</a>
+                                    <a href="{{ route('warehouse.edit', $t) }}" class="btn btn-xs btn-outline-warning"><i
+                                            class="fa-solid fa-pen me-1"></i>Sửa</a>
                                     <form method="POST" action="{{ route('warehouse.destroy', $t) }}" class="d-inline"
                                         onsubmit="return confirm('Xác nhận xóa?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-xs btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Xóa</button>
+                                        <button class="btn btn-xs btn-outline-danger"><i
+                                                class="fa-solid fa-trash me-1"></i>Xóa</button>
                                     </form>
                                 </td>
                             </tr>
