@@ -17,14 +17,14 @@ class DanhMucHangHoaExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'MÃ HÀNG HÓA',
-            'MÔ TẢ',
-            'Màu',
-            'KÍCH (ĐỂ SORT)',
-            'Nhóm HH',
-            'ĐVT',
-            'Đơn giá',
-            'Active',
+            'ma_hh',
+            'ten_hh',
+            'mau',
+            'kich_co',
+            'nhom_hh',
+            'don_vi',
+            'don_gia',
+            'active',
         ];
     }
 

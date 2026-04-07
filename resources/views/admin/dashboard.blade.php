@@ -115,7 +115,7 @@
         {{-- Stat Cards --}}
         <div class="row g-3 mb-4">
             <div class="col-xl col-md-4 col-sm-6">
-                <a href="{{ route('admin.users') }}" class="text-decoration-none">
+                <a href="{{ route('admin.users.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-1">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
@@ -126,7 +126,7 @@
                 </a>
             </div>
             <div class="col-xl col-md-4 col-sm-6">
-                <a href="{{ route('admin.orders') }}" class="text-decoration-none">
+                <a href="{{ route('admin.orders.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-2">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
@@ -137,7 +137,7 @@
                 </a>
             </div>
             <div class="col-xl col-md-4 col-sm-6">
-                <a href="{{ route('admin.order-tracking') }}" class="text-decoration-none">
+                <a href="{{ route('admin.order-tracking.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-3">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="stat-icon"><i class="fa-solid fa-truck-fast"></i></div>
@@ -148,7 +148,7 @@
                 </a>
             </div>
             <div class="col-xl col-md-6 col-sm-6">
-                <a href="{{ route('admin.production-reports') }}" class="text-decoration-none">
+                <a href="{{ route('admin.production-reports.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-4">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="stat-icon"><i class="fa-solid fa-industry"></i></div>
@@ -159,7 +159,7 @@
                 </a>
             </div>
             <div class="col-xl col-md-6 col-sm-6">
-                <a href="{{ route('admin.warehouse-transactions') }}" class="text-decoration-none">
+                <a href="{{ route('admin.warehouse-transactions.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-5">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="stat-icon"><i class="fa-solid fa-warehouse"></i></div>
@@ -181,7 +181,7 @@
                         <h6 class="section-title mb-0">
                             <i class="fa-solid fa-file-invoice"></i>Đơn hàng gần đây
                         </h6>
-                        <a href="{{ route('admin.orders') }}" class="text-decoration-none"
+                        <a href="{{ route('admin.orders.index') }}" class="text-decoration-none"
                             style="font-size:.8rem;font-weight:500;color:var(--primary)">
                             Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
                         </a>
@@ -230,7 +230,7 @@
                         <h6 class="section-title mb-0">
                             <i class="fa-solid fa-industry"></i>Báo cáo SX gần đây
                         </h6>
-                        <a href="{{ route('admin.production-reports') }}" class="text-decoration-none"
+                        <a href="{{ route('admin.production-reports.index') }}" class="text-decoration-none"
                             style="font-size:.8rem;font-weight:500;color:var(--primary)">
                             Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
                         </a>
@@ -276,7 +276,7 @@
                         <h6 class="section-title mb-0">
                             <i class="fa-solid fa-warehouse"></i>Giao dịch kho gần đây
                         </h6>
-                        <a href="{{ route('admin.warehouse-transactions') }}" class="text-decoration-none"
+                        <a href="{{ route('admin.warehouse-transactions.index') }}" class="text-decoration-none"
                             style="font-size:.8rem;font-weight:500;color:var(--primary)">
                             Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
                         </a>

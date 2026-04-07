@@ -1,8 +1,14 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderTrackingController;
+use App\Http\Controllers\Admin\ProductionReportController;
+use App\Http\Controllers\Admin\WarehouseTransactionController;
+use App\Http\Controllers\Admin\DanhMucHangHoaController;
+use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\WarehouseTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,74 +28,40 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->group(function () {
 
-    // Kho: CRUD
-    Route::resource('warehouse', WarehouseTransactionController::class);
-
-    // Tồn kho
-    Route::get('warehouse-ton-kho', [WarehouseTransactionController::class, 'tonKho'])
-         ->name('warehouse.ton-kho');
-
-    // ═══ Admin Dashboard ═══
+    // ═══ Admin ═══
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         // Users
-        Route::get('users', [AdminDashboardController::class, 'users'])->name('users');
-        Route::get('users/create', [AdminDashboardController::class, 'usersCreate'])->name('users.create');
-        Route::post('users', [AdminDashboardController::class, 'usersStore'])->name('users.store');
-        Route::get('users/{user}/edit', [AdminDashboardController::class, 'usersEdit'])->name('users.edit');
-        Route::put('users/{user}', [AdminDashboardController::class, 'usersUpdate'])->name('users.update');
-        Route::delete('users/{user}', [AdminDashboardController::class, 'usersDestroy'])->name('users.destroy');
+        Route::resource('users', UserController::class);
 
         // Orders
-        Route::get('orders', [AdminDashboardController::class, 'orders'])->name('orders');
-        Route::get('orders/create', [AdminDashboardController::class, 'ordersCreate'])->name('orders.create');
-        Route::post('orders', [AdminDashboardController::class, 'ordersStore'])->name('orders.store');
-        Route::get('orders/{order}/edit', [AdminDashboardController::class, 'ordersEdit'])->name('orders.edit');
-        Route::put('orders/{order}', [AdminDashboardController::class, 'ordersUpdate'])->name('orders.update');
-        Route::delete('orders/{order}', [AdminDashboardController::class, 'ordersDestroy'])->name('orders.destroy');
+        Route::resource('orders', OrderController::class);
 
         // Order Tracking
-        Route::get('order-tracking', [AdminDashboardController::class, 'orderTracking'])->name('order-tracking');
-        Route::get('order-tracking/create', [AdminDashboardController::class, 'orderTrackingCreate'])->name('order-tracking.create');
-        Route::post('order-tracking', [AdminDashboardController::class, 'orderTrackingStore'])->name('order-tracking.store');
-        Route::get('order-tracking/{orderTracking}/edit', [AdminDashboardController::class, 'orderTrackingEdit'])->name('order-tracking.edit');
-        Route::put('order-tracking/{orderTracking}', [AdminDashboardController::class, 'orderTrackingUpdate'])->name('order-tracking.update');
-        Route::delete('order-tracking/{orderTracking}', [AdminDashboardController::class, 'orderTrackingDestroy'])->name('order-tracking.destroy');
+        Route::resource('order-tracking', OrderTrackingController::class)
+             ->parameters(['order-tracking' => 'orderTracking']);
 
         // Production Reports
-        Route::get('production-reports', [AdminDashboardController::class, 'productionReports'])->name('production-reports');
-        Route::get('production-reports/create', [AdminDashboardController::class, 'productionReportsCreate'])->name('production-reports.create');
-        Route::post('production-reports', [AdminDashboardController::class, 'productionReportsStore'])->name('production-reports.store');
-        Route::get('production-reports/{productionReport}/edit', [AdminDashboardController::class, 'productionReportsEdit'])->name('production-reports.edit');
-        Route::put('production-reports/{productionReport}', [AdminDashboardController::class, 'productionReportsUpdate'])->name('production-reports.update');
-        Route::delete('production-reports/{productionReport}', [AdminDashboardController::class, 'productionReportsDestroy'])->name('production-reports.destroy');
+        Route::resource('production-reports', ProductionReportController::class)
+             ->parameters(['production-reports' => 'productionReport']);
 
         // Warehouse Transactions
-        Route::get('warehouse-transactions', [AdminDashboardController::class, 'warehouseTransactions'])->name('warehouse-transactions');
-        Route::get('warehouse-transactions/create', [AdminDashboardController::class, 'warehouseTransactionsCreate'])->name('warehouse-transactions.create');
-        Route::post('warehouse-transactions', [AdminDashboardController::class, 'warehouseTransactionsStore'])->name('warehouse-transactions.store');
-        Route::get('warehouse-transactions/{warehouseTransaction}/edit', [AdminDashboardController::class, 'warehouseTransactionsEdit'])->name('warehouse-transactions.edit');
-        Route::put('warehouse-transactions/{warehouseTransaction}', [AdminDashboardController::class, 'warehouseTransactionsUpdate'])->name('warehouse-transactions.update');
-        Route::delete('warehouse-transactions/{warehouseTransaction}', [AdminDashboardController::class, 'warehouseTransactionsDestroy'])->name('warehouse-transactions.destroy');
+        Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])
+             ->name('warehouse-transactions.ton-kho');
+        Route::resource('warehouse-transactions', WarehouseTransactionController::class)
+             ->parameters(['warehouse-transactions' => 'warehouseTransaction']);
 
         // Danh mục Hàng hóa
-        Route::get('hang-hoa', [AdminDashboardController::class, 'hangHoa'])->name('hang-hoa');
-        Route::get('hang-hoa/create', [AdminDashboardController::class, 'hangHoaCreate'])->name('hang-hoa.create');
-        Route::post('hang-hoa', [AdminDashboardController::class, 'hangHoaStore'])->name('hang-hoa.store');
-        Route::get('hang-hoa/{hangHoa}/edit', [AdminDashboardController::class, 'hangHoaEdit'])->name('hang-hoa.edit');
-        Route::put('hang-hoa/{hangHoa}', [AdminDashboardController::class, 'hangHoaUpdate'])->name('hang-hoa.update');
-        Route::delete('hang-hoa/{hangHoa}', [AdminDashboardController::class, 'hangHoaDestroy'])->name('hang-hoa.destroy');
-        Route::post('hang-hoa/import', [AdminDashboardController::class, 'hangHoaImport'])->name('hang-hoa.import');
-        Route::get('hang-hoa/export', [AdminDashboardController::class, 'hangHoaExport'])->name('hang-hoa.export');
+        Route::post('hang-hoa/import', [DanhMucHangHoaController::class, 'import'])->name('hang-hoa.import');
+        Route::get('hang-hoa/export', [DanhMucHangHoaController::class, 'export'])->name('hang-hoa.export');
+        Route::get('hang-hoa/template', [DanhMucHangHoaController::class, 'template'])->name('hang-hoa.template');
+        Route::resource('hang-hoa', DanhMucHangHoaController::class)
+             ->parameters(['hang-hoa' => 'hangHoa']);
 
         // Danh mục Khách hàng
-        Route::get('khach-hang', [AdminDashboardController::class, 'khachHang'])->name('khach-hang');
-        Route::get('khach-hang/create', [AdminDashboardController::class, 'khachHangCreate'])->name('khach-hang.create');
-        Route::post('khach-hang', [AdminDashboardController::class, 'khachHangStore'])->name('khach-hang.store');
-        Route::get('khach-hang/{khachHang}/edit', [AdminDashboardController::class, 'khachHangEdit'])->name('khach-hang.edit');
-        Route::put('khach-hang/{khachHang}', [AdminDashboardController::class, 'khachHangUpdate'])->name('khach-hang.update');
-        Route::delete('khach-hang/{khachHang}', [AdminDashboardController::class, 'khachHangDestroy'])->name('khach-hang.destroy');
+        Route::resource('khach-hang', DanhMucKhachHangController::class)
+             ->parameters(['khach-hang' => 'khachHang']);
     });
 });
 require __DIR__.'/auth.php';

@@ -4,7 +4,7 @@
         <div class="card-page">
             <h5 class="mb-4 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-plus-circle me-2"></i>Nhập / Xuất Kho</h5>
 
-            <form method="POST" action="{{ route('warehouse.store') }}">
+            <form method="POST" action="{{ route('admin.warehouse-transactions.store') }}">
                 @csrf
                 <div class="row g-3">
 
@@ -116,7 +116,7 @@
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary px-4"><i
                                 class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
-                        <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary">Hủy</a>
+                        <a href="{{ route('admin.warehouse-transactions.index') }}" class="btn btn-outline-secondary">Hủy</a>
                     </div>
 
                 </div>

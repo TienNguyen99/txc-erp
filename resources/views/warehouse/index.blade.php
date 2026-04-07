@@ -6,7 +6,7 @@
             {{-- Header --}}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 fw-bold" style="color:#1e3a5f"><i class="fa-solid fa-exchange-alt me-2"></i>Giao Dịch Kho</h5>
-                <a href="{{ route('warehouse.create') }}" class="btn btn-primary btn-sm">
+                <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-plus me-1"></i>Nhập / Xuất Kho
                 </a>
             </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="col-md-2 d-flex gap-1">
                     <button class="btn btn-primary btn-sm flex-fill">Lọc</button>
-                    <a href="{{ route('warehouse.index') }}" class="btn btn-outline-secondary btn-sm"><i
+                    <a href="{{ route('admin.warehouse-transactions.index') }}" class="btn btn-outline-secondary btn-sm"><i
                             class="fa-solid fa-xmark"></i></a>
                 </div>
             </form>
@@ -105,9 +105,9 @@
                                 <td>{{ $t->lenh_sx }}</td>
                                 <td>{{ $t->note }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('warehouse.edit', $t) }}" class="btn btn-xs btn-outline-warning"><i
+                                    <a href="{{ route('admin.warehouse-transactions.edit', $t) }}" class="btn btn-xs btn-outline-warning"><i
                                             class="fa-solid fa-pen me-1"></i>Sửa</a>
-                                    <form method="POST" action="{{ route('warehouse.destroy', $t) }}" class="d-inline"
+                                    <form method="POST" action="{{ route('admin.warehouse-transactions.destroy', $t) }}" class="d-inline"
                                         onsubmit="return confirm('Xác nhận xóa?')">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-xs btn-outline-danger"><i

@@ -4,6 +4,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="page-title mb-0"><i class="fa-solid fa-box-open me-2"></i>Danh mục Hàng hóa</h4>
             <div class="d-flex gap-2">
+                <a href="{{ route('admin.hang-hoa.template') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-file-lines me-1"></i>Tải Template
+                </a>
                 <a href="{{ route('admin.hang-hoa.export') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-file-excel me-1"></i>Export Excel
                 </a>
@@ -92,8 +95,9 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">File Excel cần có các cột header: <strong>MÃ HÀNG HÓA, MÔ TẢ, Màu,
-                                KÍCH (ĐỂ SORT)</strong>. Các cột tùy chọn: Nhóm HH, ĐVT, Đơn giá.</p>
+                        <p class="text-muted small mb-3">File Excel cần có các cột header: <strong>ma_hh, ten_hh</strong>
+                            (bắt buộc). Tùy chọn: <strong>mau, kich_co, nhom_hh, don_vi, don_gia, mo_ta</strong>. Bấm "Tải
+                            Template" để lấy file mẫu.</p>
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
                     </div>
                     <div class="modal-footer">

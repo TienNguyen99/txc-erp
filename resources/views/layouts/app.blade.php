@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'TXC ERP') }}</title>
+    <title>{{ config('app.name', 'CÔNG TY CỔ PHẦN CƠ KHÍ THỦ ĐỨC TEXENCO') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -330,7 +330,7 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-erp mb-0">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="{{ route('warehouse.index') }}">
+            <a class="navbar-brand" href="{{ route('admin.warehouse-transactions.index') }}">
                 <i class="fa-solid fa-cube me-2"></i>TXC ERP
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
@@ -339,20 +339,20 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto gap-1">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('warehouse.index') ? 'active fw-bold' : '' }}"
-                            href="{{ route('warehouse.index') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.index') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.warehouse-transactions.index') }}">
                             <i class="fa-solid fa-exchange-alt me-1"></i>Giao Dịch Kho
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('warehouse.ton-kho') ? 'active fw-bold' : '' }}"
-                            href="{{ route('warehouse.ton-kho') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.warehouse-transactions.ton-kho') }}">
                             <i class="fa-solid fa-boxes-stacked me-1"></i>Tồn Kho
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('warehouse.create') ? 'active fw-bold' : '' }}"
-                            href="{{ route('warehouse.create') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.create') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.warehouse-transactions.create') }}">
                             <i class="fa-solid fa-plus me-1"></i>Nhập / Xuất
                         </a>
                     </li>
@@ -381,19 +381,19 @@
                             </li>
                             <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}"><i
                                         class="fa-solid fa-gauge-high me-1 text-muted"></i>Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.users') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i
                                         class="fa-solid fa-users me-1 text-muted"></i>Users</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.orders') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i
                                         class="fa-solid fa-file-invoice me-1 text-muted"></i>Đơn hàng</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.order-tracking') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.order-tracking.index') }}"><i
                                         class="fa-solid fa-truck-fast me-1 text-muted"></i>Order Tracking</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.production-reports') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.production-reports.index') }}"><i
                                         class="fa-solid fa-industry me-1 text-muted"></i>Báo cáo SX</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.warehouse-transactions') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.warehouse-transactions.index') }}"><i
                                         class="fa-solid fa-warehouse me-1 text-muted"></i>Giao dịch Kho</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.hang-hoa') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.hang-hoa.index') }}"><i
                                         class="fa-solid fa-box-open me-1 text-muted"></i>Hàng hóa</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.khach-hang') }}"><i
+                            <li><a class="dropdown-item" href="{{ route('admin.khach-hang.index') }}"><i
                                         class="fa-solid fa-building me-1 text-muted"></i>Khách hàng</a></li>
                             <li>
                                 <hr class="dropdown-divider">

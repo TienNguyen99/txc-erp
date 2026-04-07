@@ -2,7 +2,7 @@
 @section('content')
     <div class="container-fluid px-4">
         <div class="mb-4">
-            <a href="{{ route('admin.order-tracking') }}" class="text-decoration-none"
+            <a href="{{ route('admin.order-tracking.index') }}" class="text-decoration-none"
                 style="font-size:.85rem;color:var(--primary);font-weight:500">
                 <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
             </a>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="mt-4">
                     <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Lưu</button>
-                    <a href="{{ route('admin.order-tracking') }}" class="btn btn-secondary ms-2">Hủy</a>
+                    <a href="{{ route('admin.order-tracking.index') }}" class="btn btn-secondary ms-2">Hủy</a>
                 </div>
             </form>
         </div>
