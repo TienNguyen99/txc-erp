@@ -7,7 +7,8 @@
                 <a href="{{ route('admin.hang-hoa.export') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-file-excel me-1"></i>Export Excel
                 </a>
-                <button type="button" class="btn btn-info btn-sm text-white" data-bs-toggle="modal" data-bs-target="#importModal">
+                <button type="button" class="btn btn-info btn-sm text-white" data-bs-toggle="modal"
+                    data-bs-target="#importModal">
                     <i class="fa-solid fa-file-import me-1"></i>Import Excel
                 </button>
                 <a href="{{ route('admin.hang-hoa.create') }}" class="btn btn-primary btn-sm">
@@ -59,8 +60,8 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('admin.hang-hoa.edit', $item) }}"
-                                        class="btn btn-warning btn-xs"><i class="fa-solid fa-pen"></i></a>
+                                    <a href="{{ route('admin.hang-hoa.edit', $item) }}" class="btn btn-warning btn-xs"><i
+                                            class="fa-solid fa-pen"></i></a>
                                     <form method="POST" action="{{ route('admin.hang-hoa.destroy', $item) }}"
                                         class="d-inline" onsubmit="return confirm('Xóa hàng hóa này?')">
                                         @csrf @method('DELETE')
@@ -91,12 +92,14 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">File Excel cần có các cột header: <strong>MÃ HÀNG HÓA, MÔ TẢ, Màu, KÍCH (ĐỂ SORT)</strong>. Các cột tùy chọn: Nhóm HH, ĐVT, Đơn giá.</p>
+                        <p class="text-muted small mb-3">File Excel cần có các cột header: <strong>MÃ HÀNG HÓA, MÔ TẢ, Màu,
+                                KÍCH (ĐỂ SORT)</strong>. Các cột tùy chọn: Nhóm HH, ĐVT, Đơn giá.</p>
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload me-1"></i>Import</button>
+                        <button type="submit" class="btn btn-primary"><i
+                                class="fa-solid fa-upload me-1"></i>Import</button>
                     </div>
                 </form>
             </div>

@@ -49,8 +49,8 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('admin.khach-hang.edit', $item) }}"
-                                        class="btn btn-warning btn-xs"><i class="fa-solid fa-pen"></i></a>
+                                    <a href="{{ route('admin.khach-hang.edit', $item) }}" class="btn btn-warning btn-xs"><i
+                                            class="fa-solid fa-pen"></i></a>
                                     <form method="POST" action="{{ route('admin.khach-hang.destroy', $item) }}"
                                         class="d-inline" onsubmit="return confirm('Xóa khách hàng này?')">
                                         @csrf @method('DELETE')

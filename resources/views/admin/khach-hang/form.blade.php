@@ -2,7 +2,8 @@
 @section('content')
     <div class="container-fluid px-4">
         <div class="mb-4">
-            <a href="{{ route('admin.khach-hang') }}" class="text-decoration-none" style="font-size:.85rem;color:var(--primary);font-weight:500">
+            <a href="{{ route('admin.khach-hang') }}" class="text-decoration-none"
+                style="font-size:.85rem;color:var(--primary);font-weight:500">
                 <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
             </a>
             <h4 class="page-title mt-2 mb-0">
