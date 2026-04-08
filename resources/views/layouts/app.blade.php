@@ -18,9 +18,6 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
-    <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
     <style>
         :root {
             --primary: #6366f1;
@@ -357,10 +354,10 @@
                         </a>
                     </li>
                 </ul>
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-center">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {{ request()->routeIs('admin.*') ? 'active fw-bold' : '' }}"
-                            href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" role="button" href="#" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span class="d-inline-flex align-items-center justify-content-center rounded-circle me-1"
                                 style="width:28px;height:28px;background:#eef2ff;color:var(--primary);font-size:.75rem;font-weight:700;">
                                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
