@@ -108,8 +108,8 @@
                     <div class="modal-body">
                         <p class="text-muted small mb-3">File Excel cần có cột header: <strong>job_no</strong>
                             (bắt buộc). Tùy chọn: <strong>fty_po, im_number, color, qty, unit, size, yrd,
-                            can_giao_1, can_giao_2, pl_number, tagtime_etc, sig_need_date, chart,
-                            price_usd_auto, price_usd, to_khai, status</strong>. Bấm "Tải Template" để lấy
+                                can_giao_1, can_giao_2, pl_number, tagtime_etc, sig_need_date, chart,
+                                price_usd_auto, price_usd, to_khai, status</strong>. Bấm "Tải Template" để lấy
                             file mẫu.</p>
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
                     </div>
