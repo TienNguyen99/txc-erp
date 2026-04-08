@@ -28,7 +28,25 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+        $portal = $request->input('login_portal', 'admin');
+
+        // Admin portal: chỉ admin được vào
+        if ($portal === 'admin' && !$user->isAdmin()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withInput($request->only('email', 'login_portal'))
+                         ->withErrors(['email' => 'Tài khoản này không có quyền quản trị.']);
+        }
+
+        // Staff portal: chỉ staff (hoặc admin cũng được vào)
+        if ($portal === 'staff') {
+            return redirect()->intended(route('staff.warehouse.index'));
+        }
+
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     /**
