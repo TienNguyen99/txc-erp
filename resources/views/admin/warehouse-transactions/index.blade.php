@@ -39,13 +39,55 @@
     <div class="container-fluid px-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="page-title mb-0"><i class="fa-solid fa-warehouse me-2"></i>Quản lý Kho</h4>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ route('admin.warehouse-transactions.template') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-file-excel me-1"></i>Template
+                </a>
+                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="fa-solid fa-file-import me-1"></i>Import
+                </button>
+                <a href="{{ route('admin.warehouse-transactions.export') }}" class="btn btn-info btn-sm text-white">
+                    <i class="fa-solid fa-file-export me-1"></i>Export
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.nhap-theo-lenh') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-dolly me-1"></i>Nhập kho theo Lệnh SX
                 </a>
                 <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-plus me-1"></i>Thêm Giao dịch
                 </a>
+            </div>
+        </div>
+
+        {{-- Import Modal --}}
+        <div class="modal fade" id="importModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.warehouse-transactions.import') }}"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fa-solid fa-file-import me-2"></i>Import Nhập/Xuất Kho</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">
+                                Tải <a href="{{ route('admin.warehouse-transactions.template') }}">file mẫu</a>,
+                                điền dữ liệu rồi upload.<br>
+                                Cột <code>cong_doan</code>: <strong>NHAPKHO</strong> hoặc <strong>XUATKHO</strong>.
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Chọn file Excel</label>
+                                <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fa-solid fa-upload me-1"></i>Import
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 

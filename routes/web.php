@@ -67,6 +67,12 @@ Route::middleware('auth')->group(function () {
              ->parameters(['production-reports' => 'productionReport']);
 
         // Warehouse Transactions
+        Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])
+             ->name('warehouse-transactions.export');
+        Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])
+             ->name('warehouse-transactions.template');
+        Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])
+             ->name('warehouse-transactions.import');
         Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])
              ->name('warehouse-transactions.nhap-theo-lenh');
         Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])

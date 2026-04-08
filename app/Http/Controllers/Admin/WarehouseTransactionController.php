@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
 use App\Models\Order;
 use App\Models\WarehouseTransaction;
+use App\Exports\WarehouseTransactionExport;
+use App\Exports\WarehouseTransactionTemplateExport;
+use App\Imports\WarehouseTransactionImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
 class WarehouseTransactionController extends Controller
@@ -249,5 +253,28 @@ class WarehouseTransactionController extends Controller
         return redirect()
             ->route('admin.warehouse-transactions.nhap-theo-lenh', ['lenh_sx' => $request->lenh_sx])
             ->with('success', "Đã nhập kho {$count} mục theo lệnh {$request->lenh_sx}.");
+    }
+
+    public function export()
+    {
+        return Excel::download(new WarehouseTransactionExport, 'kho_nhap_xuat_' . now()->format('Ymd') . '.xlsx');
+    }
+
+    public function template()
+    {
+        return Excel::download(new WarehouseTransactionTemplateExport, 'mau_nhap_xuat_kho.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        $import = new WarehouseTransactionImport;
+        Excel::import($import, $request->file('file'));
+
+        return redirect()->route('admin.warehouse-transactions.index')
+            ->with('success', "Import thành công {$import->getCount()} giao dịch kho.");
     }
 }
