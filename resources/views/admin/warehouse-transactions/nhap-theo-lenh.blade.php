@@ -37,7 +37,8 @@
                     <div class="row g-2 mb-3">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Ngày nhập <span class="text-danger">*</span></label>
-                            <input type="date" name="ngay" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                            <input type="date" name="ngay" class="form-control" value="{{ now()->format('Y-m-d') }}"
+                                required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Mã NV</label>
@@ -61,7 +62,8 @@
                                     <th>Size</th>
                                     <th class="text-end">SL Đơn hàng</th>
                                     <th class="text-end">SL Tồn kho</th>
-                                    <th class="text-end" style="background:#d4edda;color:#155724;min-width:120px">SL Nhập</th>
+                                    <th class="text-end" style="background:#d4edda;color:#155724;min-width:120px">SL Nhập
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,21 +72,25 @@
                                         <td>{{ $i + 1 }}</td>
                                         <td class="fw-semibold">
                                             {{ $item->ma_hang }}
-                                            <input type="hidden" name="rows[{{ $i }}][ma_hh]" value="{{ $item->ma_hang }}">
-                                            <input type="hidden" name="rows[{{ $i }}][mau]" value="{{ $item->mau }}">
-                                            <input type="hidden" name="rows[{{ $i }}][size]" value="{{ $item->size }}">
+                                            <input type="hidden" name="rows[{{ $i }}][ma_hh]"
+                                                value="{{ $item->ma_hang }}">
+                                            <input type="hidden" name="rows[{{ $i }}][mau]"
+                                                value="{{ $item->mau }}">
+                                            <input type="hidden" name="rows[{{ $i }}][size]"
+                                                value="{{ $item->size }}">
                                         </td>
                                         <td>{{ $item->mau ?: '—' }}</td>
                                         <td>{{ $item->size ?: '—' }}</td>
                                         <td class="text-end">{{ number_format($item->sl_don) }}</td>
-                                        <td class="text-end {{ $item->ton_kho < $item->sl_don ? 'text-danger fw-bold' : 'text-success' }}">
+                                        <td
+                                            class="text-end {{ $item->ton_kho < $item->sl_don ? 'text-danger fw-bold' : 'text-success' }}">
                                             {{ number_format($item->ton_kho) }}
                                         </td>
                                         <td style="background:#f0fff0">
                                             <input type="number" step="0.01" min="0"
                                                 name="rows[{{ $i }}][so_luong]"
-                                                class="form-control form-control-sm text-end"
-                                                placeholder="0" value="">
+                                                class="form-control form-control-sm text-end" placeholder="0"
+                                                value="">
                                         </td>
                                     </tr>
                                 @endforeach
@@ -98,7 +104,6 @@
                         </button>
                     </div>
                 </form>
-
             @elseif ($lenhSx)
                 <div class="alert alert-warning">
                     <i class="fa-solid fa-triangle-exclamation me-1"></i>

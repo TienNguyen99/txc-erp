@@ -179,8 +179,10 @@
                 <div class="col-md-2">
                     <select name="cong_doan" class="form-select form-select-sm">
                         <option value="">-- Loại --</option>
-                        <option value="NHAPKHO" {{ request('cong_doan') == 'NHAPKHO' ? 'selected' : '' }}>NHẬP KHO</option>
-                        <option value="XUATKHO" {{ request('cong_doan') == 'XUATKHO' ? 'selected' : '' }}>XUẤT KHO</option>
+                        <option value="NHAPKHO" {{ request('cong_doan') == 'NHAPKHO' ? 'selected' : '' }}>NHẬP KHO
+                        </option>
+                        <option value="XUATKHO" {{ request('cong_doan') == 'XUATKHO' ? 'selected' : '' }}>XUẤT KHO
+                        </option>
                     </select>
                 </div>
                 <div class="col-auto">

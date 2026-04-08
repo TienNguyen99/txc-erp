@@ -37,7 +37,8 @@
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label fw-semibold mb-1">Ngày nhập</label>
-                        <input type="date" name="ngay" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                        <input type="date" name="ngay" class="form-control" value="{{ now()->format('Y-m-d') }}"
+                            required>
                     </div>
                     <div class="col-6">
                         <label class="form-label fw-semibold mb-1">Lệnh</label>
@@ -52,7 +53,8 @@
 
                 {{-- Danh sách hàng --}}
                 @foreach ($items as $i => $item)
-                    <div class="border rounded-3 p-3 mb-2 {{ $item->ton_kho >= $item->sl_don ? 'border-success' : 'border-danger' }}" style="background:#fafffe">
+                    <div class="border rounded-3 p-3 mb-2 {{ $item->ton_kho >= $item->sl_don ? 'border-success' : 'border-danger' }}"
+                        style="background:#fafffe">
                         <input type="hidden" name="rows[{{ $i }}][ma_hh]" value="{{ $item->ma_hang }}">
                         <input type="hidden" name="rows[{{ $i }}][mau]" value="{{ $item->mau }}">
                         <input type="hidden" name="rows[{{ $i }}][size]" value="{{ $item->size }}">
@@ -73,10 +75,8 @@
                         </div>
                         <div class="input-group">
                             <span class="input-group-text bg-success text-white" style="font-size:.8rem">SL nhập</span>
-                            <input type="number" step="0.01" min="0"
-                                name="rows[{{ $i }}][so_luong]"
-                                class="form-control text-end fw-bold"
-                                placeholder="0" inputmode="decimal">
+                            <input type="number" step="0.01" min="0" name="rows[{{ $i }}][so_luong]"
+                                class="form-control text-end fw-bold" placeholder="0" inputmode="decimal">
                         </div>
                     </div>
                 @endforeach
@@ -86,7 +86,6 @@
                 </button>
             </form>
         </div>
-
     @elseif ($lenhSx)
         <div class="alert alert-warning">
             <i class="fa-solid fa-triangle-exclamation me-1"></i>
