@@ -54,8 +54,15 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Công đoạn</label>
-                        <input type="text" name="cong_doan" class="form-control"
-                            value="{{ old('cong_doan', $orderTracking->cong_doan ?? '') }}">
+                        <select name="cong_doan" class="form-select">
+                            <option value="">-- Chọn công đoạn --</option>
+                            @foreach (\App\Models\OrderTracking::STAGES as $stage => $info)
+                                <option value="{{ $stage }}"
+                                    {{ old('cong_doan', $orderTracking->cong_doan ?? '') == $stage ? 'selected' : '' }}>
+                                    {{ $stage }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">SL Đơn hàng</label>

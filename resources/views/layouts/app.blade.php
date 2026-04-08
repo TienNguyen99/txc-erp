@@ -327,8 +327,8 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-erp mb-0">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="{{ route('admin.warehouse-transactions.index') }}">
-                <i class="fa-solid fa-cube me-2"></i>TXC ERP
+            <a class="navbar-brand" href="{{ route('admin.dashboard') }}">
+                <i class="fa-solid fa-cube me-2"></i>TEXENCO
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
                 <span class="navbar-toggler-icon"></span>
@@ -336,21 +336,27 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto gap-1">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.index') ? 'active fw-bold' : '' }}"
+                        <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.orders.index') }}">
+                            <i class="fa-solid fa-file-invoice me-1"></i>Order
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.order-tracking.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.order-tracking.index') }}">
+                            <i class="fa-solid fa-truck-fast me-1"></i>Order Tracking
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.production-reports.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.production-reports.index') }}">
+                            <i class="fa-solid fa-industry me-1"></i>Production
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.warehouse-transactions.index') }}">
-                            <i class="fa-solid fa-exchange-alt me-1"></i>Giao Dịch Kho
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active fw-bold' : '' }}"
-                            href="{{ route('admin.warehouse-transactions.ton-kho') }}">
-                            <i class="fa-solid fa-boxes-stacked me-1"></i>Tồn Kho
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.create') ? 'active fw-bold' : '' }}"
-                            href="{{ route('admin.warehouse-transactions.create') }}">
-                            <i class="fa-solid fa-plus me-1"></i>Nhập / Xuất
+                            <i class="fa-solid fa-warehouse me-1"></i>Warehouse
                         </a>
                     </li>
                 </ul>
@@ -418,6 +424,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @yield('scripts')
 </body>
 
 </html>

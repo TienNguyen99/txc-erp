@@ -26,7 +26,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
  *  6 (G) Clw              → (bỏ qua)
  *  7 (H) PTL              → fty_po
  *  8 (I) JOB NO           → job_no *** KEY ***
- *  9 (J) Fty POR          → (mô tả sản phẩm, lưu vào size tạm)
+ *  9 (J) Fty POR          → (mô tả sản phẩm, lưu vào ma_hh)
  * 10 (K) IMe              → im_number
  * 11 (L) Clr              → color
  * 12 (M) Odr Q            → qty
@@ -40,6 +40,7 @@ class CustomerOrderImport implements ToModel, WithStartRow
 {
     protected int $imported = 0;
     protected int $skipped = 0;
+    protected array $importedMaHh = [];
 
     public function startRow(): int
     {
@@ -58,16 +59,20 @@ class CustomerOrderImport implements ToModel, WithStartRow
 
         $this->imported++;
 
+        $maHh = $this->cleanString($row[9] ?? null);
+        if (!empty($maHh)) {
+            $this->importedMaHh[] = $maHh;
+        }
+
         return Order::updateOrCreate(
             ['job_no' => $jobNo],
             [
                 'fty_po'        => $this->cleanString($row[7] ?? null),
                 'im_number'     => $this->cleanString($row[10] ?? null),
                 'color'         => $this->cleanString($row[11] ?? null),
-                'qty'           => $this->toNumber($row[12] ?? null),
                 'unit'          => $this->cleanString($row[13] ?? null),
-                'size'          => $this->cleanString($row[9] ?? null),
-                'yrd'           => $this->toNumber($row[14] ?? null),
+                'ma_hh'         => $this->cleanString($row[9] ?? null),
+                'yrd'           => $this->toNumber($row[12] ?? null),
                 'chart'         => $this->cleanString($row[5] ?? null),
                 'sig_need_date' => $this->parseDate($row[1] ?? null),
                 'tagtime_etc'   => $this->parseDate($row[17] ?? null),
@@ -84,6 +89,11 @@ class CustomerOrderImport implements ToModel, WithStartRow
     public function getSkippedCount(): int
     {
         return $this->skipped;
+    }
+
+    public function getImportedMaHh(): array
+    {
+        return array_values(array_unique($this->importedMaHh));
     }
 
     private function cleanString($value): ?string

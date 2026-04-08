@@ -54,9 +54,9 @@
                             value="{{ old('color', $order->color ?? '') }}">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">Qty</label>
-                        <input type="number" step="0.01" name="qty" class="form-control"
-                            value="{{ old('qty', $order->qty ?? '') }}">
+                        <label class="form-label fw-semibold">YRD</label>
+                        <input type="number" step="0.01" name="yrd" class="form-control"
+                            value="{{ old('yrd', $order->yrd ?? '') }}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Unit</label>
@@ -64,14 +64,9 @@
                             value="{{ old('unit', $order->unit ?? '') }}">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">Size</label>
-                        <input type="text" name="size" class="form-control"
-                            value="{{ old('size', $order->size ?? '') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">YRD</label>
-                        <input type="number" step="0.01" name="yrd" class="form-control"
-                            value="{{ old('yrd', $order->yrd ?? '') }}">
+                        <label class="form-label fw-semibold">Mã HH</label>
+                        <input type="text" name="ma_hh" class="form-control"
+                            value="{{ old('ma_hh', $order->ma_hh ?? '') }}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Cần giao 1</label>
@@ -117,6 +112,11 @@
                         <label class="form-label fw-semibold">Tờ khai</label>
                         <input type="text" name="to_khai" class="form-control"
                             value="{{ old('to_khai', $order->to_khai ?? '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Lệnh sản xuất</label>
+                        <input type="text" name="lenh_sanxuat" class="form-control"
+                            value="{{ old('lenh_sanxuat', $order->lenh_sanxuat ?? '') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
