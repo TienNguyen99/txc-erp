@@ -5,6 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\DanhMucKhachHang;
+use App\Imports\OrderImport;
+use App\Imports\CustomerOrderImport;
+use App\Exports\OrderExport;
+use App\Exports\OrderTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -87,5 +92,34 @@ class OrderController extends Controller
     {
         $order->delete();
         return redirect()->route('admin.orders.index')->with('success', 'Xóa đơn hàng thành công.');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:5120']);
+        Excel::import(new OrderImport, $request->file('file'));
+        return redirect()->route('admin.orders.index')->with('success', 'Import đơn hàng thành công.');
+    }
+
+    public function export()
+    {
+        return Excel::download(new OrderExport, 'don-hang.xlsx');
+    }
+
+    public function template()
+    {
+        return Excel::download(new OrderTemplateExport, 'template-don-hang.xlsx');
+    }
+
+    public function importCustomer(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls|max:10240']);
+        $import = new CustomerOrderImport;
+        Excel::import($import, $request->file('file'));
+        $msg = "Import thành công {$import->getImportedCount()} đơn hàng";
+        if ($import->getSkippedCount() > 0) {
+            $msg .= " (bỏ qua {$import->getSkippedCount()} dòng không hợp lệ)";
+        }
+        return redirect()->route('admin.orders.index')->with('success', $msg);
     }
 }

@@ -36,6 +36,10 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class);
 
         // Orders
+        Route::post('orders/import', [OrderController::class, 'import'])->name('orders.import');
+        Route::post('orders/import-customer', [OrderController::class, 'importCustomer'])->name('orders.import-customer');
+        Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
+        Route::get('orders/template', [OrderController::class, 'template'])->name('orders.template');
         Route::resource('orders', OrderController::class);
 
         // Order Tracking
