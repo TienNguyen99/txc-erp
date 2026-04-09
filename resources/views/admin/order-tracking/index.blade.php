@@ -104,7 +104,8 @@
                                                         <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
                                                         <td class="text-center">{{ $row->so_don }}</td>
                                                         <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
-                                                        <td class="text-end text-info">{{ number_format($row->sl_production, 2) }}</td>
+                                                        <td class="text-end text-info">
+                                                            {{ number_format($row->sl_production, 2) }}</td>
                                                         <td class="text-end fw-bold text-success">
                                                             {{ number_format($row->ton_kho, 2) }}</td>
                                                         <td class="text-end text-success">
@@ -181,7 +182,8 @@
                                                         <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
                                                         <td class="text-center">{{ $row->so_don }}</td>
                                                         <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
-                                                        <td class="text-end text-info">{{ number_format($row->sl_production, 2) }}</td>
+                                                        <td class="text-end text-info">
+                                                            {{ number_format($row->sl_production, 2) }}</td>
                                                         <td
                                                             class="text-end {{ $row->ton_kho > 0 ? 'text-success' : 'text-muted' }}">
                                                             {{ number_format($row->ton_kho, 2) }}
