@@ -20,64 +20,95 @@ class OrderTrackingController extends Controller
                          ->distinct()->pluck('chart');
 
         // Lọc orders theo PL Number hoặc Chart
-        $orders = collect();
         $plFilter = array_filter((array) $request->input('pl_number', []));
         $hasFilter = !empty($plFilter) || $request->filled('chart');
+
+        // Dashboard chỉ hiện khi có filter PL/Chart (= chọn lô cần đi)
+        $summary = collect();
+        $stats = (object) [
+            'total_mahh' => 0, 'du_hang' => 0, 'thieu_hang' => 0, 'dang_sx' => 0,
+            'tong_can_giao' => 0, 'tong_ton_kho' => 0, 'tong_dang_sx' => 0, 'tong_thieu' => 0,
+        ];
 
         if ($hasFilter) {
             $orders = Order::query()
                 ->when(!empty($plFilter), fn($q) => $q->whereIn('pl_number', $plFilter))
                 ->when($request->chart, fn($q, $v) => $q->where('chart', $v))
                 ->get();
+
+            // ═══ DASHBOARD: Tổng hợp theo ma_hh ═══
+            $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) {
+                $totalQty = $group->sum('yrd');
+                $orderIds = $group->pluck('id');
+
+                $trackings = OrderTracking::whereIn('order_id', $orderIds)->get();
+                $stageBreakdown = collect(OrderTracking::STAGES)->mapWithKeys(function ($info, $stage) use ($trackings) {
+                    return [$stage => $trackings->where('cong_doan', $stage)->sum('sl_don_hang')];
+                });
+
+                $slProduction = ProductionReport::where('size', $maHh)
+                    ->where('cong_doan', '!=', 'Đã nhập kho')
+                    ->sum('sl_dat');
+
+                $slProducedDone = ProductionReport::where('size', $maHh)
+                    ->where('cong_doan', 'Đã nhập kho')
+                    ->sum('sl_dat');
+
+                $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
+                $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+                $tonKho = $nhap - $xuat;
+                $thieu = max(0, $totalQty - $tonKho);
+
+                $totalProgress = $totalQty > 0
+                    ? min(100, round(($tonKho + $slProduction) / $totalQty * 100))
+                    : 0;
+
+                return (object) [
+                    'ma_hh'           => $maHh,
+                    'so_don'          => $group->count(),
+                    'tong_qty'        => $totalQty,
+                    'sl_production'   => $slProduction,
+                    'sl_produced_done'=> $slProducedDone,
+                    'sl_warehouse'    => $nhap,
+                    'ton_kho'         => $tonKho,
+                    'thieu'           => $thieu,
+                    'du_hang'         => $tonKho >= $totalQty,
+                    'stage_breakdown' => $stageBreakdown,
+                    'order_ids'       => $orderIds->toArray(),
+                    'total_progress'  => $totalProgress,
+                ];
+            })->values();
+
+            $stats = (object) [
+                'total_mahh'   => $summary->count(),
+                'du_hang'      => $summary->where('du_hang', true)->count(),
+                'thieu_hang'   => $summary->where('du_hang', false)->count(),
+                'dang_sx'      => $summary->where('sl_production', '>', 0)->count(),
+                'tong_can_giao'=> $summary->sum('tong_qty'),
+                'tong_ton_kho' => $summary->sum('ton_kho'),
+                'tong_dang_sx' => $summary->sum('sl_production'),
+                'tong_thieu'   => $summary->sum('thieu'),
+            ];
         }
 
-        // Tổng hợp theo ma_hh từ các orders đã lọc
-        $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) {
-            $totalQty = $group->sum('yrd');
-            $orderIds = $group->pluck('id');
-
-            // Đếm SL theo từng công đoạn
-            $trackings = OrderTracking::whereIn('order_id', $orderIds)->get();
-            $stageBreakdown = collect(OrderTracking::STAGES)->mapWithKeys(function ($info, $stage) use ($trackings) {
-                return [$stage => $trackings->where('cong_doan', $stage)->sum('sl_don_hang')];
-            });
-
-            $slTracking   = $trackings->sum('sl_san_xuat');
-            $slProduction = ProductionReport::where('lenh_sx', 'like', "%{$maHh}%")->sum('sl_dat');
-            $slWarehouse  = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
-
-            // Kiểm tra tồn kho
-            $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
-            $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
-            $tonKho = $nhap - $xuat;
-            $thieu = max(0, $totalQty - $tonKho);
-
-            return (object) [
-                'ma_hh'           => $maHh,
-                'so_don'          => $group->count(),
-                'tong_qty'        => $totalQty,
-                'sl_tracking'     => $slTracking,
-                'sl_production'   => $slProduction,
-                'sl_warehouse'    => $slWarehouse,
-                'ton_kho'         => $tonKho,
-                'thieu'           => $thieu,
-                'du_hang'         => $tonKho >= $totalQty,
-                'stage_breakdown' => $stageBreakdown,
-                'order_ids'       => $orderIds->toArray(),
-            ];
-        })->values();
-
-        // Danh sách tracking hiện tại (vẫn giữ phân trang)
+        // Danh sách tracking (phân trang)
         $data = OrderTracking::with('order')
                     ->when(!empty($plFilter), fn($q) => $q->whereHas('order', fn($oq) => $oq->whereIn('pl_number', $plFilter)))
                     ->when($request->chart, fn($q, $v) => $q->whereHas('order', fn($oq) => $oq->where('chart', $v)))
-                    ->when($request->search, fn($q, $s) => $q->where('pl_number', 'like', "%$s%")->orWhere('mau', 'like', "%$s%"))
+                    ->when($request->search, fn($q, $s) => $q->where(function ($sub) use ($s) {
+                        $sub->where('pl_number', 'like', "%$s%")
+                            ->orWhere('mau', 'like', "%$s%")
+                            ->orWhere('size', 'like', "%$s%");
+                    }))
                     ->latest()->paginate(15)->withQueryString();
 
         $allOrders = Order::pluck('job_no', 'id');
         $stages = OrderTracking::STAGES;
 
-        return view('admin.order-tracking.index', compact('data', 'allOrders', 'plNumbers', 'charts', 'summary', 'hasFilter', 'stages'));
+        return view('admin.order-tracking.index', compact(
+            'data', 'allOrders', 'plNumbers', 'charts',
+            'summary', 'hasFilter', 'stages', 'stats'
+        ));
     }
 
     public function create()

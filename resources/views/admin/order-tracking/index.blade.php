@@ -2,7 +2,7 @@
 @section('content')
     <div class="container-fluid px-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="page-title mb-0"><i class="fa-solid fa-truck-fast me-2"></i>Quản lý Order Tracking</h4>
+            <h4 class="page-title mb-0"><i class="fa-solid fa-truck-fast me-2"></i>Order Tracking — Dashboard</h4>
             <a href="{{ route('admin.order-tracking.create') }}" class="btn btn-primary btn-sm">
                 <i class="fa-solid fa-plus me-1"></i>Thêm Tracking
             </a>
@@ -10,16 +10,16 @@
         <div class="card-page">
             @include('admin.partials.alert')
 
-            {{-- ═══ BỘ LỌC THEO PL NUMBER / CHART ═══ --}}
+            {{-- ═══ BỘ LỌC ═══ --}}
             <form method="GET" class="row g-2 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label mb-0" style="font-size:.8rem">PL Number <small class="text-muted">(chọn
                             nhiều)</small></label>
                     <select name="pl_number[]" class="form-select form-select-sm" multiple size="3">
                         @foreach ($plNumbers as $pl)
                             <option value="{{ $pl }}"
-                                {{ in_array($pl, (array) request('pl_number', [])) ? 'selected' : '' }}>
-                                {{ $pl }}</option>
+                                {{ in_array($pl, (array) request('pl_number', [])) ? 'selected' : '' }}>{{ $pl }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -36,7 +36,7 @@
                 <div class="col-md-3">
                     <label class="form-label mb-0" style="font-size:.8rem">Tìm kiếm</label>
                     <input type="text" name="search" class="form-control form-control-sm"
-                        placeholder="Tìm PL Number / Màu..." value="{{ request('search') }}">
+                        placeholder="Tìm PL / Mã HH / Màu..." value="{{ request('search') }}">
                 </div>
                 <div class="col-auto d-flex align-items-end">
                     <button class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-search me-1"></i>Lọc</button>
@@ -46,16 +46,62 @@
                 </div>
             </form>
 
-            {{-- ═══ BẢNG TỔNG HỢP MÃ HH (chỉ hiển thị khi có filter) ═══ --}}
-            @if ($hasFilter && $summary->count())
-                @php
-                    $duHang = $summary->where('du_hang', true);
-                    $thieuHang = $summary->where('du_hang', false);
-                @endphp
+            {{-- ═══ DASHBOARD CARDS ═══ --}}
+            @if ($summary->count())
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="text-muted" style="font-size:.75rem">Tổng Mã HH</div>
+                                <h3 class="fw-bold text-primary mb-0">{{ $stats->total_mahh }}</h3>
+                                <small class="text-muted">mã hàng hóa</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <div class="text-muted" style="font-size:.75rem">Cần giao / Tồn kho</div>
+                                <h3 class="fw-bold mb-0">
+                                    <span class="text-dark">{{ number_format($stats->tong_can_giao, 0) }}</span>
+                                    <span class="text-muted mx-1">/</span>
+                                    <span class="text-success">{{ number_format($stats->tong_ton_kho, 0) }}</span>
+                                </h3>
+                                <small class="text-muted">YRD</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100 border-start border-info border-3">
+                            <div class="card-body text-center">
+                                <div class="text-muted" style="font-size:.75rem">Đang sản xuất</div>
+                                <h3 class="fw-bold text-info mb-0">{{ number_format($stats->tong_dang_sx, 0) }}</h3>
+                                <small class="text-muted">{{ $stats->dang_sx }} mã đang SX</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div
+                            class="card border-0 shadow-sm h-100 {{ $stats->tong_thieu > 0 ? 'border-start border-danger border-3' : 'border-start border-success border-3' }}">
+                            <div class="card-body text-center">
+                                @if ($stats->tong_thieu > 0)
+                                    <div class="text-muted" style="font-size:.75rem">Còn thiếu</div>
+                                    <h3 class="fw-bold text-danger mb-0">{{ number_format($stats->tong_thieu, 0) }}</h3>
+                                    <small class="text-danger">{{ $stats->thieu_hang }} mã thiếu hàng</small>
+                                @else
+                                    <div class="text-muted" style="font-size:.75rem">Trạng thái</div>
+                                    <h3 class="fw-bold text-success mb-0"><i class="fa-solid fa-check-circle"></i></h3>
+                                    <small class="text-success">Đủ hàng tất cả</small>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                {{-- ═══ BẢNG TIẾN ĐỘ TỔNG HỢP THEO MÃ HH ═══ --}}
                 <div class="mb-4">
                     <h6 class="fw-bold text-primary mb-2">
-                        <i class="fa-solid fa-chart-bar me-1"></i>Tổng hợp Mã HH
+                        <i class="fa-solid fa-chart-bar me-1"></i>Tiến độ sản xuất theo Mã HH
                         @if (request('pl_number'))
                             — PL: <span class="text-dark">{{ implode(', ', (array) request('pl_number')) }}</span>
                         @endif
@@ -64,14 +110,135 @@
                         @endif
                     </h6>
 
-                    {{-- ═══ NHÓM 1: ĐỦ HÀNG — SẴN SÀNG GIAO ═══ --}}
-                    @if ($duHang->count())
-                        <div class="card border-success mb-3">
-                            <div class="card-header bg-success text-white py-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-3">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Mã HH</th>
+                                    <th class="text-center">Số PO</th>
+                                    <th class="text-end">Cần giao</th>
+                                    <th class="text-end">Đang SX</th>
+                                    <th class="text-end">Tồn kho</th>
+                                    <th class="text-end">Thiếu / Dư</th>
+                                    <th style="min-width:200px">Tiến độ</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($summary->sortByDesc('thieu') as $row)
+                                    @php
+                                        $diff = $row->ton_kho - $row->tong_qty;
+                                        $pctKho =
+                                            $row->tong_qty > 0
+                                                ? min(100, round(($row->ton_kho / $row->tong_qty) * 100))
+                                                : 0;
+                                        $pctSx =
+                                            $row->tong_qty > 0
+                                                ? min(
+                                                    100 - $pctKho,
+                                                    round(($row->sl_production / $row->tong_qty) * 100),
+                                                )
+                                                : 0;
+                                    @endphp
+                                    <tr>
+                                        <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
+                                        <td class="text-center">{{ $row->so_don }}</td>
+                                        <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
+                                        <td
+                                            class="text-end {{ $row->sl_production > 0 ? 'text-info fw-semibold' : 'text-muted' }}">
+                                            {{ number_format($row->sl_production, 2) }}
+                                        </td>
+                                        <td
+                                            class="text-end {{ $row->ton_kho > 0 ? 'text-success fw-semibold' : 'text-muted' }}">
+                                            {{ number_format($row->ton_kho, 2) }}
+                                        </td>
+                                        <td class="text-end fw-bold {{ $diff >= 0 ? 'text-success' : 'text-danger' }}">
+                                            {{ $diff >= 0 ? '+' : '' }}{{ number_format($diff, 2) }}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height:20px">
+                                                @if ($pctKho > 0)
+                                                    <div class="progress-bar bg-success" style="width:{{ $pctKho }}%"
+                                                        title="Tồn kho: {{ number_format($row->ton_kho, 0) }}">
+                                                        @if ($pctKho >= 15)
+                                                            {{ $pctKho }}%
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                @if ($pctSx > 0)
+                                                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+                                                        style="width:{{ $pctSx }}%"
+                                                        title="Đang SX: {{ number_format($row->sl_production, 0) }}">
+                                                        @if ($pctSx >= 15)
+                                                            {{ $pctSx }}%
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                @if ($pctKho == 0 && $pctSx == 0)
+                                                    <div class="progress-bar bg-light text-dark" style="width:100%">Chưa
+                                                        SX</div>
+                                                @endif
+                                            </div>
+                                            <div class="d-flex justify-content-between"
+                                                style="font-size:.65rem;margin-top:2px">
+                                                <span class="text-success"><i
+                                                        class="fa-solid fa-warehouse me-1"></i>Kho</span>
+                                                <span class="text-info"><i class="fa-solid fa-industry me-1"></i>SX</span>
+                                                <span>{{ $row->total_progress }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if ($row->du_hang)
+                                                <span class="badge bg-success"><i
+                                                        class="fa-solid fa-check-circle me-1"></i>Đủ hàng</span>
+                                            @elseif ($row->sl_production > 0)
+                                                <span class="badge bg-info"><i class="fa-solid fa-industry me-1"></i>Đang
+                                                    SX</span>
+                                            @elseif ($row->stage_breakdown->sum() > 0)
+                                                <span class="badge bg-warning text-dark"><i
+                                                        class="fa-solid fa-clock me-1"></i>Chờ SX</span>
+                                            @else
+                                                <span class="badge bg-danger"><i
+                                                        class="fa-solid fa-triangle-exclamation me-1"></i>Thiếu</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-dark fw-bold">
+                                <tr>
+                                    <td>Tổng ({{ $summary->count() }} mã)</td>
+                                    <td class="text-center">{{ $summary->sum('so_don') }}</td>
+                                    <td class="text-end">{{ number_format($summary->sum('tong_qty'), 2) }}</td>
+                                    <td class="text-end">{{ number_format($summary->sum('sl_production'), 2) }}</td>
+                                    <td class="text-end">{{ number_format($summary->sum('ton_kho'), 2) }}</td>
+                                    <td class="text-end">
+                                        {{ number_format($summary->sum('ton_kho') - $summary->sum('tong_qty'), 2) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- ═══ HÀNH ĐỘNG: ĐỦ HÀNG → XUẤT KHO ═══ --}}
+                @php
+                    $duHang = $summary->where('du_hang', true);
+                    $thieuHang = $summary->where('du_hang', false);
+                @endphp
+
+                @if ($duHang->count() && $hasFilter)
+                    <div class="card border-success mb-3">
+                        <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center"
+                            data-bs-toggle="collapse" data-bs-target="#collapseShip" role="button">
+                            <span>
                                 <i class="fa-solid fa-check-circle me-1"></i>
-                                <strong>Đủ hàng — Sẵn sàng xuất kho giao</strong>
+                                <strong>Đủ hàng — Sẵn sàng xuất kho</strong>
                                 <span class="badge bg-light text-success ms-2">{{ $duHang->count() }} mã</span>
-                            </div>
+                            </span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="collapse" id="collapseShip">
                             <div class="card-body p-2">
                                 <form method="POST" action="{{ route('admin.order-tracking.ship-from-stock') }}"
                                     id="shipForm">
@@ -82,12 +249,10 @@
                                                 <tr>
                                                     <th><input type="checkbox" id="checkAllShip" checked></th>
                                                     <th>Mã HH</th>
-                                                    <th class="text-center">Số đơn</th>
+                                                    <th class="text-center">Số PO</th>
                                                     <th class="text-end">Cần giao</th>
-                                                    <th class="text-end">Đang SX</th>
                                                     <th class="text-end">Tồn kho</th>
                                                     <th class="text-end">Dư</th>
-                                                    <th>Công đoạn SX</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -96,59 +261,46 @@
                                                         <td>
                                                             @foreach ($row->order_ids as $oid)
                                                                 <input type="checkbox" name="order_ids[]"
-                                                                    value="{{ $oid }}" class="ship-check" checked
-                                                                    style="display:none">
+                                                                    value="{{ $oid }}" class="ship-check"
+                                                                    checked style="display:none">
                                                             @endforeach
                                                             <input type="checkbox" class="ship-group-check" checked>
                                                         </td>
                                                         <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
                                                         <td class="text-center">{{ $row->so_don }}</td>
                                                         <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
-                                                        <td class="text-end text-info">
-                                                            {{ number_format($row->sl_production, 2) }}</td>
                                                         <td class="text-end fw-bold text-success">
                                                             {{ number_format($row->ton_kho, 2) }}</td>
                                                         <td class="text-end text-success">
                                                             +{{ number_format($row->ton_kho - $row->tong_qty, 2) }}</td>
-                                                        <td>
-                                                            <div class="d-flex align-items-center gap-1"
-                                                                style="font-size:.75rem">
-                                                                @foreach ($stages as $stageName => $stageInfo)
-                                                                    @php $stageQty = $row->stage_breakdown[$stageName] ?? 0; @endphp
-                                                                    @if ($stageQty > 0)
-                                                                        <span class="badge bg-{{ $stageInfo['color'] }}">
-                                                                            <i
-                                                                                class="fa-solid {{ $stageInfo['icon'] }} me-1"></i>{{ number_format($stageQty, 0) }}
-                                                                        </span>
-                                                                    @endif
-                                                                @endforeach
-                                                                @if ($row->stage_breakdown->sum() == 0)
-                                                                    <span class="text-muted">Chưa có tracking</span>
-                                                                @endif
-                                                            </div>
-                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                     </div>
-                                    <button type="submit" class="btn btn-success btn-sm" id="btnShipFromStock"
+                                    <button type="submit" class="btn btn-success btn-sm"
                                         onclick="return confirm('Xuất kho giao hàng cho các đơn đã chọn?')">
                                         <i class="fa-solid fa-truck-fast me-1"></i>Xuất kho giao hàng
                                     </button>
                                 </form>
                             </div>
                         </div>
-                    @endif
+                    </div>
+                @endif
 
-                    {{-- ═══ NHÓM 2: THIẾU HÀNG — CẦN SẢN XUẤT ═══ --}}
-                    @if ($thieuHang->count())
-                        <div class="card border-danger mb-3">
-                            <div class="card-header bg-danger text-white py-2">
+                {{-- ═══ HÀNH ĐỘNG: THIẾU HÀNG → TẠO TRACKING & SX ═══ --}}
+                @if ($thieuHang->count() && $hasFilter)
+                    <div class="card border-danger mb-3">
+                        <div class="card-header bg-danger text-white py-2 d-flex justify-content-between align-items-center"
+                            data-bs-toggle="collapse" data-bs-target="#collapseGenerate" role="button">
+                            <span>
                                 <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                                <strong>Thiếu hàng — Cần sản xuất thêm</strong>
+                                <strong>Thiếu hàng — Cần sản xuất</strong>
                                 <span class="badge bg-light text-danger ms-2">{{ $thieuHang->count() }} mã</span>
-                            </div>
+                            </span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="collapse show" id="collapseGenerate">
                             <div class="card-body p-2">
                                 <form method="POST" action="{{ route('admin.order-tracking.generate') }}"
                                     id="generateForm">
@@ -159,13 +311,12 @@
                                                 <tr>
                                                     <th><input type="checkbox" id="checkAllGenerate" checked></th>
                                                     <th>Mã HH</th>
-                                                    <th class="text-center">Số đơn</th>
+                                                    <th class="text-center">Số PO</th>
                                                     <th class="text-end">Cần giao</th>
                                                     <th class="text-end">Đang SX</th>
                                                     <th class="text-end">Tồn kho</th>
                                                     <th class="text-end">Thiếu</th>
-                                                    <th>Công đoạn SX</th>
-                                                    <th>Tiến độ</th>
+                                                    <th style="min-width:140px">Tiến độ</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -186,43 +337,13 @@
                                                             {{ number_format($row->sl_production, 2) }}</td>
                                                         <td
                                                             class="text-end {{ $row->ton_kho > 0 ? 'text-success' : 'text-muted' }}">
-                                                            {{ number_format($row->ton_kho, 2) }}
-                                                        </td>
+                                                            {{ number_format($row->ton_kho, 2) }}</td>
                                                         <td class="text-end fw-bold text-danger">
                                                             {{ number_format($row->thieu, 2) }}</td>
                                                         <td>
-                                                            <div class="d-flex align-items-center gap-1"
-                                                                style="font-size:.75rem">
-                                                                @foreach ($stages as $stageName => $stageInfo)
-                                                                    @php $stageQty = $row->stage_breakdown[$stageName] ?? 0; @endphp
-                                                                    @if ($stageQty > 0)
-                                                                        <span class="badge bg-{{ $stageInfo['color'] }}">
-                                                                            <i
-                                                                                class="fa-solid {{ $stageInfo['icon'] }} me-1"></i>{{ number_format($stageQty, 0) }}
-                                                                        </span>
-                                                                    @endif
-                                                                @endforeach
-                                                                @if ($row->stage_breakdown->sum() == 0)
-                                                                    <span class="text-muted">Chưa có tracking</span>
-                                                                @endif
-                                                            </div>
-                                                        </td>
-                                                        <td style="min-width:120px">
-                                                            @php
-                                                                $pct =
-                                                                    $row->tong_qty > 0
-                                                                        ? min(
-                                                                            100,
-                                                                            round(
-                                                                                ($row->sl_warehouse / $row->tong_qty) *
-                                                                                    100,
-                                                                            ),
-                                                                        )
-                                                                        : 0;
-                                                                $barColor = $pct >= 50 ? 'bg-info' : 'bg-warning';
-                                                            @endphp
                                                             <div class="progress" style="height:18px">
-                                                                <div class="progress-bar {{ $barColor }}"
+                                                                @php $pct = $row->total_progress; @endphp
+                                                                <div class="progress-bar {{ $pct >= 50 ? 'bg-info' : 'bg-warning' }}"
                                                                     style="width:{{ $pct }}%">
                                                                     {{ $pct }}%</div>
                                                             </div>
@@ -238,14 +359,19 @@
                                 </form>
                             </div>
                         </div>
-                    @endif
-                </div>
+                    </div>
+                @endif
             @elseif ($hasFilter && $summary->isEmpty())
                 <div class="alert alert-info">Không tìm thấy đơn hàng nào với bộ lọc đã chọn.</div>
+            @else
+                <div class="alert alert-secondary mb-4">
+                    <i class="fa-solid fa-filter me-1"></i>Chọn PL Number hoặc Chart ở trên để xem dashboard tiến độ sản
+                    xuất.
+                </div>
             @endif
 
-            {{-- ═══ DANH SÁCH TRACKING ═══ --}}
-            <h6 class="fw-bold mb-2"><i class="fa-solid fa-list me-1"></i>Danh sách Tracking</h6>
+            {{-- ═══ DANH SÁCH TRACKING CHI TIẾT ═══ --}}
+            <h6 class="fw-bold mb-2"><i class="fa-solid fa-list me-1"></i>Chi tiết Tracking theo PO</h6>
             <form id="trackingActionForm" method="POST">
                 @csrf
                 <div class="table-responsive">
@@ -312,7 +438,7 @@
                                     <td class="text-center">
                                         <a href="{{ route('admin.order-tracking.edit', $item) }}"
                                             class="btn btn-warning btn-xs"><i class="fa-solid fa-pen"></i></a>
-                                        <button type="button" class="btn btn-danger btn-xs btn-delete-tracking"
+                                        <button type="button" class="btn btn-danger btn-xs"
                                             data-url="{{ route('admin.order-tracking.destroy', $item) }}"
                                             onclick="if(confirm('Xóa tracking này?')){document.getElementById('deleteForm').action=this.dataset.url;document.getElementById('deleteForm').submit();}">
                                             <i class="fa-solid fa-trash"></i>
@@ -330,58 +456,9 @@
             </form>
 
             @if ($data->count())
-                <div class="row mt-3 mb-3">
-                    <div class="col-md-5">
-                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-chart-pie me-1"></i>Tổng YRD theo Mã HH</h6>
-                        <table class="table table-sm table-bordered">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Mã HH</th>
-                                    <th class="text-end">Số tracking</th>
-                                    <th class="text-end">Tổng SL Đơn hàng</th>
-                                    <th class="text-end">Tổng SL Sản xuất</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php
-                                    $grouped = $data->getCollection()->groupBy('size');
-                                    $grandDH = 0;
-                                    $grandSX = 0;
-                                @endphp
-                                @foreach ($grouped as $maHh => $items)
-                                    @php
-                                        $sumDH = $items->sum('sl_don_hang');
-                                        $sumSX = $items->sum('sl_san_xuat');
-                                        $grandDH += $sumDH;
-                                        $grandSX += $sumSX;
-                                    @endphp
-                                    <tr>
-                                        <td class="fw-semibold">{{ $maHh ?: '—' }}</td>
-                                        <td class="text-end">{{ $items->count() }}</td>
-                                        <td class="text-end">{{ number_format($sumDH, 2) }}</td>
-                                        <td class="text-end">{{ number_format($sumSX, 2) }}</td>
-                                    </tr>
-                                @endforeach
-                                <tr class="table-dark fw-bold">
-                                    <td>Tổng cộng</td>
-                                    <td class="text-end">{{ $data->count() }}</td>
-                                    <td class="text-end">{{ number_format($grandDH, 2) }}</td>
-                                    <td class="text-end">{{ number_format($grandSX, 2) }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
-
-            {{-- Nút chuyển hàng loạt --}}
-            @if ($data->count())
                 <div class="d-flex gap-2 mt-2 mb-3">
                     <button type="button" class="btn btn-info btn-sm text-white" id="btnPushProduction">
-                        <i class="fa-solid fa-industry me-1"></i>Chuyển sang Sản xuất
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm" id="btnPushWarehouse">
-                        <i class="fa-solid fa-warehouse me-1"></i>Nhập Kho
+                        <i class="fa-solid fa-industry me-1"></i>Chuyển sang Sản xuất (gộp theo Mã HH)
                     </button>
                     <button type="button" class="btn btn-danger btn-sm" id="btnBulkDelete">
                         <i class="fa-solid fa-trash me-1"></i>Xóa hàng loạt
@@ -393,60 +470,39 @@
         </div>
     </div>
 
-    {{-- Hidden delete form (outside trackingActionForm to avoid nesting) --}}
     <form id="deleteForm" method="POST" style="display:none">@csrf @method('DELETE')</form>
 
     <script>
-        // Check all — Xuất kho giao hàng
         document.getElementById('checkAllShip')?.addEventListener('change', function() {
             document.querySelectorAll('.ship-group-check').forEach(cb => cb.checked = this.checked);
             document.querySelectorAll('.ship-check').forEach(cb => cb.checked = this.checked);
         });
         document.querySelectorAll('.ship-group-check').forEach(cb => {
             cb.addEventListener('change', function() {
-                const row = this.closest('tr');
-                row.querySelectorAll('.ship-check').forEach(h => h.checked = this.checked);
+                this.closest('tr').querySelectorAll('.ship-check').forEach(h => h.checked = this.checked);
             });
         });
-
-        // Check all — Lên lệnh SX
         document.getElementById('checkAllGenerate')?.addEventListener('change', function() {
             document.querySelectorAll('.generate-group-check').forEach(cb => cb.checked = this.checked);
             document.querySelectorAll('.generate-check').forEach(cb => cb.checked = this.checked);
         });
         document.querySelectorAll('.generate-group-check').forEach(cb => {
             cb.addEventListener('change', function() {
-                const row = this.closest('tr');
-                row.querySelectorAll('.generate-check').forEach(h => h.checked = this.checked);
+                this.closest('tr').querySelectorAll('.generate-check').forEach(h => h.checked = this
+                    .checked);
             });
         });
-
-        // Check all tracking
         document.getElementById('checkAllTracking')?.addEventListener('change', function() {
             document.querySelectorAll('.tracking-check').forEach(cb => cb.checked = this.checked);
         });
-
-        // Push to Production
         document.getElementById('btnPushProduction')?.addEventListener('click', function() {
             const form = document.getElementById('trackingActionForm');
             const checked = form.querySelectorAll('.tracking-check:checked');
             if (checked.length === 0) return alert('Chọn ít nhất 1 tracking.');
-            if (!confirm(`Chuyển ${checked.length} mục sang sản xuất?`)) return;
+            if (!confirm(`Chuyển ${checked.length} mục sang sản xuất (gộp theo Mã HH)?`)) return;
             form.action = '{{ route('admin.order-tracking.push-production') }}';
             form.submit();
         });
-
-        // Push to Warehouse
-        document.getElementById('btnPushWarehouse')?.addEventListener('click', function() {
-            const form = document.getElementById('trackingActionForm');
-            const checked = form.querySelectorAll('.tracking-check:checked');
-            if (checked.length === 0) return alert('Chọn ít nhất 1 tracking.');
-            if (!confirm(`Nhập kho ${checked.length} mục?`)) return;
-            form.action = '{{ route('admin.order-tracking.push-warehouse') }}';
-            form.submit();
-        });
-
-        // Bulk Delete
         document.getElementById('btnBulkDelete')?.addEventListener('click', function() {
             const form = document.getElementById('trackingActionForm');
             const checked = form.querySelectorAll('.tracking-check:checked');

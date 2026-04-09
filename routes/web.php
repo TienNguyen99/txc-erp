@@ -63,6 +63,8 @@ Route::middleware('auth')->group(function () {
              ->parameters(['order-tracking' => 'orderTracking']);
 
         // Production Reports
+        Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])
+             ->name('production-reports.push-warehouse');
         Route::resource('production-reports', ProductionReportController::class)
              ->parameters(['production-reports' => 'productionReport']);
 

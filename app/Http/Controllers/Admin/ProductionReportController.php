@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProductionReport;
+use App\Models\WarehouseTransaction;
 use Illuminate\Http\Request;
 
 class ProductionReportController extends Controller
@@ -79,5 +80,53 @@ class ProductionReportController extends Controller
     {
         $productionReport->delete();
         return redirect()->route('admin.production-reports.index')->with('success', 'Xóa báo cáo thành công.');
+    }
+
+    /**
+     * Nhập kho từ Production Report — gộp theo size (ma_hh).
+     */
+    public function pushToWarehouse(Request $request)
+    {
+        $request->validate([
+            'report_ids'   => 'required|array',
+            'report_ids.*' => 'exists:production_reports,id',
+        ]);
+
+        $reports = ProductionReport::whereIn('id', $request->report_ids)->get();
+
+        // Gộp theo size (= ma_hh)
+        $grouped = $reports->groupBy('size');
+
+        $countGroup = 0;
+        foreach ($grouped as $maHh => $group) {
+            $totalSlDat = $group->sum('sl_dat');
+            $totalSlHu  = $group->sum('sl_hu');
+            $slNhap     = $totalSlDat - $totalSlHu;
+
+            if ($slNhap <= 0) continue;
+
+            $mauList   = $group->pluck('mau')->unique()->filter()->implode(', ');
+            $lenhSxList = $group->pluck('lenh_sx')->unique()->filter()->implode(', ');
+
+            WarehouseTransaction::create([
+                'cong_doan' => 'NHAPKHO',
+                'ma_hh'     => $maHh,
+                'ngay'      => now()->toDateString(),
+                'size'      => $maHh,
+                'mau'       => $mauList,
+                'so_luong'  => $slNhap,
+                'lenh_sx'   => $lenhSxList,
+                'note'      => "Từ SX: {$group->count()} báo cáo, SL đạt: {$totalSlDat}, SL hư: {$totalSlHu}",
+            ]);
+
+            // Cập nhật trạng thái các báo cáo
+            foreach ($group as $report) {
+                $report->update(['cong_doan' => 'Đã nhập kho']);
+            }
+            $countGroup++;
+        }
+
+        return redirect()->back()->with('success',
+            "Đã gộp {$reports->count()} báo cáo SX thành {$countGroup} phiếu nhập kho theo mã HH.");
     }
 }
