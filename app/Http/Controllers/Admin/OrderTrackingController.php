@@ -186,7 +186,7 @@ class OrderTrackingController extends Controller
     }
 
     /**
-     * Chuyển tracking sang Production Report.
+     * Chuyển tracking sang Production Report — gộp theo mã HH.
      */
     public function pushToProduction(Request $request)
     {
@@ -195,31 +195,43 @@ class OrderTrackingController extends Controller
             'tracking_ids.*' => 'exists:order_tracking,id',
         ]);
 
-        $count = 0;
-        foreach ($request->tracking_ids as $trackingId) {
-            $tracking = OrderTracking::with('order')->find($trackingId);
-            if (!$tracking) continue;
+        $trackings = OrderTracking::with('order')
+            ->whereIn('id', $request->tracking_ids)
+            ->get();
+
+        // Gộp theo ma_hh (từ order)
+        $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? $t->size);
+
+        $countGroup = 0;
+        foreach ($grouped as $maHh => $group) {
+            $totalSlSanXuat = $group->sum('sl_san_xuat');
+            $totalSlDonHang = $group->sum('sl_don_hang');
+
+            $mauList = $group->pluck('mau')->unique()->filter()->implode(', ');
+            $lenhSxList = $group->map(fn($t) => $t->order->lenh_sanxuat ?? $t->order->job_no)
+                                ->unique()->filter()->implode(', ');
 
             ProductionReport::create([
-                'cong_doan'   => $tracking->cong_doan,
+                'cong_doan'   => $group->first()->cong_doan,
                 'ngay_sx'     => now()->toDateString(),
                 'ca'          => '1',
-                'lenh_sx'     => $tracking->order->lenh_sanxuat ?? $tracking->order->job_no,
-                'mau'         => $tracking->mau,
-                'size'        => $tracking->size,
-                'sl_dat'      => $tracking->sl_san_xuat,
+                'lenh_sx'     => $lenhSxList,
+                'mau'         => $mauList,
+                'size'        => $maHh,
+                'sl_dat'      => $totalSlSanXuat > 0 ? $totalSlSanXuat : $totalSlDonHang,
                 'sl_hu'       => 0,
             ]);
 
-            // Cập nhật công đoạn tracking
-            $tracking->update(['cong_doan' => 'Đã chuyển SX']);
-
-            // Tự động cập nhật status đơn hàng
-            $tracking->order->updateStatusFromTracking();
-            $count++;
+            // Cập nhật tất cả tracking trong nhóm
+            foreach ($group as $tracking) {
+                $tracking->update(['cong_doan' => 'Đã chuyển SX']);
+                $tracking->order->updateStatusFromTracking();
+            }
+            $countGroup++;
         }
 
-        return redirect()->back()->with('success', "Đã chuyển {$count} mục sang sản xuất.");
+        return redirect()->back()->with('success',
+            "Đã gộp {$trackings->count()} tracking thành {$countGroup} lệnh SX theo mã HH.");
     }
 
     /**
@@ -232,30 +244,43 @@ class OrderTrackingController extends Controller
             'tracking_ids.*' => 'exists:order_tracking,id',
         ]);
 
-        $count = 0;
-        foreach ($request->tracking_ids as $trackingId) {
-            $tracking = OrderTracking::with('order')->find($trackingId);
-            if (!$tracking || $tracking->sl_san_xuat <= 0) continue;
+        $trackings = OrderTracking::with('order')
+            ->whereIn('id', $request->tracking_ids)
+            ->where('sl_san_xuat', '>', 0)
+            ->get();
+
+        // Gộp theo ma_hh
+        $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? $t->size);
+
+        $countGroup = 0;
+        foreach ($grouped as $maHh => $group) {
+            $totalSl = $group->sum('sl_san_xuat');
+            $mauList = $group->pluck('mau')->unique()->filter()->implode(', ');
+            $lenhSxList = $group->map(fn($t) => $t->order->lenh_sanxuat ?? $t->order->job_no)
+                                ->unique()->filter()->implode(', ');
+            $jobNos = $group->map(fn($t) => $t->order->job_no)->unique()->filter()->implode(', ');
 
             WarehouseTransaction::create([
                 'cong_doan' => 'NHAPKHO',
-                'ma_hh'     => $tracking->order->ma_hh,
+                'ma_hh'     => $maHh,
                 'ngay'      => now()->toDateString(),
-                'size'      => $tracking->kich ?? $tracking->size,
-                'mau'       => $tracking->mau,
-                'so_luong'  => $tracking->sl_san_xuat,
-                'lenh_sx'   => $tracking->order->lenh_sanxuat ?? $tracking->order->job_no,
-                'note'      => "Từ tracking #{$tracking->id} - Order {$tracking->order->job_no}",
+                'size'      => $group->first()->kich ?? $group->first()->size,
+                'mau'       => $mauList,
+                'so_luong'  => $totalSl,
+                'lenh_sx'   => $lenhSxList,
+                'note'      => "Gộp {$group->count()} tracking - Orders: {$jobNos}",
             ]);
 
-            $tracking->update(['cong_doan' => 'Đã nhập kho']);
-
-            // Tự động cập nhật status đơn hàng
-            $tracking->order->updateStatusFromTracking();
-            $count++;
+            // Cập nhật tất cả tracking trong nhóm
+            foreach ($group as $tracking) {
+                $tracking->update(['cong_doan' => 'Đã nhập kho']);
+                $tracking->order->updateStatusFromTracking();
+            }
+            $countGroup++;
         }
 
-        return redirect()->back()->with('success', "Đã nhập kho {$count} mục.");
+        return redirect()->back()->with('success',
+            "Đã gộp {$trackings->count()} tracking thành {$countGroup} phiếu nhập kho theo mã HH.");
     }
 
     /**
