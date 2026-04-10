@@ -60,17 +60,20 @@
                             value="{{ old('don_gia', $hangHoa->don_gia ?? 0) }}">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">Định mức thùng <small class="text-muted">(yard)</small></label>
+                        <label class="form-label fw-semibold">Định mức thùng <small
+                                class="text-muted">(yard)</small></label>
                         <input type="number" name="dinh_muc_thung" class="form-control"
                             value="{{ old('dinh_muc_thung', $hangHoa->dinh_muc_thung ?? '') }}" placeholder="540, 504...">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">Net Weight <small class="text-muted">(KGS/thùng)</small></label>
+                        <label class="form-label fw-semibold">Net Weight <small
+                                class="text-muted">(KGS/thùng)</small></label>
                         <input type="number" step="0.01" name="net_weight" class="form-control"
                             value="{{ old('net_weight', $hangHoa->net_weight ?? '') }}" placeholder="11.5">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">Gross Weight <small class="text-muted">(KGS/thùng)</small></label>
+                        <label class="form-label fw-semibold">Gross Weight <small
+                                class="text-muted">(KGS/thùng)</small></label>
                         <input type="number" step="0.01" name="gross_weight" class="form-control"
                             value="{{ old('gross_weight', $hangHoa->gross_weight ?? '') }}" placeholder="11.73">
                     </div>
@@ -84,8 +87,8 @@
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="active" id="active" value="1"
-                                {{ old('active', $hangHoa->active ?? true) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" name="active" id="active"
+                                value="1" {{ old('active', $hangHoa->active ?? true) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold" for="active">Active</label>
                         </div>
                     </div>
