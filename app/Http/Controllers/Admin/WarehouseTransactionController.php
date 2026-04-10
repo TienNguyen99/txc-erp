@@ -10,6 +10,7 @@ use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Exports\WarehouseTransactionExport;
 use App\Exports\WarehouseTransactionTemplateExport;
+use App\Exports\PackingListExport;
 use App\Imports\WarehouseTransactionImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -416,5 +417,17 @@ class WarehouseTransactionController extends Controller
 
         return redirect()->route('admin.warehouse-transactions.index')
             ->with('success', "Import thành công {$import->getCount()} giao dịch kho.");
+    }
+
+    public function exportPackingList(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string',
+        ]);
+
+        $tn = $request->tracking_number;
+        $filename = 'PackingList_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $tn) . '_' . now()->format('Ymd') . '.xlsx';
+
+        return Excel::download(new PackingListExport($tn), $filename);
     }
 }

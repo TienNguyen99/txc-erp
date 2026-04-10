@@ -87,6 +87,8 @@ Route::middleware('auth')->group(function () {
              ->name('warehouse-transactions.store-nhap-theo-lenh');
         Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])
              ->name('warehouse-transactions.ton-kho');
+        Route::get('warehouse-transactions/export-packing-list', [WarehouseTransactionController::class, 'exportPackingList'])
+             ->name('warehouse-transactions.export-packing-list');
         Route::resource('warehouse-transactions', WarehouseTransactionController::class)
              ->parameters(['warehouse-transactions' => 'warehouseTransaction']);
 

@@ -49,6 +49,9 @@
                 <a href="{{ route('admin.warehouse-transactions.export') }}" class="btn btn-info btn-sm text-white">
                     <i class="fa-solid fa-file-export me-1"></i>Export
                 </a>
+                <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#packingListModal">
+                    <i class="fa-solid fa-file-invoice me-1"></i>Packing List
+                </button>
                 <a href="{{ route('admin.warehouse-transactions.nhap-theo-lenh') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-dolly me-1"></i>Nhập kho theo Lệnh SX
                 </a>
@@ -84,6 +87,50 @@
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
                             <button type="submit" class="btn btn-warning btn-sm">
                                 <i class="fa-solid fa-upload me-1"></i>Import
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Packing List Export Modal --}}
+        <div class="modal fade" id="packingListModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="GET" action="{{ route('admin.warehouse-transactions.export-packing-list') }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fa-solid fa-file-invoice me-2"></i>Export Packing List</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">
+                                Chọn Order Tracking Number để xuất phiếu Packing List (Phiếu xuất kho) theo đúng format
+                                chuẩn.
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Order Tracking Number</label>
+                                <select name="tracking_number" id="packingPlSelect" class="form-select" required>
+                                    <option value="">-- Chọn OT Number --</option>
+                                    @php
+                                        $otNumbers = \App\Models\OrderTracking::whereNotNull('tracking_number')
+                                            ->select('tracking_number')
+                                            ->selectRaw('COUNT(*) as total_items')
+                                            ->groupBy('tracking_number')
+                                            ->orderByDesc('tracking_number')
+                                            ->get();
+                                    @endphp
+                                    @foreach ($otNumbers as $ot)
+                                        <option value="{{ $ot->tracking_number }}">{{ $ot->tracking_number }}
+                                            ({{ $ot->total_items }} items)</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-dark btn-sm">
+                                <i class="fa-solid fa-download me-1"></i>Export Packing List
                             </button>
                         </div>
                     </form>
@@ -433,6 +480,19 @@
             if (checked.length === 0) {
                 e.preventDefault();
                 alert('Chọn ít nhất 1 mã hàng để xuất kho.');
+            }
+        });
+    </script>
+@endsection
+
+@section('scripts')
+    <script>
+        document.getElementById('packingListModal')?.addEventListener('shown.bs.modal', function() {
+            if (!document.getElementById('packingPlSelect').tomselect) {
+                new TomSelect('#packingPlSelect', {
+                    allowEmptyOption: false,
+                    maxOptions: null,
+                });
             }
         });
     </script>
