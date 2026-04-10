@@ -619,16 +619,16 @@
 @endsection
 
 @section('scripts')
-<script>
-    new TomSelect('#plNumberSelect', {
-        plugins: ['remove_button'],
-        maxOptions: null,
-        allowEmptyOption: false,
-    });
-    new TomSelect('#chartSelect', {
-        plugins: ['remove_button'],
-        maxOptions: null,
-        allowEmptyOption: false,
-    });
-</script>
+    <script>
+        new TomSelect('#plNumberSelect', {
+            plugins: ['remove_button'],
+            maxOptions: null,
+            allowEmptyOption: false,
+        });
+        new TomSelect('#chartSelect', {
+            plugins: ['remove_button'],
+            maxOptions: null,
+            allowEmptyOption: false,
+        });
+    </script>
 @endsection
