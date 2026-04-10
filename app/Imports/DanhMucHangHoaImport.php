@@ -19,9 +19,12 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
                 'kich_co' => $row['kich_co'] ?? null,
                 'nhom_hh' => $row['nhom_hh'] ?? null,
                 'don_vi'  => $row['don_vi'] ?? null,
-                'don_gia' => $row['don_gia'] ?? 0,
-                'mo_ta'   => $row['mo_ta'] ?? null,
-                'active'  => true,
+                'don_gia'       => $row['don_gia'] ?? 0,
+                'dinh_muc_thung'=> $row['dinh_muc_thung'] ?? null,
+                'net_weight'    => $row['net_weight'] ?? null,
+                'gross_weight'  => $row['gross_weight'] ?? null,
+                'mo_ta'         => $row['mo_ta'] ?? null,
+                'active'        => true,
             ]
         );
     }

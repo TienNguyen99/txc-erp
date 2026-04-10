@@ -59,6 +59,21 @@
                         <input type="number" step="0.0001" name="don_gia" class="form-control"
                             value="{{ old('don_gia', $hangHoa->don_gia ?? 0) }}">
                     </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Định mức thùng <small class="text-muted">(yard)</small></label>
+                        <input type="number" name="dinh_muc_thung" class="form-control"
+                            value="{{ old('dinh_muc_thung', $hangHoa->dinh_muc_thung ?? '') }}" placeholder="540, 504...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Net Weight <small class="text-muted">(KGS/thùng)</small></label>
+                        <input type="number" step="0.01" name="net_weight" class="form-control"
+                            value="{{ old('net_weight', $hangHoa->net_weight ?? '') }}" placeholder="11.5">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Gross Weight <small class="text-muted">(KGS/thùng)</small></label>
+                        <input type="number" step="0.01" name="gross_weight" class="form-control"
+                            value="{{ old('gross_weight', $hangHoa->gross_weight ?? '') }}" placeholder="11.73">
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Hình ảnh</label>
                         <input type="file" name="hinh_anh" class="form-control" accept="image/*">

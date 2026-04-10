@@ -18,13 +18,16 @@ class DanhMucHangHoaTemplateExport implements WithHeadings, WithStyles
             'nhom_hh',
             'don_vi',
             'don_gia',
+            'dinh_muc_thung',
+            'net_weight',
+            'gross_weight',
             'mo_ta',
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->getStyle('A1:H1')->applyFromArray([
+        $sheet->getStyle('A1:K1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -32,7 +35,7 @@ class DanhMucHangHoaTemplateExport implements WithHeadings, WithStyles
             ],
         ]);
 
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

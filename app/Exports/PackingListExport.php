@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\DanhMucHangHoa;
 use App\Models\OrderTracking;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -25,193 +26,285 @@ class PackingListExport implements WithEvents
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Load tracking items with order for this OT number
+                // Load tracking items with order & customer
                 $trackings = OrderTracking::with('order.khachHang')
                     ->where('tracking_number', $this->trackingNumber)
                     ->get()
-                    ->sortBy([fn($a, $b) => ($a->order->ma_hh ?? '') <=> ($b->order->ma_hh ?? ''), fn($a, $b) => ($a->order->job_no ?? '') <=> ($b->order->job_no ?? '')]);
+                    ->sortBy(fn($t) => $t->order->ma_hh ?? '');
 
                 if ($trackings->isEmpty()) {
                     $sheet->setCellValue('A1', 'Không có dữ liệu cho OT: ' . $this->trackingNumber);
                     return;
                 }
 
-                // Derive PL number & customer from tracking data
+                // Preload carton specs per ma_hh
+                $allMaHh = $trackings->pluck('order.ma_hh')->unique()->filter()->values();
+                $cartonSpecs = DanhMucHangHoa::whereIn('ma_hh', $allMaHh)
+                    ->whereNotNull('dinh_muc_thung')
+                    ->get()
+                    ->keyBy('ma_hh');
+
+                // Derive header info
                 $plNumbers  = $trackings->pluck('pl_number')->unique()->filter()->implode(', ');
                 $firstOrder = $trackings->first()->order;
                 $khachHang  = $firstOrder?->khachHang;
                 $shipDate   = $firstOrder?->sig_need_date?->format('d/m/Y') ?? now()->format('d/m/Y');
 
-                // ═══ HEADER ═══
+                // ═══ HEADER SECTION ═══
                 $row = 1;
-                $this->setVal($sheet, "A{$row}", 'PACKING LIST  (PHIẾU XUẤT KHO)', true);
-                $sheet->mergeCells("A{$row}:H{$row}");
+                $this->setVal($sheet, "A{$row}", 'PACKING LIST  (PHIẾU XUẤT KHO CHIA THEO THÙNG)', true);
+                $sheet->mergeCells("A{$row}:K{$row}");
                 $sheet->getStyle("A{$row}")->getFont()->setSize(14)->setBold(true);
                 $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $row += 1;
-                $this->setVal($sheet, "A{$row}", 'OT NUMBER:');
-                $this->setVal($sheet, "B{$row}", $this->trackingNumber, true);
-
-                $row += 1;
-                $this->setVal($sheet, "A{$row}", 'PL NUMBER:');
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'PL NUMBER:', true);
                 $this->setVal($sheet, "B{$row}", $plNumbers, true);
 
-                $row += 1;
-                $this->setVal($sheet, "A{$row}", 'SHIP DATE:');
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'SHIP DATE');
                 $this->setVal($sheet, "B{$row}", $shipDate);
 
-                $row += 1;
+                $row++;
                 $this->setVal($sheet, "A{$row}", 'SHIP TO:');
                 $this->setVal($sheet, "B{$row}", $khachHang->ten_kh ?? '');
 
-                $row += 1;
+                $row++;
                 $this->setVal($sheet, "A{$row}", 'Address:');
                 $this->setVal($sheet, "B{$row}", $khachHang->dia_chi ?? '');
 
                 $row += 2;
-                $this->setVal($sheet, "A{$row}", 'SUPPLIER:');
+                $this->setVal($sheet, "A{$row}", 'SUPPLIER:', true);
                 $this->setVal($sheet, "B{$row}", 'TEXENCO CORPORATION', true);
 
-                $row += 1;
+                $row++;
                 $this->setVal($sheet, "A{$row}", 'Address:');
                 $this->setVal($sheet, "B{$row}", '219 Le Van Chi, Linh Xuan Ward, Ho Chi Minh City, Vietnam');
 
-                $row += 1;
+                $row++;
+                $this->setVal($sheet, "B{$row}", 'Ho Chi Minh City, Vietnam');
+
+                $row++;
                 $this->setVal($sheet, "A{$row}", 'Tel:');
-                $this->setVal($sheet, "B{$row}", '84-028. 39003333');
+                $this->setVal($sheet, "B{$row}", ' 028. 39003333');
+
+                $row += 2;
+                $this->setVal($sheet, "A{$row}", 'FACTORY:', true);
+                $this->setVal($sheet, "B{$row}", 'VIETTIEN GARMENT CORPORATION', true);
+
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'Address:');
+                $this->setVal($sheet, "B{$row}", '7 Le Minh Xuan Street, Tân Sơn Nhất ward, HCMC - VN');
+
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'Tel:');
+                $this->setVal($sheet, "B{$row}", '028-38 640 800');
+
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'Fax:');
+                $this->setVal($sheet, "B{$row}", '84-028.38 645 085');
+
+                $row += 2;
+                $this->setVal($sheet, "A{$row}", 'CUSTOMER:', true);
+                $this->setVal($sheet, "B{$row}", $khachHang->ten_kh ?? '', true);
+
+                $row++;
+                $this->setVal($sheet, "A{$row}", 'Address:');
+                $this->setVal($sheet, "B{$row}", $khachHang->dia_chi ?? '');
+
+                // CHI TIẾT GIAO HÀNG
+                $row += 2;
+                $this->setVal($sheet, "A{$row}", 'CHI TIẾT GIAO HÀNG', true);
+                $sheet->mergeCells("A{$row}:K{$row}");
+                $sheet->getStyle("A{$row}")->getFont()->setSize(11)->setBold(true);
 
                 // ═══ TABLE HEADER ═══
-                $row += 2;
-                $headerRow = $row;
-                $headers = ['JOB REF', 'P/O No', 'Description', 'Colour', 'ORDER Qty (GRS)', 'ORDER Qty (YARD)', 'DELIVERY Qty (YARD)', 'NOTE'];
+                $row++;
+                $headers = [
+                    'JOB NO.', 'PO', 'Description', 'Màu',
+                    'Số lượng (Grs)', 'Số lượng (yard)', 'Số lượng/ Carton No',
+                    'SIZE', 'NET WEIGHT (KGS)', 'GROSS WEIGHT (KGS)', 'Carton No.',
+                ];
+                $cols = ['A','B','C','D','E','F','G','H','I','J','K'];
                 foreach ($headers as $i => $h) {
-                    $col = chr(65 + $i); // A-H
-                    $this->setVal($sheet, "{$col}{$row}", $h, true);
+                    $sheet->setCellValue("{$cols[$i]}{$row}", $h);
                 }
-                $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:K{$row}")->applyFromArray([
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F2937']],
                     'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true, 'size' => 9],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
                 ]);
-                $sheet->getRowDimension($row)->setRowHeight(30);
+                $sheet->getRowDimension($row)->setRowHeight(35);
 
-                // ═══ DATA ROWS — grouped by ma_hh (NOTE column) ═══
-                $row += 1;
+                // ═══ DATA ROWS — per carton ═══
+                $row++;
                 $dataStartRow = $row;
-                $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? '');
-                $groupTotals = []; // ma_hh => [grs, yrd]
+                $cartonNo = 0;
 
-                foreach ($grouped as $maHh => $group) {
-                    foreach ($group as $tracking) {
-                        $order = $tracking->order;
-                        $grs = $order->qty ?? 0;
-                        $yrd = $tracking->sl_don_hang ?? $order->yrd ?? 0;
-                        $note = $maHh ?: '';
+                $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? 'UNKNOWN');
 
-                        $sheet->setCellValue("A{$row}", $order->job_no ?? '');
-                        $sheet->setCellValue("B{$row}", $order->fty_po ?? '');
-                        $sheet->setCellValue("C{$row}", $order->im_number ?? '');
-                        $sheet->setCellValue("D{$row}", $tracking->mau ?? $order->color ?? '');
-                        $sheet->setCellValue("E{$row}", $grs);
-                        $sheet->setCellValue("F{$row}", $yrd);
-                        $sheet->setCellValue("G{$row}", $yrd);
-                        $sheet->setCellValue("H{$row}", $note);
+                $grandTotalGrs = 0;
+                $grandTotalYrd = 0;
+                $grandTotalCartonQty = 0;
+                $grandTotalNet = 0;
+                $grandTotalGross = 0;
 
-                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                foreach ($grouped as $maHh => $groupTrackings) {
+                    $spec = $cartonSpecs[$maHh] ?? null;
+                    $cap  = $spec->dinh_muc_thung ?? null;
+                    $nwFull = $spec ? (float) $spec->net_weight : 0;
+                    $gwFull = $spec ? (float) $spec->gross_weight : 0;
 
-                        $row++;
+                    $description = $groupTrackings->first()->order->im_number ?? '';
+                    $sizeName = $spec->ten_hh ?? $maHh;
+
+                    $subGrs = 0; $subYrd = 0; $subCQ = 0; $subNW = 0; $subGW = 0;
+
+                    // Group by fty_po within this product
+                    $byPo = $groupTrackings->groupBy(fn($t) => $t->order->fty_po ?? '');
+
+                    foreach ($byPo as $ftyPo => $poTrackings) {
+                        $jobNos = $poTrackings->pluck('order.job_no')->unique()->filter()->implode("\n");
+                        $color  = $poTrackings->first()->mau ?? $poTrackings->first()->order->color ?? '';
+                        $tGrs   = $poTrackings->sum(fn($t) => $t->order->qty ?? 0);
+                        $tYrd   = $poTrackings->sum(fn($t) => $t->sl_don_hang ?? $t->order->yrd ?? 0);
+
+                        $subGrs += $tGrs;
+                        $subYrd += $tYrd;
+
+                        if ($cap && $cap > 0) {
+                            $remaining = $tYrd;
+                            $first = true;
+
+                            while ($remaining > 0) {
+                                $cartonNo++;
+                                $cQty = min($remaining, $cap);
+                                $remaining -= $cQty;
+
+                                $ratio = $cQty / $cap;
+                                $nw = round($nwFull * $ratio, 1);
+                                $gw = round($gwFull * $ratio, 3);
+
+                                $sheet->setCellValue("A{$row}", $jobNos);
+                                $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
+                                $sheet->setCellValue("B{$row}", $ftyPo);
+                                $sheet->setCellValue("C{$row}", $description);
+                                $sheet->setCellValue("D{$row}", $color);
+
+                                if ($first) {
+                                    $sheet->setCellValue("E{$row}", $tGrs);
+                                    $sheet->setCellValue("F{$row}", $tYrd);
+                                    $first = false;
+                                }
+
+                                $sheet->setCellValue("G{$row}", $cQty);
+                                $sheet->setCellValue("H{$row}", $sizeName);
+                                $sheet->setCellValue("I{$row}", $nw);
+                                $sheet->setCellValue("J{$row}", $gw);
+                                $sheet->setCellValue("K{$row}", $cartonNo);
+
+                                $subCQ += $cQty;
+                                $subNW += $nw;
+                                $subGW += $gw;
+
+                                $sheet->getStyle("E{$row}:F{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                                $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                                $sheet->getStyle("I{$row}:J{$row}")->getNumberFormat()->setFormatCode('#,##0.0##');
+
+                                $row++;
+                            }
+                        } else {
+                            // No carton spec → single row
+                            $cartonNo++;
+                            $sheet->setCellValue("A{$row}", $jobNos);
+                            $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
+                            $sheet->setCellValue("B{$row}", $ftyPo);
+                            $sheet->setCellValue("C{$row}", $description);
+                            $sheet->setCellValue("D{$row}", $color);
+                            $sheet->setCellValue("E{$row}", $tGrs);
+                            $sheet->setCellValue("F{$row}", $tYrd);
+                            $sheet->setCellValue("G{$row}", $tYrd);
+                            $sheet->setCellValue("H{$row}", $sizeName);
+                            $sheet->setCellValue("K{$row}", $cartonNo);
+
+                            $subCQ += $tYrd;
+                            $sheet->getStyle("E{$row}:F{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                            $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                            $row++;
+                        }
                     }
 
-                    // SUBTOTAL row per group
-                    $totalGrs = $group->sum(fn($t) => $t->order->qty ?? 0);
-                    $totalYrd = $group->sum(fn($t) => $t->sl_don_hang ?? $t->order->yrd ?? 0);
-                    $groupTotals[$maHh] = ['grs' => $totalGrs, 'yrd' => $totalYrd, 'count' => $group->count()];
-
-                    $sheet->setCellValue("A{$row}", "TOTAL {$maHh}");
+                    // SUBTOTAL per product type
+                    $sheet->setCellValue("A{$row}", "TOTAL {$description}");
                     $sheet->mergeCells("A{$row}:D{$row}");
-                    $sheet->setCellValue("E{$row}", $totalGrs);
-                    $sheet->setCellValue("F{$row}", $totalYrd);
-                    $sheet->setCellValue("G{$row}", $totalYrd);
+                    $sheet->setCellValue("E{$row}", $subGrs);
+                    $sheet->setCellValue("F{$row}", $subYrd);
+                    $sheet->setCellValue("G{$row}", $subCQ);
+                    $sheet->setCellValue("I{$row}", round($subNW, 1));
+                    $sheet->setCellValue("J{$row}", round($subGW, 3));
 
-                    $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                    $sheet->getStyle("A{$row}:K{$row}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
                     ]);
-                    $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                    $sheet->getStyle("E{$row}:F{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                    $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle("I{$row}:J{$row}")->getNumberFormat()->setFormatCode('#,##0.0##');
+
+                    $grandTotalGrs += $subGrs;
+                    $grandTotalYrd += $subYrd;
+                    $grandTotalCartonQty += $subCQ;
+                    $grandTotalNet += $subNW;
+                    $grandTotalGross += $subGW;
 
                     $row++;
                 }
 
                 // ═══ GRAND TOTAL ═══
-                $grandGrs   = $trackings->sum(fn($t) => $t->order->qty ?? 0);
-                $grandYrd   = $trackings->sum(fn($t) => $t->sl_don_hang ?? $t->order->yrd ?? 0);
-                $grandCount = $trackings->count();
-
                 $sheet->setCellValue("A{$row}", 'TOTAL');
                 $sheet->mergeCells("A{$row}:D{$row}");
-                $sheet->setCellValue("E{$row}", $grandGrs);
-                $sheet->setCellValue("F{$row}", $grandYrd);
-                $sheet->setCellValue("G{$row}", $grandYrd);
-                $sheet->setCellValue("H{$row}", "{$grandCount} items");
+                $sheet->setCellValue("E{$row}", $grandTotalGrs);
+                $sheet->setCellValue("F{$row}", $grandTotalYrd);
+                $sheet->setCellValue("G{$row}", $grandTotalCartonQty);
+                $sheet->setCellValue("I{$row}", round($grandTotalNet, 1));
+                $sheet->setCellValue("J{$row}", round($grandTotalGross, 0));
 
-                $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:K{$row}")->applyFromArray([
                     'font' => ['bold' => true, 'size' => 10],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1D5DB']],
                     'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM]],
                 ]);
-                $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle("I{$row}:J{$row}")->getNumberFormat()->setFormatCode('#,##0');
 
                 // Data borders
-                $sheet->getStyle("A{$dataStartRow}:H{$row}")->applyFromArray([
+                $sheet->getStyle("A{$dataStartRow}:K{$row}")->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                     'font' => ['size' => 9],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                 ]);
-
-                // ═══ PACKAGE SUMMARY ═══
-                $row += 2;
-                $this->setVal($sheet, "A{$row}", 'ĐÓNG GÓI / PACKAGE SUMMARY', true);
-                $sheet->mergeCells("A{$row}:H{$row}");
-                $sheet->getStyle("A{$row}")->getFont()->setSize(11)->setBold(true);
-                $sheet->getStyle("A{$row}")->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E5E7EB']],
-                ]);
-
-                $row += 1;
-                $totalPackages = 0;
-                foreach ($groupTotals as $maHh => $info) {
-                    $this->setVal($sheet, "B{$row}", $maHh, true);
-                    $sheet->setCellValue("C{$row}", number_format($info['yrd'], 0, '.', '.') . ' YARD');
-                    $sheet->setCellValue("D{$row}", $info['count'] . ' items');
-                    $totalPackages += $info['count'];
-                    $row++;
-                }
-
-                $row++;
-                $this->setVal($sheet, "A{$row}", "TOTAL: {$totalPackages} PACKAGE", true);
-                $sheet->mergeCells("A{$row}:D{$row}");
-                $sheet->getStyle("A{$row}")->getFont()->setSize(10)->setBold(true);
 
                 // ═══ SIGNATURE BLOCK ═══
-                $row += 3;
-                $sigTitles = ['KHÁCH HÀNG', 'KINH DOANH', 'THỦ KHO', 'KẾ TOÁN', 'GIÁM ĐỐC'];
-                $sigCols   = ['A', 'B', 'C', 'E', 'G'];
-                foreach ($sigTitles as $idx => $title) {
-                    $col = $sigCols[$idx];
+                $row += 4;
+                $sigMap = ['A' => 'KHÁCH HÀNG', 'C' => 'KINH DOANH', 'E' => 'THỦ KHO', 'G' => 'KẾ TOÁN', 'I' => 'GIÁM ĐỐC'];
+                foreach ($sigMap as $col => $title) {
                     $this->setVal($sheet, "{$col}{$row}", $title, true);
                     $sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 // ═══ COLUMN WIDTHS ═══
-                $sheet->getColumnDimension('A')->setWidth(18);
+                $sheet->getColumnDimension('A')->setWidth(22);
                 $sheet->getColumnDimension('B')->setWidth(20);
                 $sheet->getColumnDimension('C')->setWidth(50);
-                $sheet->getColumnDimension('D')->setWidth(25);
+                $sheet->getColumnDimension('D')->setWidth(22);
                 $sheet->getColumnDimension('E')->setWidth(14);
                 $sheet->getColumnDimension('F')->setWidth(14);
-                $sheet->getColumnDimension('G')->setWidth(14);
-                $sheet->getColumnDimension('H')->setWidth(30);
+                $sheet->getColumnDimension('G')->setWidth(16);
+                $sheet->getColumnDimension('H')->setWidth(28);
+                $sheet->getColumnDimension('I')->setWidth(14);
+                $sheet->getColumnDimension('J')->setWidth(16);
+                $sheet->getColumnDimension('K')->setWidth(12);
 
                 // Print settings
                 $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
@@ -220,8 +313,8 @@ class PackingListExport implements WithEvents
                 $sheet->getPageSetup()->setFitToHeight(0);
                 $sheet->getPageMargins()->setTop(0.4);
                 $sheet->getPageMargins()->setBottom(0.4);
-                $sheet->getPageMargins()->setLeft(0.4);
-                $sheet->getPageMargins()->setRight(0.4);
+                $sheet->getPageMargins()->setLeft(0.3);
+                $sheet->getPageMargins()->setRight(0.3);
 
                 $sheet->setTitle('Packing List');
             },

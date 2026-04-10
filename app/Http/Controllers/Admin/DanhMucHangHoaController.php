@@ -33,10 +33,13 @@ class DanhMucHangHoaController extends Controller
             'kich_co'  => 'nullable|string',
             'nhom_hh'  => 'nullable|string',
             'don_vi'   => 'nullable|string',
-            'don_gia'  => 'nullable|numeric|min:0',
-            'hinh_anh' => 'nullable|image|max:2048',
-            'mo_ta'    => 'nullable|string',
-            'active'   => 'nullable|boolean',
+            'don_gia'        => 'nullable|numeric|min:0',
+            'dinh_muc_thung' => 'nullable|integer|min:1',
+            'net_weight'     => 'nullable|numeric|min:0',
+            'gross_weight'   => 'nullable|numeric|min:0',
+            'hinh_anh'       => 'nullable|image|max:2048',
+            'mo_ta'          => 'nullable|string',
+            'active'         => 'nullable|boolean',
         ]);
 
         if ($request->hasFile('hinh_anh')) {
@@ -62,10 +65,13 @@ class DanhMucHangHoaController extends Controller
             'kich_co'  => 'nullable|string',
             'nhom_hh'  => 'nullable|string',
             'don_vi'   => 'nullable|string',
-            'don_gia'  => 'nullable|numeric|min:0',
-            'hinh_anh' => 'nullable|image|max:2048',
-            'mo_ta'    => 'nullable|string',
-            'active'   => 'nullable|boolean',
+            'don_gia'        => 'nullable|numeric|min:0',
+            'dinh_muc_thung' => 'nullable|integer|min:1',
+            'net_weight'     => 'nullable|numeric|min:0',
+            'gross_weight'   => 'nullable|numeric|min:0',
+            'hinh_anh'       => 'nullable|image|max:2048',
+            'mo_ta'          => 'nullable|string',
+            'active'         => 'nullable|boolean',
         ]);
 
         if ($request->hasFile('hinh_anh')) {

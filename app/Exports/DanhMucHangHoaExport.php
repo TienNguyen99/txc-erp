@@ -24,6 +24,9 @@ class DanhMucHangHoaExport implements FromCollection, WithHeadings, WithMapping
             'nhom_hh',
             'don_vi',
             'don_gia',
+            'dinh_muc_thung',
+            'net_weight',
+            'gross_weight',
             'active',
         ];
     }
@@ -38,6 +41,9 @@ class DanhMucHangHoaExport implements FromCollection, WithHeadings, WithMapping
             $row->nhom_hh,
             $row->don_vi,
             $row->don_gia,
+            $row->dinh_muc_thung,
+            $row->net_weight,
+            $row->gross_weight,
             $row->active ? 'Yes' : 'No',
         ];
     }
