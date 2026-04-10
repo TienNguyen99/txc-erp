@@ -91,6 +91,142 @@
             </div>
         </div>
 
+        {{-- ═══ SOẠN HÀNG — Mỗi tracking = 1 phiếu xuất kho ═══ --}}
+        <div class="card-page mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 fw-bold" style="color:#1e3a5f">
+                    <i class="fa-solid fa-dolly-flatbed me-2"></i>Soạn Hàng (Phiếu xuất kho)
+                </h5>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success fs-6">Đủ hàng: {{ $soanStats->du_hang }}</span>
+                    <span class="badge bg-warning text-dark fs-6">Đang SX: {{ $soanStats->dang_sx }}</span>
+                    <span class="badge bg-danger fs-6">Thiếu: {{ $soanStats->thieu_hang }}</span>
+                    <span class="badge bg-secondary fs-6">Tổng: {{ $soanStats->tong_phieu }} phiếu</span>
+                </div>
+            </div>
+
+            @if ($soanHang->count())
+                <form id="xuatKhoForm" method="POST" action="{{ route('admin.warehouse-transactions.xuat-hang-loat') }}">
+                    @csrf
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size:.85rem">
+                            <thead class="table-dark">
+                                <tr class="text-center">
+                                    <th style="width:35px"><input type="checkbox" id="checkAllSoan"></th>
+                                    <th>Mã HH</th>
+                                    <th>PL Number</th>
+                                    <th>Chart</th>
+                                    <th>Job No</th>
+                                    <th>Màu</th>
+                                    <th>Công đoạn</th>
+                                    <th>Cần xuất</th>
+                                    <th>Tồn kho (mã)</th>
+                                    <th>Đang SX</th>
+                                    <th>SL Xuất</th>
+                                    <th>Ngày cần giao</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($soanHang as $idx => $row)
+                                    <tr
+                                        class="{{ $row->trang_thai === 'du' ? 'table-success' : ($row->trang_thai === 'thieu' ? 'table-danger' : '') }}">
+                                        <td class="text-center">
+                                            @if ($row->trang_thai === 'du')
+                                                <input type="checkbox" name="items[{{ $idx }}][selected]"
+                                                    value="1" class="soan-check">
+                                                <input type="hidden" name="items[{{ $idx }}][tracking_id]"
+                                                    value="{{ $row->tracking_id }}">
+                                                <input type="hidden" name="items[{{ $idx }}][ma_hh]"
+                                                    value="{{ $row->ma_hh }}">
+                                                <input type="hidden" name="items[{{ $idx }}][mau]"
+                                                    value="{{ $row->mau }}">
+                                                <input type="hidden" name="items[{{ $idx }}][size]"
+                                                    value="{{ $row->size }}">
+                                            @endif
+                                        </td>
+                                        <td class="fw-bold">{{ $row->ma_hh }}</td>
+                                        <td><small>{{ $row->pl_number }}</small></td>
+                                        <td><small>{{ $row->chart }}</small></td>
+                                        <td><small>{{ $row->job_no }}</small></td>
+                                        <td>{{ $row->mau }}</td>
+                                        <td>
+                                            <span
+                                                class="badge bg-{{ $row->cong_doan === 'Đã nhập kho' ? 'success' : 'info' }}">
+                                                {{ $row->cong_doan }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end fw-bold">{{ number_format($row->can_xuat, 2) }}</td>
+                                        <td
+                                            class="text-end {{ $row->ton_kho <= 0 ? 'text-danger fw-bold' : 'text-success fw-bold' }}">
+                                            {{ number_format($row->ton_kho, 2) }}
+                                        </td>
+                                        <td
+                                            class="text-end {{ $row->dang_sx > 0 ? 'text-warning fw-bold' : 'text-muted' }}">
+                                            {{ $row->dang_sx > 0 ? number_format($row->dang_sx, 2) : '—' }}
+                                        </td>
+                                        <td style="width:100px">
+                                            @if ($row->trang_thai === 'du')
+                                                <input type="number" name="items[{{ $idx }}][so_luong]"
+                                                    class="form-control form-control-sm text-end sl-xuat"
+                                                    value="{{ $row->can_xuat }}" min="0"
+                                                    max="{{ $row->ton_kho }}" step="0.01">
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if ($row->sig_need_date)
+                                                <small
+                                                    class="{{ $row->sig_need_date->isPast() ? 'text-danger fw-bold' : '' }}">
+                                                    {{ $row->sig_need_date->format('d/m/Y') }}
+                                                </small>
+                                                @if ($row->sig_need_date->isPast())
+                                                    <i class="fa-solid fa-exclamation-triangle text-danger"
+                                                        title="Quá hạn!"></i>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if ($row->trang_thai === 'du')
+                                                <span class="badge bg-success">Đủ hàng</span>
+                                            @elseif ($row->trang_thai === 'dang_sx')
+                                                <span class="badge bg-warning text-dark">Đang SX</span>
+                                            @else
+                                                <span class="badge bg-danger">Thiếu hàng</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td colspan="7" class="text-end">TỔNG:</td>
+                                    <td class="text-end">{{ number_format($soanHang->sum('can_xuat'), 2) }}</td>
+                                    <td colspan="5"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <input type="date" name="ngay" class="form-control form-control-sm" style="width:160px"
+                            value="{{ now()->format('Y-m-d') }}" required>
+                        <input type="text" name="ma_nv" class="form-control form-control-sm" style="width:140px"
+                            placeholder="Mã NV thủ kho">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Xác nhận xuất kho các phiếu đã chọn?')">
+                            <i class="fa-solid fa-truck-loading me-1"></i>Xuất Kho
+                        </button>
+                    </div>
+                </form>
+            @else
+                <p class="text-muted text-center mb-0">Không có phiếu nào cần soạn hàng.</p>
+            @endif
+        </div>
+
         {{-- ═══ BẢNG TỒN KHO ═══ --}}
         <div class="card-page mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -111,8 +247,8 @@
                                 {{ $i }}</option>
                         @endfor
                     </select>
-                    <input type="number" name="nam" class="form-control form-control-sm" value="{{ $nam }}"
-                        style="width:80px">
+                    <input type="number" name="nam" class="form-control form-control-sm"
+                        value="{{ $nam }}" style="width:80px">
                     <button class="btn btn-primary btn-sm">Xem</button>
                 </form>
             </div>
@@ -286,4 +422,18 @@
             {{ $data->links() }}
         </div>
     </div>
+
+    <script>
+        document.getElementById('checkAllSoan')?.addEventListener('change', function() {
+            document.querySelectorAll('.soan-check').forEach(cb => cb.checked = this.checked);
+        });
+
+        document.getElementById('xuatKhoForm')?.addEventListener('submit', function(e) {
+            const checked = this.querySelectorAll('.soan-check:checked');
+            if (checked.length === 0) {
+                e.preventDefault();
+                alert('Chọn ít nhất 1 mã hàng để xuất kho.');
+            }
+        });
+    </script>
 @endsection

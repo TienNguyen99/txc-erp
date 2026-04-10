@@ -49,6 +49,10 @@ Route::middleware('auth')->group(function () {
         Route::resource('orders', OrderController::class);
 
         // Order Tracking
+        Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])
+             ->name('order-tracking.lot');
+        Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])
+             ->name('order-tracking.create-batch');
         Route::post('order-tracking/generate', [OrderTrackingController::class, 'generate'])
              ->name('order-tracking.generate');
         Route::post('order-tracking/push-production', [OrderTrackingController::class, 'pushToProduction'])
@@ -75,6 +79,8 @@ Route::middleware('auth')->group(function () {
              ->name('warehouse-transactions.template');
         Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])
              ->name('warehouse-transactions.import');
+        Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])
+             ->name('warehouse-transactions.xuat-hang-loat');
         Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])
              ->name('warehouse-transactions.nhap-theo-lenh');
         Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])

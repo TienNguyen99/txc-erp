@@ -15,7 +15,7 @@
                 <div class="col-md-3">
                     <label class="form-label mb-0" style="font-size:.8rem">PL Number <small class="text-muted">(chọn
                             nhiều)</small></label>
-                    <select name="pl_number[]" class="form-select form-select-sm" multiple size="3">
+                    <select id="plNumberSelect" name="pl_number[]" multiple placeholder="Tìm & chọn PL...">
                         @foreach ($plNumbers as $pl)
                             <option value="{{ $pl }}"
                                 {{ in_array($pl, (array) request('pl_number', [])) ? 'selected' : '' }}>{{ $pl }}
@@ -23,12 +23,13 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label mb-0" style="font-size:.8rem">Chart</label>
-                    <select name="chart" class="form-select form-select-sm">
-                        <option value="">-- Tất cả --</option>
+                <div class="col-md-3">
+                    <label class="form-label mb-0" style="font-size:.8rem">Chart <small class="text-muted">(chọn
+                            nhiều)</small></label>
+                    <select id="chartSelect" name="chart[]" multiple placeholder="Tìm & chọn Chart...">
                         @foreach ($charts as $c)
-                            <option value="{{ $c }}" {{ request('chart') == $c ? 'selected' : '' }}>
+                            <option value="{{ $c }}"
+                                {{ in_array($c, (array) request('chart', [])) ? 'selected' : '' }}>
                                 {{ $c }}</option>
                         @endforeach
                     </select>
@@ -47,6 +48,90 @@
             </form>
 
             {{-- ═══ DASHBOARD CARDS ═══ --}}
+            @if ($hasFilter)
+                {{-- Nút tạo Order Tracking Number --}}
+                <div class="card border-primary mb-3">
+                    <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="fa-solid fa-hashtag text-primary me-1"></i>
+                            <strong>PL đã chọn:</strong>
+                            @foreach ((array) request('pl_number', []) as $pl)
+                                <span class="badge bg-primary ms-1">{{ $pl }}</span>
+                            @endforeach
+                            @foreach ((array) request('chart', []) as $c)
+                                <span class="badge bg-secondary ms-1">Chart: {{ $c }}</span>
+                            @endforeach
+                        </div>
+                        <form method="POST" action="{{ route('admin.order-tracking.create-batch') }}" class="d-inline">
+                            @csrf
+                            @foreach ((array) request('pl_number', []) as $pl)
+                                <input type="hidden" name="pl_numbers[]" value="{{ $pl }}">
+                            @endforeach
+                            <button type="submit" class="btn btn-primary btn-sm"
+                                onclick="return confirm('Tạo Order Tracking Number mới cho các PL đã chọn?')">
+                                <i class="fa-solid fa-layer-group me-1"></i>Tạo Order Tracking Number
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
+            {{-- ═══ DANH SÁCH ORDER TRACKING NUMBERS ═══ --}}
+            @if ($trackingNumbers->count())
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center"
+                        data-bs-toggle="collapse" data-bs-target="#collapseOTList" role="button">
+                        <span>
+                            <i class="fa-solid fa-layer-group me-1"></i>
+                            <strong>Danh sách Order Tracking</strong>
+                            <span class="badge bg-light text-dark ms-2">{{ $trackingNumbers->count() }}</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="collapse show" id="collapseOTList">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Order Tracking Number</th>
+                                            <th class="text-center">Số tracking</th>
+                                            <th>Ngày tạo</th>
+                                            <th class="text-center">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($trackingNumbers as $tn)
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <a href="{{ route('admin.order-tracking.lot', $tn->tracking_number) }}"
+                                                        class="fw-bold text-decoration-none">
+                                                        <i
+                                                            class="fa-solid fa-hashtag text-primary me-1"></i>{{ $tn->tracking_number }}
+                                                    </a>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-info">{{ $tn->total_items }} items</span>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($tn->created_at)->format('d/m/Y H:i') }}</td>
+                                                <td class="text-center">
+                                                    <a href="{{ route('admin.order-tracking.lot', $tn->tracking_number) }}"
+                                                        class="btn btn-outline-primary btn-xs">
+                                                        <i class="fa-solid fa-eye me-1"></i>Xem
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @if ($summary->count())
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
@@ -106,7 +191,7 @@
                             — PL: <span class="text-dark">{{ implode(', ', (array) request('pl_number')) }}</span>
                         @endif
                         @if (request('chart'))
-                            — Chart: <span class="text-dark">{{ request('chart') }}</span>
+                            — Chart: <span class="text-dark">{{ implode(', ', (array) request('chart')) }}</span>
                         @endif
                     </h6>
 
@@ -158,7 +243,8 @@
                                         <td>
                                             <div class="progress" style="height:20px">
                                                 @if ($pctKho > 0)
-                                                    <div class="progress-bar bg-success" style="width:{{ $pctKho }}%"
+                                                    <div class="progress-bar bg-success"
+                                                        style="width:{{ $pctKho }}%"
                                                         title="Tồn kho: {{ number_format($row->ton_kho, 0) }}">
                                                         @if ($pctKho >= 15)
                                                             {{ $pctKho }}%
@@ -381,6 +467,7 @@
                                 <th><input type="checkbox" id="checkAllTracking"></th>
                                 <th>#</th>
                                 <th>Order (Job No)</th>
+                                <th>OT Number</th>
                                 <th>PL Number</th>
                                 <th>Mã HH</th>
                                 <th>Màu</th>
@@ -398,7 +485,24 @@
                                             class="tracking-check"></td>
                                     <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
                                     <td class="fw-semibold">{{ $item->order->job_no ?? '—' }}</td>
-                                    <td>{{ $item->pl_number }}</td>
+                                    <td>
+                                        @if ($item->tracking_number)
+                                            <a href="{{ route('admin.order-tracking.lot', $item->tracking_number) }}"
+                                                class="text-decoration-none fw-semibold text-primary"
+                                                title="{{ $item->tracking_number }}">
+                                                {{ $item->tracking_number }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($item->pl_number)
+                                            <span class="fw-semibold">{{ $item->pl_number }}</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td>{{ $item->size }}</td>
                                     <td>{{ $item->mau }}</td>
                                     <td>{{ $item->kich }}</td>
@@ -447,7 +551,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-muted text-center">Không có dữ liệu</td>
+                                    <td colspan="12" class="text-muted text-center">Không có dữ liệu</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -512,4 +616,19 @@
             form.submit();
         });
     </script>
+@endsection
+
+@section('scripts')
+<script>
+    new TomSelect('#plNumberSelect', {
+        plugins: ['remove_button'],
+        maxOptions: null,
+        allowEmptyOption: false,
+    });
+    new TomSelect('#chartSelect', {
+        plugins: ['remove_button'],
+        maxOptions: null,
+        allowEmptyOption: false,
+    });
+</script>
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Order;
+use App\Models\DanhMucHangHoa;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -13,18 +14,35 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
 
     public function model(array $row)
     {
-        if (!empty($row['ma_hh'])) {
-            $this->importedMaHh[] = $row['ma_hh'];
+        $maHh     = trim($row['ma_hh'] ?? '');
+        $priceUsd = $this->toNumeric($row['price_usd'] ?? null);
+
+        // Tự động tạo/cập nhật danh mục hàng hóa nếu có ma_hh
+        if ($maHh !== '') {
+            $this->importedMaHh[] = $maHh;
+
+            DanhMucHangHoa::updateOrCreate(
+                ['ma_hh' => $maHh],
+                array_filter([
+                    'ten_hh'  => $maHh,
+                    'mau'     => $row['color'] ?? null,
+                    'don_vi'  => $row['unit'] ?? null,
+                    'don_gia' => $priceUsd,
+                    'active'  => true,
+                ], fn($v) => $v !== null)
+            );
         }
 
         return Order::updateOrCreate(
-            ['job_no' => $row['job_no']],
+            [
+                'job_no' => $row['job_no'],
+                'ma_hh'  => $row['ma_hh'] ?? null,
+                'color'  => $row['color'] ?? null,
+            ],
             [
                 'fty_po'         => $row['fty_po'] ?? null,
                 'im_number'      => $row['im_number'] ?? null,
-                'color'          => $row['color'] ?? null,
                 'unit'           => $row['unit'] ?? null,
-                'ma_hh'          => $row['ma_hh'] ?? null,
                 'yrd'            => $this->toNumeric($row['yrd'] ?? null),
                 'can_giao_1'     => $this->toNumeric($row['can_giao_1'] ?? null),
                 'can_giao_2'     => $this->toNumeric($row['can_giao_2'] ?? null),

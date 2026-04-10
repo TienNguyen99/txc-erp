@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
 use App\Models\Order;
+use App\Models\OrderTracking;
+use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Exports\WarehouseTransactionExport;
 use App\Exports\WarehouseTransactionTemplateExport;
@@ -21,6 +23,73 @@ class WarehouseTransactionController extends Controller
         $data = WarehouseTransaction::when($request->search, fn($q, $s) => $q->where('lenh_sx', 'like', "%$s%")->orWhere('ma_nv', 'like', "%$s%"))
                     ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
                     ->latest()->paginate(15)->withQueryString();
+
+        // ═══ SOẠN HÀNG: Mỗi OrderTracking = 1 phiếu xuất kho ═══
+        // Lấy tracking chưa giao, có order chưa shipped
+        $trackings = OrderTracking::with('order')
+            ->where('cong_doan', '!=', 'Đã giao')
+            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
+                ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
+            ->get();
+
+        // Tính tồn kho 1 lần cho mỗi ma_hh (tránh N+1)
+        $allMaHh = $trackings->map(fn($t) => $t->order->ma_hh)->unique();
+        $tonKhoMap = [];
+        foreach ($allMaHh as $maHh) {
+            $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
+            $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+            $tonKhoMap[$maHh] = $nhap - $xuat;
+        }
+
+        // Tính đang SX 1 lần
+        $dangSxMap = [];
+        foreach ($allMaHh as $maHh) {
+            $dangSxMap[$maHh] = ProductionReport::where('size', $maHh)
+                ->where('cong_doan', '!=', 'Đã nhập kho')
+                ->sum('sl_dat');
+        }
+
+        $soanHang = $trackings->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
+            $order  = $tracking->order;
+            $maHh   = $order->ma_hh;
+            $canXuat = $tracking->sl_don_hang ?? $order->yrd ?? 0;
+            $tonKho = $tonKhoMap[$maHh] ?? 0;
+            $dangSx = $dangSxMap[$maHh] ?? 0;
+
+            if ($tonKho >= $canXuat) {
+                $trangThai = 'du';
+            } elseif ($dangSx > 0) {
+                $trangThai = 'dang_sx';
+            } else {
+                $trangThai = 'thieu';
+            }
+
+            return (object) [
+                'tracking_id'   => $tracking->id,
+                'ma_hh'         => $maHh,
+                'pl_number'     => $tracking->pl_number ?? $order->pl_number,
+                'chart'         => $order->chart,
+                'job_no'        => $order->job_no,
+                'mau'           => $tracking->mau ?? $order->color,
+                'size'          => $tracking->size,
+                'cong_doan'     => $tracking->cong_doan,
+                'can_xuat'      => $canXuat,
+                'ton_kho'       => $tonKho,
+                'dang_sx'       => $dangSx,
+                'trang_thai'    => $trangThai,
+                'sig_need_date' => $order->sig_need_date,
+            ];
+        })->sortBy([
+            ['trang_thai', 'asc'],
+            ['sig_need_date', 'asc'],
+        ])->values();
+
+        $soanStats = (object) [
+            'tong_phieu'  => $soanHang->count(),
+            'du_hang'     => $soanHang->where('trang_thai', 'du')->count(),
+            'dang_sx'     => $soanHang->where('trang_thai', 'dang_sx')->count(),
+            'thieu_hang'  => $soanHang->where('trang_thai', 'thieu')->count(),
+        ];
 
         // ═══ TỒN KHO ═══
         $thang = $request->thang ?? now()->month;
@@ -107,7 +176,8 @@ class WarehouseTransactionController extends Controller
         })->sortBy(['ma_hh', 'mau'])->values();
 
         return view('admin.warehouse-transactions.index', compact(
-            'data', 'tonKho', 'thang', 'nam', 'nhapDates', 'xuatDates'
+            'data', 'tonKho', 'thang', 'nam', 'nhapDates', 'xuatDates',
+            'soanHang', 'soanStats'
         ));
     }
 
@@ -163,6 +233,76 @@ class WarehouseTransactionController extends Controller
     {
         $warehouseTransaction->delete();
         return redirect()->route('admin.warehouse-transactions.index')->with('success', 'Xóa giao dịch kho thành công.');
+    }
+
+    /**
+     * Xuất kho hàng loạt — mỗi tracking = 1 phiếu xuất kho.
+     */
+    public function xuatHangLoat(Request $request)
+    {
+        $request->validate([
+            'ngay'                 => 'required|date',
+            'ma_nv'                => 'nullable|string',
+            'items'                => 'required|array',
+            'items.*.selected'     => 'required',
+            'items.*.tracking_id'  => 'required|exists:order_tracking,id',
+            'items.*.ma_hh'        => 'required|string',
+            'items.*.so_luong'     => 'required|numeric|min:0.01',
+        ]);
+
+        $count = 0;
+        $errors = [];
+
+        foreach ($request->items as $item) {
+            if (empty($item['selected']) || floatval($item['so_luong'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $tracking = OrderTracking::with('order')->find($item['tracking_id']);
+            if (!$tracking) continue;
+
+            $maHh = $item['ma_hh'];
+            $slXuat = floatval($item['so_luong']);
+
+            // Kiểm tra tồn kho đủ không
+            $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
+            $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+            $tonKho = $nhap - $xuat;
+
+            if ($tonKho < $slXuat) {
+                $errors[] = "{$maHh}: tồn ({$tonKho}) < xuất ({$slXuat})";
+                continue;
+            }
+
+            $order = $tracking->order;
+
+            WarehouseTransaction::create([
+                'cong_doan' => 'XUATKHO',
+                'ma_hh'     => $maHh,
+                'ngay'      => $request->ngay,
+                'size'      => $item['size'] ?? null,
+                'mau'       => $item['mau'] ?? null,
+                'so_luong'  => $slXuat,
+                'ma_nv'     => $request->ma_nv,
+                'lenh_sx'   => $order->lenh_sanxuat ?? $order->job_no,
+                'note'      => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
+            ]);
+
+            // Cập nhật tracking → Đã giao
+            $tracking->update(['cong_doan' => 'Đã giao']);
+            $order->updateStatusFromTracking();
+
+            $count++;
+        }
+
+        $msg = "Đã tạo {$count} phiếu xuất kho.";
+        if (count($errors) > 0) {
+            $msg .= ' Lỗi: ' . implode('; ', array_slice($errors, 0, 5));
+            return redirect()->route('admin.warehouse-transactions.index')->with('warning', $msg);
+        }
+
+        return redirect()->route('admin.warehouse-transactions.index')
+            ->with('success', $msg);
     }
 
     public function tonKho(Request $request)

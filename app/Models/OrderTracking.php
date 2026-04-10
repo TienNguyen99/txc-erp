@@ -17,7 +17,7 @@ class OrderTracking extends Model
     ];
 
     protected $fillable = [
-        'order_id', 'pl_number', 'size', 'mau', 'kich',
+        'order_id', 'tracking_number', 'pl_number', 'size', 'mau', 'kich',
         'cong_doan', 'sl_don_hang', 'sl_san_xuat',
     ];
 
@@ -25,6 +25,21 @@ class OrderTracking extends Model
         'sl_don_hang'  => 'decimal:2',
         'sl_san_xuat'  => 'decimal:2',
     ];
+
+    /**
+     * Sinh tracking number tự động: OT-YYYYMMDD-XXX
+     */
+    public static function generateTrackingNumber(): string
+    {
+        $prefix = 'OT-' . now()->format('Ymd') . '-';
+        $last = static::where('tracking_number', 'like', $prefix . '%')
+            ->orderByDesc('tracking_number')
+            ->value('tracking_number');
+
+        $seq = $last ? ((int) substr($last, -3)) + 1 : 1;
+
+        return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
+    }
 
     public function order()
     {

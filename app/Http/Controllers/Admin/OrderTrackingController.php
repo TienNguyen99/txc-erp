@@ -21,7 +21,8 @@ class OrderTrackingController extends Controller
 
         // Lọc orders theo PL Number hoặc Chart
         $plFilter = array_filter((array) $request->input('pl_number', []));
-        $hasFilter = !empty($plFilter) || $request->filled('chart');
+        $chartFilter = array_filter((array) $request->input('chart', []));
+        $hasFilter = !empty($plFilter) || !empty($chartFilter);
 
         // Dashboard chỉ hiện khi có filter PL/Chart (= chọn lô cần đi)
         $summary = collect();
@@ -33,7 +34,7 @@ class OrderTrackingController extends Controller
         if ($hasFilter) {
             $orders = Order::query()
                 ->when(!empty($plFilter), fn($q) => $q->whereIn('pl_number', $plFilter))
-                ->when($request->chart, fn($q, $v) => $q->where('chart', $v))
+                ->when(!empty($chartFilter), fn($q) => $q->whereIn('chart', $chartFilter))
                 ->get();
 
             // ═══ DASHBOARD: Tổng hợp theo ma_hh ═══
@@ -94,7 +95,7 @@ class OrderTrackingController extends Controller
         // Danh sách tracking (phân trang)
         $data = OrderTracking::with('order')
                     ->when(!empty($plFilter), fn($q) => $q->whereHas('order', fn($oq) => $oq->whereIn('pl_number', $plFilter)))
-                    ->when($request->chart, fn($q, $v) => $q->whereHas('order', fn($oq) => $oq->where('chart', $v)))
+                    ->when(!empty($chartFilter), fn($q) => $q->whereHas('order', fn($oq) => $oq->whereIn('chart', $chartFilter)))
                     ->when($request->search, fn($q, $s) => $q->where(function ($sub) use ($s) {
                         $sub->where('pl_number', 'like', "%$s%")
                             ->orWhere('mau', 'like', "%$s%")
@@ -105,9 +106,161 @@ class OrderTrackingController extends Controller
         $allOrders = Order::pluck('job_no', 'id');
         $stages = OrderTracking::STAGES;
 
+        // Danh sách tracking numbers đã tạo
+        $trackingNumbers = OrderTracking::whereNotNull('tracking_number')
+            ->select('tracking_number')
+            ->selectRaw('MIN(created_at) as created_at')
+            ->selectRaw('COUNT(*) as total_items')
+            ->groupBy('tracking_number')
+            ->orderByDesc('created_at')
+            ->get();
+
         return view('admin.order-tracking.index', compact(
             'data', 'allOrders', 'plNumbers', 'charts',
-            'summary', 'hasFilter', 'stages', 'stats'
+            'summary', 'hasFilter', 'stages', 'stats', 'trackingNumbers'
+        ));
+    }
+
+    public function show(OrderTracking $orderTracking)
+    {
+        if ($orderTracking->tracking_number) {
+            return redirect()->route('admin.order-tracking.lot', $orderTracking->tracking_number);
+        }
+        return redirect()->route('admin.order-tracking.index');
+    }
+
+    /**
+     * Tạo Order Tracking Number mới — gom nhiều PL Number thành 1 lô.
+     */
+    public function createBatch(Request $request)
+    {
+        $request->validate([
+            'pl_numbers'   => 'required|array|min:1',
+            'pl_numbers.*' => 'required|string',
+        ]);
+
+        $plNumbers = $request->pl_numbers;
+        $trackingNumber = OrderTracking::generateTrackingNumber();
+
+        // Lấy tất cả orders thuộc các PL này
+        $orders = Order::whereIn('pl_number', $plNumbers)->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->back()->with('error', 'Không tìm thấy đơn hàng nào cho các PL đã chọn.');
+        }
+
+        $count = 0;
+        foreach ($orders as $order) {
+            // Kiểm tra đã có tracking cho order này chưa
+            $exists = OrderTracking::where('order_id', $order->id)->exists();
+            if ($exists) continue;
+
+            OrderTracking::create([
+                'order_id'        => $order->id,
+                'tracking_number' => $trackingNumber,
+                'pl_number'       => $order->pl_number,
+                'size'            => $order->ma_hh,
+                'mau'             => $order->color,
+                'cong_doan'       => 'Chờ sản xuất',
+                'sl_don_hang'     => $order->yrd,
+                'sl_san_xuat'     => 0,
+            ]);
+
+            $order->updateStatusFromTracking();
+            $count++;
+        }
+
+        // Nếu có tracking cũ chưa có tracking_number cho các PL này, gán luôn
+        OrderTracking::whereNull('tracking_number')
+            ->whereIn('pl_number', $plNumbers)
+            ->update(['tracking_number' => $trackingNumber]);
+
+        if ($count === 0) {
+            // Tất cả order đã có tracking → chỉ gán tracking_number
+            return redirect()->route('admin.order-tracking.lot', $trackingNumber)
+                ->with('success', "Đã gán Order Tracking Number: {$trackingNumber}");
+        }
+
+        return redirect()->route('admin.order-tracking.lot', $trackingNumber)
+            ->with('success', "Đã tạo {$count} tracking với Order Tracking Number: {$trackingNumber}");
+    }
+
+    /**
+     * Xem chi tiết một lô theo Tracking Number.
+     */
+    public function lot(string $trackingNumber)
+    {
+        $stages = OrderTracking::STAGES;
+
+        // Tất cả tracking của lô này
+        $trackings = OrderTracking::with('order')
+            ->where('tracking_number', $trackingNumber)
+            ->latest()
+            ->get();
+
+        if ($trackings->isEmpty()) {
+            return redirect()->route('admin.order-tracking.index')
+                ->with('error', "Không tìm thấy Order Tracking: {$trackingNumber}");
+        }
+
+        // Các PL Numbers trong lô
+        $plNumbersInLot = $trackings->pluck('pl_number')->unique()->filter()->values();
+
+        // Tất cả orders thuộc lô
+        $orderIds = $trackings->pluck('order_id')->unique();
+        $orders = Order::whereIn('id', $orderIds)->get();
+
+        // Tổng hợp theo mã HH
+        $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) use ($stages, $trackingNumber) {
+            $totalQty = $group->sum('yrd');
+            $groupOrderIds = $group->pluck('id');
+
+            $trackingsForMa = OrderTracking::where('tracking_number', $trackingNumber)
+                ->whereIn('order_id', $groupOrderIds)->get();
+            $stageBreakdown = collect($stages)->mapWithKeys(function ($info, $stage) use ($trackingsForMa) {
+                return [$stage => $trackingsForMa->where('cong_doan', $stage)->sum('sl_don_hang')];
+            });
+
+            $slProduction = ProductionReport::where('size', $maHh)
+                ->where('cong_doan', '!=', 'Đã nhập kho')
+                ->sum('sl_dat');
+            $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
+            $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+            $tonKho = $nhap - $xuat;
+            $thieu = max(0, $totalQty - $tonKho);
+
+            return (object) [
+                'ma_hh'           => $maHh,
+                'so_don'          => $group->count(),
+                'tong_qty'        => $totalQty,
+                'sl_production'   => $slProduction,
+                'ton_kho'         => $tonKho,
+                'thieu'           => $thieu,
+                'du_hang'         => $tonKho >= $totalQty,
+                'stage_breakdown' => $stageBreakdown,
+                'total_progress'  => $totalQty > 0 ? min(100, round(($tonKho + $slProduction) / $totalQty * 100)) : 0,
+            ];
+        })->values();
+
+        // Thống kê tổng
+        $stats = (object) [
+            'total_mahh'    => $summary->count(),
+            'du_hang'       => $summary->where('du_hang', true)->count(),
+            'thieu_hang'    => $summary->where('du_hang', false)->count(),
+            'dang_sx'       => $summary->where('sl_production', '>', 0)->count(),
+            'tong_can_giao' => $summary->sum('tong_qty'),
+            'tong_ton_kho'  => $summary->sum('ton_kho'),
+            'tong_dang_sx'  => $summary->sum('sl_production'),
+            'tong_thieu'    => $summary->sum('thieu'),
+        ];
+
+        // Danh sách tất cả Tracking Numbers (để chuyển lô nhanh)
+        $allTrackingNumbers = OrderTracking::whereNotNull('tracking_number')
+            ->distinct()->orderByDesc('tracking_number')->pluck('tracking_number');
+
+        return view('admin.order-tracking.lot', compact(
+            'trackingNumber', 'plNumbersInLot', 'orders', 'trackings',
+            'summary', 'stats', 'stages', 'allTrackingNumbers'
         ));
     }
 
@@ -189,6 +342,9 @@ class OrderTrackingController extends Controller
             'order_ids.*' => 'exists:orders,id',
         ]);
 
+        // Tạo tracking number cho batch này
+        $trackingNumber = $request->input('tracking_number') ?: OrderTracking::generateTrackingNumber();
+
         $count = 0;
         foreach ($request->order_ids as $orderId) {
             $order = Order::find($orderId);
@@ -199,13 +355,14 @@ class OrderTrackingController extends Controller
             if ($exists) continue;
 
             OrderTracking::create([
-                'order_id'    => $order->id,
-                'pl_number'   => $order->pl_number,
-                'size'        => $order->ma_hh,
-                'mau'         => $order->color,
-                'cong_doan'   => 'Chờ sản xuất',
-                'sl_don_hang' => $order->yrd,
-                'sl_san_xuat' => 0,
+                'order_id'        => $order->id,
+                'tracking_number' => $trackingNumber,
+                'pl_number'       => $order->pl_number,
+                'size'            => $order->ma_hh,
+                'mau'             => $order->color,
+                'cong_doan'       => 'Chờ sản xuất',
+                'sl_don_hang'     => $order->yrd,
+                'sl_san_xuat'     => 0,
             ]);
 
             // Tự động cập nhật status đơn hàng

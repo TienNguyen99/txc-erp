@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Order;
+use App\Models\DanhMucHangHoa;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
@@ -62,16 +63,28 @@ class CustomerOrderImport implements ToModel, WithStartRow
         $maHh = $this->cleanString($row[9] ?? null);
         if (!empty($maHh)) {
             $this->importedMaHh[] = $maHh;
+
+            DanhMucHangHoa::updateOrCreate(
+                ['ma_hh' => $maHh],
+                array_filter([
+                    'ten_hh' => $maHh,
+                    'mau'    => $this->cleanString($row[11] ?? null),
+                    'don_vi' => $this->cleanString($row[13] ?? null),
+                    'active' => true,
+                ], fn($v) => $v !== null)
+            );
         }
 
         return Order::updateOrCreate(
-            ['job_no' => $jobNo],
+            [
+                'job_no' => $jobNo,
+                'ma_hh'  => $maHh,
+                'color'  => $this->cleanString($row[11] ?? null),
+            ],
             [
                 'fty_po'        => $this->cleanString($row[7] ?? null),
                 'im_number'     => $this->cleanString($row[10] ?? null),
-                'color'         => $this->cleanString($row[11] ?? null),
                 'unit'          => $this->cleanString($row[13] ?? null),
-                'ma_hh'         => $this->cleanString($row[9] ?? null),
                 'yrd'           => $this->toNumber($row[12] ?? null),
                 'chart'         => $this->cleanString($row[5] ?? null),
                 'sig_need_date' => $this->parseDate($row[1] ?? null),

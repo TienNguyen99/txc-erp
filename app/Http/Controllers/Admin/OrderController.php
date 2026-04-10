@@ -44,7 +44,7 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
-            'job_no'        => 'required|string|unique:orders,job_no',
+            'job_no'        => 'required|string',
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
@@ -77,7 +77,7 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
-            'job_no'        => 'required|string|unique:orders,job_no,' . $order->id,
+            'job_no'        => 'required|string',
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
