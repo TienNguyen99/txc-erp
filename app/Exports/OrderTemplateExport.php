@@ -15,6 +15,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
             'fty_po',
             'im_number',
             'color',
+            'qty',
             'unit',
             'ma_hh',
             'yrd',
@@ -27,6 +28,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
             'price_usd_auto',
             'price_usd',
             'to_khai',
+            'lenh_sanxuat',
             'status',
         ];
     }
