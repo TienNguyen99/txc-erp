@@ -126,7 +126,9 @@
                                         <td class="fw-semibold">
                                             {{ $row->ma_hh ?: '—' }}
                                             <!-- Nút tạo lệnh sản xuất -->
-                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}">
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}">
                                                 <i class="fa-solid fa-plus"></i> Lệnh SX
                                             </button>
                                         </td>
@@ -196,14 +198,18 @@
 
                             <!-- Modal tạo lệnh sản xuất cho từng mã HH -->
                             @foreach ($summary->sortByDesc('thieu') as $row)
-                                <div class="modal fade" id="modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}" tabindex="-1" aria-labelledby="modalLabel_{{ Str::slug($row->ma_hh) }}" aria-hidden="true">
+                                <div class="modal fade" id="modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}"
+                                    tabindex="-1" aria-labelledby="modalLabel_{{ Str::slug($row->ma_hh) }}"
+                                    aria-hidden="true">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
                                             <form method="POST" action="{{ route('admin.production-reports.store') }}">
                                                 @csrf
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title" id="modalLabel_{{ Str::slug($row->ma_hh) }}">Tạo lệnh sản xuất cho {{ $row->ma_hh }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    <h5 class="modal-title" id="modalLabel_{{ Str::slug($row->ma_hh) }}">
+                                                        Tạo lệnh sản xuất cho {{ $row->ma_hh }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <input type="hidden" name="size" value="{{ $row->ma_hh }}">
@@ -217,7 +223,8 @@
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Ngày SX</label>
-                                                        <input type="date" name="ngay_sx" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                                        <input type="date" name="ngay_sx" class="form-control"
+                                                            value="{{ date('Y-m-d') }}" required>
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Ca</label>
@@ -229,23 +236,28 @@
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Lệnh SX</label>
-                                                        <input type="text" name="lenh_sx" class="form-control" value="{{ $trackingNumber }}-{{ $row->ma_hh }}">
+                                                        <input type="text" name="lenh_sx" class="form-control"
+                                                            value="{{ $trackingNumber }}-{{ $row->ma_hh }}">
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Màu</label>
-                                                        <input type="text" name="mau" class="form-control" value="">
+                                                        <input type="text" name="mau" class="form-control"
+                                                            value="">
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Số lượng đạt</label>
-                                                        <input type="number" step="any" name="sl_dat" class="form-control" value="{{ $row->tong_qty }}" required>
+                                                        <input type="number" step="any" name="sl_dat"
+                                                            class="form-control" value="{{ $row->tong_qty }}" required>
                                                     </div>
                                                     <div class="mb-2">
                                                         <label class="form-label">Số lượng hư</label>
-                                                        <input type="number" step="any" name="sl_hu" class="form-control" value="0">
+                                                        <input type="number" step="any" name="sl_hu"
+                                                            class="form-control" value="0">
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">Đóng</button>
                                                     <button type="submit" class="btn btn-primary">Lưu lệnh SX</button>
                                                 </div>
                                             </form>
