@@ -138,14 +138,15 @@
             </div>
         </div>
 
-        {{-- ═══ SOẠN HÀNG — Mỗi tracking = 1 phiếu xuất kho ═══ --}}
+        {{-- ═══ SOẠN HÀNG — Trừ tồn tuần tự theo ma_hh ═══ --}}
         <div class="card-page mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 fw-bold" style="color:#1e3a5f">
                     <i class="fa-solid fa-dolly-flatbed me-2"></i>Soạn Hàng (Phiếu xuất kho)
                 </h5>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <span class="badge bg-success fs-6">Đủ hàng: {{ $soanStats->du_hang }}</span>
+                    <span class="badge fs-6" style="background:#fd7e14;color:#fff">Thiếu 1 phần: {{ $soanStats->thieu_1_phan }}</span>
                     <span class="badge bg-warning text-dark fs-6">Đang SX: {{ $soanStats->dang_sx }}</span>
                     <span class="badge bg-danger fs-6">Thiếu: {{ $soanStats->thieu_hang }}</span>
                     <span class="badge bg-secondary fs-6">Tổng: {{ $soanStats->tong_phieu }} phiếu</span>
@@ -162,12 +163,14 @@
                                     <th style="width:35px"><input type="checkbox" id="checkAllSoan"></th>
                                     <th>Mã HH</th>
                                     <th>PL Number</th>
-                                    <th>Chart</th>
+                                    <th>FTY PO</th>
                                     <th>Job No</th>
                                     <th>Màu</th>
                                     <th>Công đoạn</th>
                                     <th>Cần xuất</th>
-                                    <th>Tồn kho (mã)</th>
+                                    <th style="background:#2d6a4f!important">Tồn còn lại</th>
+                                    <th style="background:#2d6a4f!important">Cấp được</th>
+                                    <th style="background:#9d0208!important">Thiếu</th>
                                     <th>Đang SX</th>
                                     <th>SL Xuất</th>
                                     <th>Ngày cần giao</th>
@@ -175,11 +178,17 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $prevMaHh = null; @endphp
                                 @foreach ($soanHang as $idx => $row)
-                                    <tr
-                                        class="{{ $row->trang_thai === 'du' ? 'table-success' : ($row->trang_thai === 'thieu' ? 'table-danger' : '') }}">
+                                    {{-- Separator giữa các nhóm ma_hh --}}
+                                    @if ($prevMaHh !== null && $prevMaHh !== $row->ma_hh)
+                                        <tr><td colspan="15" style="height:4px;background:#1e3a5f;padding:0;border:none"></td></tr>
+                                    @endif
+                                    @php $prevMaHh = $row->ma_hh; @endphp
+                                    <tr class="@if($row->trang_thai === 'du') table-success @elseif($row->trang_thai === 'thieu_1_phan') @elseif($row->trang_thai === 'thieu') table-danger @endif"
+                                        @if($row->trang_thai === 'thieu_1_phan') style="background:#fff3cd" @endif>
                                         <td class="text-center">
-                                            @if ($row->trang_thai === 'du')
+                                            @if (in_array($row->trang_thai, ['du', 'thieu_1_phan']))
                                                 <input type="checkbox" name="items[{{ $idx }}][selected]"
                                                     value="1" class="soan-check">
                                                 <input type="hidden" name="items[{{ $idx }}][tracking_id]"
@@ -194,7 +203,7 @@
                                         </td>
                                         <td class="fw-bold">{{ $row->ma_hh }}</td>
                                         <td><small>{{ $row->pl_number }}</small></td>
-                                        <td><small>{{ $row->chart }}</small></td>
+                                        <td><small>{{ $row->fty_po ?? '' }}</small></td>
                                         <td><small>{{ $row->job_no }}</small></td>
                                         <td>{{ $row->mau }}</td>
                                         <td>
@@ -204,20 +213,31 @@
                                             </span>
                                         </td>
                                         <td class="text-end fw-bold">{{ number_format($row->can_xuat, 2) }}</td>
-                                        <td
-                                            class="text-end {{ $row->ton_kho <= 0 ? 'text-danger fw-bold' : 'text-success fw-bold' }}">
-                                            {{ number_format($row->ton_kho, 2) }}
+                                        {{-- Tồn còn lại (sau khi trừ PO phía trên) --}}
+                                        <td class="text-end fw-bold {{ $row->ton_con_lai <= 0 ? 'text-danger' : 'text-success' }}"
+                                            style="background:#e8f5e9">
+                                            {{ number_format($row->ton_con_lai, 2) }}
+                                        </td>
+                                        {{-- Cấp được --}}
+                                        <td class="text-end fw-bold {{ $row->cap_duoc >= $row->can_xuat ? 'text-success' : ($row->cap_duoc > 0 ? 'text-warning' : 'text-danger') }}"
+                                            style="background:#e8f5e9">
+                                            {{ number_format($row->cap_duoc, 2) }}
+                                        </td>
+                                        {{-- Thiếu --}}
+                                        <td class="text-end fw-bold {{ $row->thieu > 0 ? 'text-danger' : 'text-muted' }}"
+                                            style="background:#ffebee">
+                                            {{ $row->thieu > 0 ? number_format($row->thieu, 2) : '—' }}
                                         </td>
                                         <td
                                             class="text-end {{ $row->dang_sx > 0 ? 'text-warning fw-bold' : 'text-muted' }}">
                                             {{ $row->dang_sx > 0 ? number_format($row->dang_sx, 2) : '—' }}
                                         </td>
                                         <td style="width:100px">
-                                            @if ($row->trang_thai === 'du')
+                                            @if (in_array($row->trang_thai, ['du', 'thieu_1_phan']))
                                                 <input type="number" name="items[{{ $idx }}][so_luong]"
                                                     class="form-control form-control-sm text-end sl-xuat"
-                                                    value="{{ $row->can_xuat }}" min="0"
-                                                    max="{{ $row->ton_kho }}" step="0.01">
+                                                    value="{{ $row->cap_duoc }}" min="0"
+                                                    max="{{ $row->cap_duoc }}" step="0.01">
                                             @else
                                                 <span class="text-muted">—</span>
                                             @endif
@@ -239,6 +259,8 @@
                                         <td class="text-center">
                                             @if ($row->trang_thai === 'du')
                                                 <span class="badge bg-success">Đủ hàng</span>
+                                            @elseif ($row->trang_thai === 'thieu_1_phan')
+                                                <span class="badge" style="background:#fd7e14">Thiếu {{ number_format($row->thieu, 2) }}</span>
                                             @elseif ($row->trang_thai === 'dang_sx')
                                                 <span class="badge bg-warning text-dark">Đang SX</span>
                                             @else
@@ -252,7 +274,10 @@
                                 <tr>
                                     <td colspan="7" class="text-end">TỔNG:</td>
                                     <td class="text-end">{{ number_format($soanHang->sum('can_xuat'), 2) }}</td>
-                                    <td colspan="5"></td>
+                                    <td></td>
+                                    <td class="text-end text-success">{{ number_format($soanHang->sum('cap_duoc'), 2) }}</td>
+                                    <td class="text-end text-danger">{{ number_format($soanHang->sum('thieu'), 2) }}</td>
+                                    <td colspan="4"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -273,6 +298,7 @@
                 <p class="text-muted text-center mb-0">Không có phiếu nào cần soạn hàng.</p>
             @endif
         </div>
+
 
         {{-- ═══ BẢNG TỒN KHO ═══ --}}
         <div class="card-page mb-4">

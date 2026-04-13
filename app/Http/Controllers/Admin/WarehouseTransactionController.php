@@ -50,20 +50,12 @@ class WarehouseTransactionController extends Controller
                 ->sum('sl_dat');
         }
 
-        $soanHang = $trackings->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
+        // ═══ Trừ tồn tuần tự theo ma_hh từ trên xuống ═══
+        // Bước 1: Map dữ liệu cơ bản cho mỗi tracking
+        $soanHangRaw = $trackings->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
             $order  = $tracking->order;
             $maHh   = $order->ma_hh;
             $canXuat = $tracking->sl_don_hang ?? $order->yrd ?? 0;
-            $tonKho = $tonKhoMap[$maHh] ?? 0;
-            $dangSx = $dangSxMap[$maHh] ?? 0;
-
-            if ($tonKho >= $canXuat) {
-                $trangThai = 'du';
-            } elseif ($dangSx > 0) {
-                $trangThai = 'dang_sx';
-            } else {
-                $trangThai = 'thieu';
-            }
 
             return (object) [
                 'tracking_id'   => $tracking->id,
@@ -71,25 +63,60 @@ class WarehouseTransactionController extends Controller
                 'pl_number'     => $tracking->pl_number ?? $order->pl_number,
                 'chart'         => $order->chart,
                 'job_no'        => $order->job_no,
+                'fty_po'        => $order->fty_po,
                 'mau'           => $tracking->mau ?? $order->color,
                 'size'          => $tracking->size,
                 'cong_doan'     => $tracking->cong_doan,
                 'can_xuat'      => $canXuat,
-                'ton_kho'       => $tonKho,
-                'dang_sx'       => $dangSx,
-                'trang_thai'    => $trangThai,
+                'ton_kho_tong'  => $tonKhoMap[$maHh] ?? 0,
+                'dang_sx'       => $dangSxMap[$maHh] ?? 0,
                 'sig_need_date' => $order->sig_need_date,
             ];
-        })->sortBy([
-            ['trang_thai', 'asc'],
-            ['sig_need_date', 'asc'],
-        ])->values();
+        })->values();
+
+        // Bước 2: Trừ tồn tuần tự theo ma_hh từ trên xuống
+        $tonConLaiMap = []; // Track remaining per ma_hh
+        $soanHang = $soanHangRaw->map(function ($row) use (&$tonConLaiMap) {
+            $maHh = $row->ma_hh;
+
+            // Khởi tạo tồn còn lại lần đầu cho ma_hh này
+            if (!isset($tonConLaiMap[$maHh])) {
+                $tonConLaiMap[$maHh] = $row->ton_kho_tong;
+            }
+
+            $tonConLai = $tonConLaiMap[$maHh];
+            $canXuat   = $row->can_xuat;
+            $capDuoc   = min($canXuat, max(0, $tonConLai));
+            $thieu     = max(0, $canXuat - $capDuoc);
+
+            // Trừ tồn cho PO tiếp theo cùng ma_hh
+            $tonConLaiMap[$maHh] -= $capDuoc;
+
+            // Xác định trạng thái
+            if ($capDuoc >= $canXuat) {
+                $trangThai = 'du';
+            } elseif ($capDuoc > 0) {
+                $trangThai = 'thieu_1_phan';
+            } elseif ($row->dang_sx > 0) {
+                $trangThai = 'dang_sx';
+            } else {
+                $trangThai = 'thieu';
+            }
+
+            $row->ton_con_lai = $tonConLai;
+            $row->cap_duoc    = $capDuoc;
+            $row->thieu       = $thieu;
+            $row->trang_thai  = $trangThai;
+
+            return $row;
+        })->values();
 
         $soanStats = (object) [
-            'tong_phieu'  => $soanHang->count(),
-            'du_hang'     => $soanHang->where('trang_thai', 'du')->count(),
-            'dang_sx'     => $soanHang->where('trang_thai', 'dang_sx')->count(),
-            'thieu_hang'  => $soanHang->where('trang_thai', 'thieu')->count(),
+            'tong_phieu'    => $soanHang->count(),
+            'du_hang'       => $soanHang->where('trang_thai', 'du')->count(),
+            'thieu_1_phan'  => $soanHang->where('trang_thai', 'thieu_1_phan')->count(),
+            'dang_sx'       => $soanHang->where('trang_thai', 'dang_sx')->count(),
+            'thieu_hang'    => $soanHang->where('trang_thai', 'thieu')->count(),
         ];
 
         // ═══ TỒN KHO ═══
