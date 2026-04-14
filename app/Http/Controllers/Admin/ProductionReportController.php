@@ -42,7 +42,26 @@ class ProductionReportController extends Controller
             'sl_yard_met'  => 'nullable|numeric',
             'van_de'       => 'nullable|string',
         ]);
-        ProductionReport::create($validated);
+        $report = ProductionReport::create($validated);
+
+        // Đồng bộ lenh_sanxuat cho các order liên quan
+        if (!empty($validated['lenh_sx']) && !empty($validated['size'])) {
+            $query = \App\Models\Order::where('ma_hh', $validated['size']);
+            if (!empty($validated['mau'])) {
+                $query = $query->where('color', $validated['mau']);
+            }
+            // Nếu có pl_number trong request, lọc theo pl_number (có thể là mảng hoặc chuỗi, ưu tiên mảng)
+            $plNumbers = $request->input('pl_number');
+            if (!empty($plNumbers)) {
+                if (is_array($plNumbers)) {
+                    $query = $query->whereIn('pl_number', $plNumbers);
+                } else {
+                    $query = $query->where('pl_number', $plNumbers);
+                }
+            }
+            $query->update(['lenh_sanxuat' => $validated['lenh_sx']]);
+        }
+
         return redirect()->route('admin.production-reports.index')->with('success', 'Thêm báo cáo thành công.');
     }
 
@@ -78,6 +97,23 @@ class ProductionReportController extends Controller
 
     public function destroy(ProductionReport $productionReport)
     {
+        // Xóa lenh_sanxuat bên order nếu trùng thông tin với production_report bị xóa
+        $query = \App\Models\Order::where('ma_hh', $productionReport->size)
+            ->where('lenh_sanxuat', $productionReport->lenh_sx);
+        if (!empty($productionReport->mau)) {
+            $query = $query->where('color', $productionReport->mau);
+        }
+        // Nếu có pl_number trong request (khi xóa qua form có thể truyền vào), hoặc lấy theo logic riêng nếu cần
+        $plNumbers = request()->input('pl_number');
+        if (!empty($plNumbers)) {
+            if (is_array($plNumbers)) {
+                $query = $query->whereIn('pl_number', $plNumbers);
+            } else {
+                $query = $query->where('pl_number', $plNumbers);
+            }
+        }
+        $query->update(['lenh_sanxuat' => null]);
+
         $productionReport->delete();
         return redirect()->route('admin.production-reports.index')->with('success', 'Xóa báo cáo thành công.');
     }

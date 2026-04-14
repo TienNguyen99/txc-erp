@@ -412,20 +412,30 @@ class OrderTrackingController extends Controller
         // Gộp theo ma_hh (từ order)
         $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? $t->size);
 
+
         $countGroup = 0;
         foreach ($grouped as $maHh => $group) {
             $totalSlSanXuat = $group->sum('sl_san_xuat');
             $totalSlDonHang = $group->sum('sl_don_hang');
 
             $mauList = $group->pluck('mau')->unique()->filter()->implode(', ');
-            $lenhSxList = $group->map(fn($t) => $t->order->lenh_sanxuat ?? $t->order->job_no)
-                ->unique()->filter()->implode(', ');
+            // Lấy duy nhất 1 mã lệnh sản xuất cho nhóm: ưu tiên order->lenh_sanxuat, nếu chưa có thì lấy order->job_no
+            $firstOrder = $group->first()->order;
+            $lenhSx = $firstOrder->lenh_sanxuat ?: $firstOrder->job_no;
+
+            // Gán lại cho tất cả order trong nhóm nếu chưa có
+            foreach ($group as $tracking) {
+                $order = $tracking->order;
+                if ($order && $order->lenh_sanxuat !== $lenhSx) {
+                    $order->update(['lenh_sanxuat' => $lenhSx]);
+                }
+            }
 
             ProductionReport::create([
                 'cong_doan' => $group->first()->cong_doan,
                 'ngay_sx' => now()->toDateString(),
                 'ca' => '1',
-                'lenh_sx' => $lenhSxList,
+                'lenh_sx' => $lenhSx,
                 'mau' => $mauList,
                 'size' => $maHh,
                 'sl_dat' => $totalSlSanXuat > 0 ? $totalSlSanXuat : $totalSlDonHang,
@@ -435,7 +445,7 @@ class OrderTrackingController extends Controller
             // Cập nhật tất cả tracking trong nhóm
             foreach ($group as $tracking) {
                 $tracking->update(['cong_doan' => 'Đã chuyển SX']);
-                $tracking->order->updateStatusFromTracking();
+                $tracking->order?->updateStatusFromTracking();
             }
             $countGroup++;
         }
