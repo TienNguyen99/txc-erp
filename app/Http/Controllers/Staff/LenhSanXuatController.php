@@ -19,17 +19,28 @@ class LenhSanXuatController extends Controller
         // Tìm production report theo lenh_sx
         $reports = ProductionReport::where('lenh_sx', $lenhSx)->get();
 
-        // Nếu không tìm thấy report, thử tìm từ tracking_number
         $trackingNumber = null;
         $maHh = null;
+        $mau = null;
+        $orderTracking = null;
+
         if ($reports->isEmpty()) {
             // Parse lenh_sx: OT-XXXXXXXX-XXX/N → tracking = OT-XXXXXXXX-XXX
             if (str_contains($lenhSx, '/')) {
                 $parts = explode('/', $lenhSx);
                 $trackingNumber = $parts[0];
+            } else {
+                $trackingNumber = $lenhSx;
+            }
+            // Kiểm tra bảng order_tracking
+            $orderTracking = \App\Models\OrderTracking::where('tracking_number', $trackingNumber)->first();
+            if ($orderTracking) {
+                $maHh = $orderTracking->size;
+                $mau = $orderTracking->mau;
             }
         } else {
             $maHh = $reports->first()->size;
+            $mau = $reports->first()->mau;
             $trackingNumber = str_contains($lenhSx, '/') ? explode('/', $lenhSx)[0] : null;
         }
 
@@ -70,7 +81,9 @@ class LenhSanXuatController extends Controller
             'totalSlDat',
             'totalSlHu',
             'totalNhapKho',
-            'tonKho'
+            'tonKho',
+            'orderTracking',
+            'mau'
         ));
     }
 
