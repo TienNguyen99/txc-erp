@@ -415,6 +415,18 @@ class WarehouseTransactionController extends Controller
                 'lenh_sx'   => $request->lenh_sx,
                 'note'      => "Nhập theo lệnh SX",
             ]);
+
+            // Cập nhật ProductionReport liên quan thành NHAPKHO
+            \App\Models\ProductionReport::where('ma_hh', $row['ma_hh'])
+                ->where('lenh_sx', $request->lenh_sx)
+                ->when($row['size'] ?? null, function($q) use ($row) {
+                    $q->where('size', $row['size']);
+                })
+                ->when($row['mau'] ?? null, function($q) use ($row) {
+                    $q->where('mau', $row['mau']);
+                })
+                ->update(['cong_doan' => 'NHAPKHO']);
+
             $count++;
         }
 

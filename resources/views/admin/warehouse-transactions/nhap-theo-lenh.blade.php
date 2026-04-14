@@ -52,6 +52,18 @@
                         Chỉ cần điền <strong>SL nhập</strong>, các dòng SL = 0 sẽ bỏ qua.
                     </div>
 
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Nhập tổng SL cho tất cả mã hàng</label>
+                        <div class="input-group" style="max-width:220px">
+                            <input type="number" step="0.01" min="0" id="input-total-qty"
+                                class="form-control form-control-sm text-end" placeholder="Nhập tổng SL...">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyTotalQty()">Áp
+                                dụng</button>
+                        </div>
+                        <small class="text-muted">Nhập số lượng vào ô này để tự động điền cho tất cả các dòng bên
+                            dưới.</small>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered align-middle">
                             <thead class="table-dark">
@@ -89,7 +101,7 @@
                                         <td style="background:#f0fff0">
                                             <input type="number" step="0.01" min="0"
                                                 name="rows[{{ $i }}][so_luong]"
-                                                class="form-control form-control-sm text-end" placeholder="0"
+                                                class="form-control form-control-sm text-end input-row-qty" placeholder="0"
                                                 value="">
                                         </td>
                                     </tr>
@@ -103,6 +115,15 @@
                             <i class="fa-solid fa-save me-1"></i>Nhập kho
                         </button>
                     </div>
+
+                    <script>
+                        function applyTotalQty() {
+                            var total = document.getElementById('input-total-qty').value;
+                            document.querySelectorAll('.input-row-qty').forEach(function(input) {
+                                input.value = total;
+                            });
+                        }
+                    </script>
                 </form>
             @elseif ($lenhSx)
                 <div class="alert alert-warning">
