@@ -35,6 +35,8 @@
         </div>
 
         <div class="card-page">
+            @include('admin.partials.alert')
+
             {{-- ═══ THỐNG KÊ TỔNG ═══ --}}
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
@@ -89,13 +91,28 @@
             {{-- ═══ BẢNG TIẾN ĐỘ THEO MÃ HH ═══ --}}
             @if ($summary->count())
                 <div class="mb-4">
-                    <h6 class="fw-bold text-primary mb-2">
-                        <i class="fa-solid fa-chart-bar me-1"></i>Tiến độ sản xuất theo Mã HH
-                    </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-primary mb-0">
+                            <i class="fa-solid fa-chart-bar me-1"></i>Tiến độ sản xuất theo Mã HH
+                            <span class="badge bg-dark ms-1">Lệnh tổng: {{ $trackingNumber }}</span>
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#modalBatchLenhSx">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Tạo lệnh SX
+                            </button>
+                            <a href="{{ route('admin.order-tracking.export-lenh-sx', $trackingNumber) }}"
+                                class="btn btn-success btn-sm">
+                                <i class="fa-solid fa-file-excel me-1"></i>In lệnh SX (Excel)
+                            </a>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered align-middle mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    <th class="text-center">STT</th>
+                                    <th>Lệnh SX</th>
                                     <th>Mã HH</th>
                                     <th class="text-center">Số PO</th>
                                     <th class="text-end">Cần giao</th>
@@ -107,7 +124,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($summary->sortByDesc('thieu') as $row)
+                                @foreach ($summary->sortBy('stt') as $row)
                                     @php
                                         $diff = $row->ton_kho - $row->tong_qty;
                                         $pctKho =
@@ -123,15 +140,11 @@
                                                 : 0;
                                     @endphp
                                     <tr>
-                                        <td class="fw-semibold">
-                                            {{ $row->ma_hh ?: '—' }}
-                                            <!-- Nút tạo lệnh sản xuất -->
-                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}">
-                                                <i class="fa-solid fa-plus"></i> Lệnh SX
-                                            </button>
+                                        <td class="text-center fw-bold">{{ $row->stt }}</td>
+                                        <td>
+                                            <span class="badge bg-primary" style="font-size:.8rem">{{ $row->lenh_sx }}</span>
                                         </td>
+                                        <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
                                         <td class="text-center">{{ $row->so_don }}</td>
                                         <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
                                         <td
@@ -195,80 +208,9 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-
-                            <!-- Modal tạo lệnh sản xuất cho từng mã HH -->
-                            @foreach ($summary->sortByDesc('thieu') as $row)
-                                <div class="modal fade" id="modalCreateLenhSx_{{ Str::slug($row->ma_hh) }}"
-                                    tabindex="-1" aria-labelledby="modalLabel_{{ Str::slug($row->ma_hh) }}"
-                                    aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <form method="POST" action="{{ route('admin.production-reports.store') }}">
-                                                @csrf
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="modalLabel_{{ Str::slug($row->ma_hh) }}">
-                                                        Tạo lệnh sản xuất cho {{ $row->ma_hh }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <input type="hidden" name="size" value="{{ $row->ma_hh }}">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Công đoạn</label>
-                                                        <select name="cong_doan" class="form-select" required>
-                                                            <option value="Dệt">Dệt</option>
-                                                            <option value="Định hình">Định hình</option>
-                                                            <option value="Đã nhập kho">Nhập kho</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Ngày SX</label>
-                                                        <input type="date" name="ngay_sx" class="form-control"
-                                                            value="{{ date('Y-m-d') }}" required>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Ca</label>
-                                                        <select name="ca" class="form-select">
-                                                            <option value="1">Ca 1</option>
-                                                            <option value="2">Ca 2</option>
-                                                            <option value="3">Ca 3</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Lệnh SX</label>
-                                                        <input type="text" name="lenh_sx" class="form-control"
-                                                            value="{{ $trackingNumber }}-{{ $row->ma_hh }}">
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Màu</label>
-                                                        <input type="text" name="mau" class="form-control"
-                                                            value="">
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Số lượng đạt</label>
-                                                        <input type="number" step="any" name="sl_dat"
-                                                            class="form-control" value="{{ $row->tong_qty }}" required>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Số lượng hư</label>
-                                                        <input type="number" step="any" name="sl_hu"
-                                                            class="form-control" value="0">
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Đóng</button>
-                                                    <button type="submit" class="btn btn-primary">Lưu lệnh SX</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                            </tbody>
                             <tfoot class="table-dark fw-bold">
                                 <tr>
-                                    <td>Tổng ({{ $summary->count() }} mã)</td>
+                                    <td colspan="3">Tổng ({{ $summary->count() }} mã)</td>
                                     <td class="text-center">{{ $summary->sum('so_don') }}</td>
                                     <td class="text-end">{{ number_format($summary->sum('tong_qty'), 2) }}</td>
                                     <td class="text-end">{{ number_format($summary->sum('sl_production'), 2) }}</td>
@@ -279,6 +221,123 @@
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+                </div>
+
+                {{-- ═══ MODAL TẠO LỆNH SX BATCH ═══ --}}
+                <div class="modal fade" id="modalBatchLenhSx" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ route('admin.order-tracking.create-production-batch') }}">
+                                @csrf
+                                <input type="hidden" name="tracking_number" value="{{ $trackingNumber }}">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fa-solid fa-industry me-2"></i>Tạo lệnh sản xuất — {{ $trackingNumber }}
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    {{-- Thông tin chung --}}
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Công đoạn</label>
+                                            <select name="cong_doan" class="form-select" required>
+                                                <option value="Dệt">Dệt</option>
+                                                <option value="Định hình">Định hình</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Ngày SX</label>
+                                            <input type="date" name="ngay_sx" class="form-control"
+                                                value="{{ date('Y-m-d') }}" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Ca</label>
+                                            <select name="ca" class="form-select">
+                                                <option value="1">Ca 1</option>
+                                                <option value="2">Ca 2</option>
+                                                <option value="3">Ca 3</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">% Hao hụt</label>
+                                            <input type="number" step="0.1" min="0" max="100" name="pct_hao_hut"
+                                                class="form-control" value="10" id="pctHaoHut">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button type="button" class="btn btn-outline-primary btn-sm w-100" id="btnApplyHaoHut">
+                                                <i class="fa-solid fa-calculator me-1"></i>Áp dụng %
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {{-- Bảng chọn mã HH --}}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered align-middle mb-0" id="tblBatchSx">
+                                            <thead class="table-primary">
+                                                <tr>
+                                                    <th class="text-center" style="width:40px">
+                                                        <input type="checkbox" id="checkAllBatch" checked>
+                                                    </th>
+                                                    <th class="text-center">STT</th>
+                                                    <th>Lệnh SX</th>
+                                                    <th>Mã HH</th>
+                                                    <th class="text-end">SL Cần giao</th>
+                                                    <th class="text-end">Tồn kho</th>
+                                                    <th class="text-end">Thiếu</th>
+                                                    <th class="text-end" style="min-width:120px">SL Sản xuất</th>
+                                                    <th class="text-end" style="min-width:120px">SL + %HH</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($summary->sortBy('stt') as $row)
+                                                    @php $thieu = max(0, $row->tong_qty - $row->ton_kho); @endphp
+                                                    <tr>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" name="items[{{ $loop->index }}][selected]"
+                                                                value="1" class="batch-check" checked>
+                                                        </td>
+                                                        <td class="text-center fw-bold">{{ $row->stt }}</td>
+                                                        <td>
+                                                            <input type="hidden" name="items[{{ $loop->index }}][lenh_sx]"
+                                                                value="{{ $row->lenh_sx }}">
+                                                            <span class="badge bg-primary">{{ $row->lenh_sx }}</span>
+                                                        </td>
+                                                        <td class="fw-semibold">
+                                                            <input type="hidden" name="items[{{ $loop->index }}][ma_hh]"
+                                                                value="{{ $row->ma_hh }}">
+                                                            {{ $row->ma_hh }}
+                                                        </td>
+                                                        <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
+                                                        <td class="text-end text-success">{{ number_format($row->ton_kho, 2) }}</td>
+                                                        <td class="text-end {{ $thieu > 0 ? 'text-danger fw-bold' : 'text-muted' }}">
+                                                            {{ number_format($thieu, 2) }}
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <input type="number" step="0.01" min="0"
+                                                                name="items[{{ $loop->index }}][sl_dat]"
+                                                                value="{{ $row->tong_qty }}"
+                                                                class="form-control form-control-sm text-end sl-dat-input"
+                                                                data-base="{{ $row->tong_qty }}">
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <span class="sl-plus-hh fw-bold text-primary">{{ number_format($row->tong_qty * 1.10, 2) }}</span>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-check me-1"></i>Tạo lệnh SX ({{ $summary->count() }} mã)
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -425,4 +484,43 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        // Check All batch
+        document.getElementById('checkAllBatch')?.addEventListener('change', function() {
+            document.querySelectorAll('.batch-check').forEach(cb => cb.checked = this.checked);
+        });
+
+        // Áp dụng % hao hụt
+        function applyHaoHut() {
+            const pct = parseFloat(document.getElementById('pctHaoHut')?.value || 10);
+            document.querySelectorAll('#tblBatchSx .sl-dat-input').forEach(input => {
+                const base = parseFloat(input.dataset.base) || 0;
+                const slPlusHh = base * (1 + pct / 100);
+                const row = input.closest('tr');
+                row.querySelector('.sl-plus-hh').textContent = slPlusHh.toLocaleString('en', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            });
+        }
+        document.getElementById('btnApplyHaoHut')?.addEventListener('click', applyHaoHut);
+
+        // Khi thay đổi SL sản xuất → cập nhật SL + %HH
+        document.querySelectorAll('#tblBatchSx .sl-dat-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const pct = parseFloat(document.getElementById('pctHaoHut')?.value || 10);
+                const val = parseFloat(this.value) || 0;
+                const slPlusHh = val * (1 + pct / 100);
+                const row = this.closest('tr');
+                row.querySelector('.sl-plus-hh').textContent = slPlusHh.toLocaleString('en', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                this.dataset.base = val;
+            });
+        });
+    </script>
 @endsection

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Exports\LenhSanXuatExport;
 use App\Models\Order;
 use App\Models\OrderTracking;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrderTrackingController extends Controller
 {
@@ -254,7 +256,14 @@ class OrderTrackingController extends Controller
                 'stage_breakdown' => $stageBreakdown,
                 'total_progress' => $totalQty > 0 ? min(100, round(($tonKho + $slProduction) / $totalQty * 100)) : 0,
             ];
-        })->values();
+        })->values()->sortBy('ma_hh')->values();
+
+        // Gán số thứ tự lệnh con theo ma_hh tăng dần
+        $summary = $summary->map(function ($row, $index) use ($trackingNumber) {
+            $row->stt = $index + 1;
+            $row->lenh_sx = $trackingNumber . '/' . ($index + 1);
+            return $row;
+        });
 
         // Thống kê tổng
         $stats = (object) [
@@ -417,12 +426,14 @@ class OrderTrackingController extends Controller
         $stt = 1;
         // Lấy tracking_number tổng từ tracking đầu tiên
         $trackingNumber = $trackings->first()->tracking_number ?? null;
+        // Sắp xếp theo ma_hh tăng dần trước khi gán số thứ tự
+        $grouped = $grouped->sortKeys();
         foreach ($grouped as $maHh => $group) {
             $totalSlSanXuat = $group->sum('sl_san_xuat');
             $totalSlDonHang = $group->sum('sl_don_hang');
 
             $mauList = $group->pluck('mau')->unique()->filter()->implode(', ');
-            // Sinh mã lệnh con: {tracking_number}/{stt}
+            // Sinh mã lệnh con: {tracking_number}/{stt} theo ma_hh tăng dần
             $lenhSx = $trackingNumber ? ($trackingNumber . '/' . $stt) : ('LENH/' . $stt);
 
             // Gán lại cho tất cả order trong nhóm
@@ -567,5 +578,78 @@ class OrderTrackingController extends Controller
             return redirect()->back()->with('warning', $msg);
         }
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Tạo lệnh SX batch — từ modal trên trang lot.
+     * Tạo production_reports cho từng ma_hh đã chọn.
+     */
+    public function createProductionBatch(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string',
+            'cong_doan'       => 'required|string',
+            'ngay_sx'         => 'required|date',
+            'ca'              => 'nullable|string',
+            'pct_hao_hut'     => 'nullable|numeric|min:0|max:100',
+            'items'           => 'required|array|min:1',
+            'items.*.ma_hh'   => 'required|string',
+            'items.*.lenh_sx' => 'required|string',
+            'items.*.sl_dat'  => 'required|numeric|min:0',
+        ]);
+
+        $trackingNumber = $request->tracking_number;
+        $count = 0;
+
+        foreach ($request->items as $item) {
+            // Chỉ tạo cho các mục đã checked
+            if (!isset($item['selected'])) {
+                continue;
+            }
+
+            $lenhSx = $item['lenh_sx'];
+            $maHh = $item['ma_hh'];
+            $slDat = floatval($item['sl_dat']);
+
+            if ($slDat <= 0) continue;
+
+            // Lấy màu từ orders
+            $mauList = Order::where('ma_hh', $maHh)
+                ->whereHas('tracking', fn($q) => $q->where('tracking_number', $trackingNumber))
+                ->pluck('color')->unique()->filter()->implode(', ');
+
+            ProductionReport::create([
+                'cong_doan' => $request->cong_doan,
+                'ngay_sx'   => $request->ngay_sx,
+                'ca'        => $request->ca ?? '1',
+                'lenh_sx'   => $lenhSx,
+                'mau'       => $mauList,
+                'size'      => $maHh,
+                'sl_dat'    => $slDat,
+                'sl_hu'     => 0,
+            ]);
+
+            // Cập nhật lenh_sanxuat cho tất cả orders với ma_hh này trong tracking
+            $orderIds = OrderTracking::where('tracking_number', $trackingNumber)
+                ->whereHas('order', fn($q) => $q->where('ma_hh', $maHh))
+                ->pluck('order_id');
+            Order::whereIn('id', $orderIds)->update(['lenh_sanxuat' => $lenhSx]);
+
+            $count++;
+        }
+
+        return redirect()->route('admin.order-tracking.lot', $trackingNumber)
+            ->with('success', "Đã tạo {$count} lệnh SX con cho lệnh tổng {$trackingNumber}.");
+    }
+
+    /**
+     * Xuất Excel lệnh sản xuất.
+     */
+    public function exportLenhSx(string $trackingNumber)
+    {
+        $pctHaoHut = request('pct_hao_hut', 10);
+        $filename = 'LENH_SX_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
+
+        return Excel::download(new LenhSanXuatExport($trackingNumber, $pctHaoHut), $filename);
     }
 }

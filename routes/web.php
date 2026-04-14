@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\WarehouseTransactionController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
+use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +64,10 @@ Route::middleware('auth')->group(function () {
                ->name('order-tracking.bulk-delete');
           Route::post('order-tracking/ship-from-stock', [OrderTrackingController::class, 'shipFromStock'])
                ->name('order-tracking.ship-from-stock');
+          Route::post('order-tracking/create-production-batch', [OrderTrackingController::class, 'createProductionBatch'])
+               ->name('order-tracking.create-production-batch');
+          Route::get('order-tracking/export-lenh-sx/{trackingNumber}', [OrderTrackingController::class, 'exportLenhSx'])
+               ->name('order-tracking.export-lenh-sx');
           Route::resource('order-tracking', OrderTrackingController::class)
                ->parameters(['order-tracking' => 'orderTracking']);
 
@@ -115,3 +120,8 @@ Route::middleware('auth')->group(function () {
      });
 });
 require __DIR__ . '/auth.php';
+
+// ═══ Public QR Scan Routes (không cần auth) ═══
+Route::get('lenh-sx/{lenhSx}', [LenhSanXuatController::class, 'scan'])->where('lenhSx', '.*')->name('lenh-sx.scan');
+Route::post('lenh-sx/{lenhSx}/report', [LenhSanXuatController::class, 'report'])->where('lenhSx', '.*')->name('lenh-sx.report');
+Route::post('lenh-sx/{lenhSx}/nhap-kho', [LenhSanXuatController::class, 'nhapKho'])->where('lenhSx', '.*')->name('lenh-sx.nhap-kho');
