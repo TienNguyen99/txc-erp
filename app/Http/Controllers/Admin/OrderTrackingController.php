@@ -414,16 +414,18 @@ class OrderTrackingController extends Controller
 
 
         $countGroup = 0;
+        $stt = 1;
+        // Lấy tracking_number tổng từ tracking đầu tiên
+        $trackingNumber = $trackings->first()->tracking_number ?? null;
         foreach ($grouped as $maHh => $group) {
             $totalSlSanXuat = $group->sum('sl_san_xuat');
             $totalSlDonHang = $group->sum('sl_don_hang');
 
             $mauList = $group->pluck('mau')->unique()->filter()->implode(', ');
-            // Lấy duy nhất 1 mã lệnh sản xuất cho nhóm: ưu tiên order->lenh_sanxuat, nếu chưa có thì lấy order->job_no
-            $firstOrder = $group->first()->order;
-            $lenhSx = $firstOrder->lenh_sanxuat ?: $firstOrder->job_no;
+            // Sinh mã lệnh con: {tracking_number}/{stt}
+            $lenhSx = $trackingNumber ? ($trackingNumber . '/' . $stt) : ('LENH/' . $stt);
 
-            // Gán lại cho tất cả order trong nhóm nếu chưa có
+            // Gán lại cho tất cả order trong nhóm
             foreach ($group as $tracking) {
                 $order = $tracking->order;
                 if ($order && $order->lenh_sanxuat !== $lenhSx) {
@@ -448,6 +450,7 @@ class OrderTrackingController extends Controller
                 $tracking->order?->updateStatusFromTracking();
             }
             $countGroup++;
+            $stt++;
         }
 
         return redirect()->back()->with(
