@@ -30,7 +30,7 @@ class OrderController extends Controller
                   ->when($request->no_pl, fn($q) => $q->where(fn($q2) => $q2->whereNull('pl_number')->orWhere('pl_number', '')));
         }
 
-        $data = $query->latest()->paginate(100)->withQueryString();
+        $data = $query->latest()->paginate(1000)->withQueryString();
         return view('admin.orders.index', compact('data'));
     }
 

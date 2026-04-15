@@ -101,15 +101,20 @@ class OrderTrackingController extends Controller
         }
 
         // Danh sách tracking (phân trang)
-        $data = OrderTracking::with('order')
+        $dataQuery = OrderTracking::with('order')
             ->when(!empty($plFilter), fn($q) => $q->whereHas('order', fn($oq) => $oq->whereIn('pl_number', $plFilter)))
             ->when(!empty($chartFilter), fn($q) => $q->whereHas('order', fn($oq) => $oq->whereIn('chart', $chartFilter)))
             ->when($request->search, fn($q, $s) => $q->where(function ($sub) use ($s) {
                 $sub->where('pl_number', 'like', "%$s%")
                     ->orWhere('mau', 'like', "%$s%")
                     ->orWhere('size', 'like', "%$s%");
-            }))
-            ->latest()->paginate(15)->withQueryString();
+            }));
+
+        if (auth()->check() && auth()->user()->isStaff()) {
+            $dataQuery->where('da_tao_lenh_sx', true);
+        }
+
+        $data = $dataQuery->latest()->paginate(15)->withQueryString();
 
         $allOrders = Order::pluck('job_no', 'id');
         $stages = OrderTracking::STAGES;
@@ -436,12 +441,14 @@ class OrderTrackingController extends Controller
             // Sinh mã lệnh con: {tracking_number}/{stt} theo ma_hh tăng dần
             $lenhSx = $trackingNumber ? ($trackingNumber . '/' . $stt) : ('LENH/' . $stt);
 
-            // Gán lại cho tất cả order trong nhóm
+            // Gán lại cho tất cả order trong nhóm và gán tracking_number_child giống nhau
             foreach ($group as $tracking) {
                 $order = $tracking->order;
                 if ($order && $order->lenh_sanxuat !== $lenhSx) {
                     $order->update(['lenh_sanxuat' => $lenhSx]);
                 }
+                // Gán tracking_number_child giống nhau cho tất cả tracking trong nhóm
+                $tracking->update(['tracking_number_child' => $lenhSx]);
             }
 
             ProductionReport::create([
@@ -588,58 +595,31 @@ class OrderTrackingController extends Controller
     {
         $request->validate([
             'tracking_number' => 'required|string',
-            'cong_doan'       => 'required|string',
-            'ngay_sx'         => 'required|date',
-            'ca'              => 'nullable|string',
-            'pct_hao_hut'     => 'nullable|numeric|min:0|max:100',
             'items'           => 'required|array|min:1',
             'items.*.ma_hh'   => 'required|string',
-            'items.*.lenh_sx' => 'required|string',
-            'items.*.sl_dat'  => 'required|numeric|min:0',
         ]);
 
         $trackingNumber = $request->tracking_number;
         $count = 0;
 
         foreach ($request->items as $item) {
-            // Chỉ tạo cho các mục đã checked
-            if (!isset($item['selected'])) {
-                continue;
-            }
-
-            $lenhSx = $item['lenh_sx'];
             $maHh = $item['ma_hh'];
-            $slDat = floatval($item['sl_dat']);
-
-            if ($slDat <= 0) continue;
-
-            // Lấy màu từ orders
-            $mauList = Order::where('ma_hh', $maHh)
-                ->whereHas('tracking', fn($q) => $q->where('tracking_number', $trackingNumber))
-                ->pluck('color')->unique()->filter()->implode(', ');
-
-            ProductionReport::create([
-                'cong_doan' => $request->cong_doan,
-                'ngay_sx'   => $request->ngay_sx,
-                'ca'        => $request->ca ?? '1',
-                'lenh_sx'   => $lenhSx,
-                'mau'       => $mauList,
-                'size'      => $maHh,
-                'sl_dat'    => $slDat,
-                'sl_hu'     => 0,
-            ]);
-
-            // Cập nhật lenh_sanxuat cho tất cả orders với ma_hh này trong tracking
-            $orderIds = OrderTracking::where('tracking_number', $trackingNumber)
-                ->whereHas('order', fn($q) => $q->where('ma_hh', $maHh))
-                ->pluck('order_id');
-            Order::whereIn('id', $orderIds)->update(['lenh_sanxuat' => $lenhSx]);
-
-            $count++;
+            if (isset($item['selected'])) {
+                // Nếu được chọn, đánh dấu đã lên lệnh SX
+                $affected = OrderTracking::where('tracking_number', $trackingNumber)
+                    ->where('size', $maHh)
+                    ->update(['da_tao_lenh_sx' => true]);
+                $count += $affected;
+            } else {
+                // Nếu không được chọn, bỏ đánh dấu đã lên lệnh SX
+                OrderTracking::where('tracking_number', $trackingNumber)
+                    ->where('size', $maHh)
+                    ->update(['da_tao_lenh_sx' => false]);
+            }
         }
 
         return redirect()->route('admin.order-tracking.lot', $trackingNumber)
-            ->with('success', "Đã tạo {$count} lệnh SX con cho lệnh tổng {$trackingNumber}.");
+            ->with('success', "Đã đánh dấu {$count} lệnh đã tạo lệnh SX.");
     }
 
     /**

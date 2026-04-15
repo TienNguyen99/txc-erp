@@ -495,6 +495,10 @@
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif
+                                        @if ($item->da_tao_lenh_sx)
+                                            <span class="badge bg-success ms-1" style="font-size:.75rem"><i
+                                                    class="fa-solid fa-check"></i> Đã lên lệnh</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($item->pl_number)
