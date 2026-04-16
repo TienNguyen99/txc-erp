@@ -71,7 +71,9 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
 
                 // --- Lấy dữ liệu ---
                 $trackings = OrderTracking::with('order')
-                    ->where('tracking_number', $this->trackingNumber)->get();
+                    ->where('tracking_number', $this->trackingNumber)
+                    ->where('da_tao_lenh_sx', true)
+                    ->get();
                 $orderIds = $trackings->pluck('order_id')->unique();
                 $orders = Order::with('khachHang')->whereIn('id', $orderIds)->get();
 

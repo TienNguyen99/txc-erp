@@ -90,19 +90,33 @@
         .history-item:last-child {
             border-bottom: none;
         }
+
+        .back-link {
+            color: rgba(255,255,255,.8);
+            text-decoration: none;
+            font-size: .85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            margin-bottom: .5rem;
+        }
+        .back-link:hover {
+            color: #fff;
+        }
     </style>
 </head>
 
 <body>
     {{-- Header --}}
     <div class="scan-header text-center">
+        <a href="{{ route('lenh-sx.index', $trackingNumber) }}" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+        </a>
         <div style="font-size:.75rem;opacity:.8">LỆNH SẢN XUẤT</div>
         <h4 class="fw-bold mb-1">{{ $lenhSx }}</h4>
-        @if ($trackingNumber)
-            <div style="font-size:.8rem;opacity:.8">
-                <i class="fa-solid fa-layer-group me-1"></i>{{ $trackingNumber }}
-            </div>
-        @endif
+        <div style="font-size:.8rem;opacity:.8">
+            <i class="fa-solid fa-layer-group me-1"></i>{{ $trackingNumber }}
+        </div>
         @if ($maHh)
             <div class="mt-1">
                 <span class="badge bg-white text-primary" style="font-size:.85rem">{{ $maHh }}</span>
@@ -137,6 +151,14 @@
                 <div class="info-item">
                     <div class="label">Tên hàng hóa</div>
                     <div class="value">{{ $hangHoa?->ten_hh ?: '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Màu</div>
+                    <div class="value">{{ $mau ?: '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">SL đơn hàng</div>
+                    <div class="value">{{ number_format($totalSlDonHang, 0) }}</div>
                 </div>
                 <div class="info-item">
                     <div class="label">SL đã SX</div>
@@ -181,7 +203,7 @@
             {{-- TAB: BÁO CÁO SX --}}
             <div class="tab-pane fade show active" id="tabSX" role="tabpanel">
                 <div class="scan-card">
-                    <form method="POST" action="{{ route('lenh-sx.report', $lenhSx) }}">
+                    <form method="POST" action="{{ route('lenh-sx.report', [$trackingNumber, $stt]) }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Công đoạn</label>
@@ -255,7 +277,7 @@
             {{-- TAB: NHẬP KHO --}}
             <div class="tab-pane fade" id="tabNhapKho" role="tabpanel">
                 <div class="scan-card">
-                    <form method="POST" action="{{ route('lenh-sx.nhap-kho', $lenhSx) }}">
+                    <form method="POST" action="{{ route('lenh-sx.nhap-kho', [$trackingNumber, $stt]) }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Mã hàng</label>
@@ -311,16 +333,6 @@
                 @endif
             </div>
         </div>
-
-        @if ($reports->isEmpty())
-            <div class="scan-card text-center">
-                <i class="fa-solid fa-circle-info text-warning" style="font-size:2rem"></i>
-                <p class="mt-2 mb-0 text-muted" style="font-size:.85rem">
-                    Chưa có lệnh SX nào cho mã <strong>{{ $lenhSx }}</strong>.<br>
-                    Vui lòng liên hệ quản lý để tạo lệnh.
-                </p>
-            </div>
-        @endif
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

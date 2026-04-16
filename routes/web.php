@@ -122,6 +122,7 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 // ═══ Public QR Scan Routes (không cần auth) ═══
-Route::get('lenh-sx/{lenhSx}', [LenhSanXuatController::class, 'scan'])->where('lenhSx', '.*')->name('lenh-sx.scan');
-Route::post('lenh-sx/{lenhSx}/report', [LenhSanXuatController::class, 'report'])->where('lenhSx', '.*')->name('lenh-sx.report');
-Route::post('lenh-sx/{lenhSx}/nhap-kho', [LenhSanXuatController::class, 'nhapKho'])->where('lenhSx', '.*')->name('lenh-sx.nhap-kho');
+Route::get('lenh-sx/{trackingNumber}', [LenhSanXuatController::class, 'index'])->name('lenh-sx.index');
+Route::get('lenh-sx/{trackingNumber}/{stt}', [LenhSanXuatController::class, 'scan'])->where('stt', '[0-9]+')->name('lenh-sx.scan');
+Route::post('lenh-sx/{trackingNumber}/{stt}/report', [LenhSanXuatController::class, 'report'])->where('stt', '[0-9]+')->name('lenh-sx.report');
+Route::post('lenh-sx/{trackingNumber}/{stt}/nhap-kho', [LenhSanXuatController::class, 'nhapKho'])->where('stt', '[0-9]+')->name('lenh-sx.nhap-kho');
