@@ -138,7 +138,7 @@
             </div>
         </div>
 
-        {{-- ═══ SOẠN HÀNG — Trừ tồn tuần tự theo ma_hh ═══ --}}
+        {{-- ═══ SOẠN HÀNG — Phân theo lô giao (tracking_number) ═══ --}}
         <div class="card-page mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 fw-bold" style="color:#1e3a5f">
@@ -153,6 +153,56 @@
                 </div>
             </div>
 
+            {{-- Filter theo tracking_number --}}
+            <form method="GET" class="row g-2 mb-3 align-items-end">
+                {{-- Giữ lại params khác --}}
+                @if (request('search')) <input type="hidden" name="search" value="{{ request('search') }}"> @endif
+                @if (request('cong_doan')) <input type="hidden" name="cong_doan" value="{{ request('cong_doan') }}"> @endif
+                @if (request('thang')) <input type="hidden" name="thang" value="{{ request('thang') }}"> @endif
+                @if (request('nam')) <input type="hidden" name="nam" value="{{ request('nam') }}"> @endif
+
+                <div class="col-md-3">
+                    <label class="form-label mb-0" style="font-size:.8rem">
+                        <i class="fa-solid fa-truck-fast me-1"></i>Lô giao (Tracking Number)
+                    </label>
+                    <select name="tracking_filter" id="trackingFilterSelect" class="form-select form-select-sm">
+                        <option value="">-- Tất cả lô --</option>
+                        @foreach ($availableTrackings as $tn)
+                            <option value="{{ $tn }}" {{ $selectedTracking === $tn ? 'selected' : '' }}>
+                                {{ $tn }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="fa-solid fa-filter me-1"></i>Lọc lô
+                    </button>
+                    @if ($selectedTracking)
+                        <a href="{{ route('admin.warehouse-transactions.index', request()->except('tracking_filter')) }}"
+                            class="btn btn-outline-secondary btn-sm ms-1">
+                            <i class="fa-solid fa-rotate-left me-1"></i>Xem tất cả
+                        </a>
+                    @endif
+                </div>
+                @if ($selectedTracking)
+                    <div class="col-auto ms-auto">
+                        <a href="{{ route('admin.warehouse-transactions.export-packing-list', ['tracking_number' => $selectedTracking]) }}"
+                            class="btn btn-dark btn-sm">
+                            <i class="fa-solid fa-file-invoice me-1"></i>Export Packing List: {{ $selectedTracking }}
+                        </a>
+                    </div>
+                @endif
+            </form>
+
+            @if ($selectedTracking)
+                <div class="alert alert-info py-2 mb-3" style="font-size:.85rem">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Đang hiển thị lô: <strong>{{ $selectedTracking }}</strong>
+                    — Bảng sắp xếp theo <strong>Mã HH → FTY PO</strong> giống file Packing List.
+                </div>
+            @endif
+
             @if ($soanHang->count())
                 <form id="xuatKhoForm" method="POST" action="{{ route('admin.warehouse-transactions.xuat-hang-loat') }}">
                     @csrf
@@ -162,9 +212,10 @@
                                 <tr class="text-center">
                                     <th style="width:35px"><input type="checkbox" id="checkAllSoan"></th>
                                     <th>Mã HH</th>
-                                    <th>PL Number</th>
-                                    <th>FTY PO</th>
+                                    <th>Tên SP / Description</th>
                                     <th>Job No</th>
+                                    <th>FTY PO</th>
+                                    <th>PL Number</th>
                                     <th>Màu</th>
                                     <th>Công đoạn</th>
                                     <th>Cần xuất</th>
@@ -182,7 +233,7 @@
                                 @foreach ($soanHang as $idx => $row)
                                     {{-- Separator giữa các nhóm ma_hh --}}
                                     @if ($prevMaHh !== null && $prevMaHh !== $row->ma_hh)
-                                        <tr><td colspan="15" style="height:4px;background:#1e3a5f;padding:0;border:none"></td></tr>
+                                        <tr><td colspan="16" style="height:4px;background:#1e3a5f;padding:0;border:none"></td></tr>
                                     @endif
                                     @php $prevMaHh = $row->ma_hh; @endphp
                                     <tr class="@if($row->trang_thai === 'du') table-success @elseif($row->trang_thai === 'thieu_1_phan') @elseif($row->trang_thai === 'thieu') table-danger @endif"
@@ -202,9 +253,10 @@
                                             @endif
                                         </td>
                                         <td class="fw-bold">{{ $row->ma_hh }}</td>
-                                        <td><small>{{ $row->pl_number }}</small></td>
-                                        <td><small>{{ $row->fty_po ?? '' }}</small></td>
+                                        <td><small>{{ $row->ten_hh ?: $row->im_number }}</small></td>
                                         <td><small>{{ $row->job_no }}</small></td>
+                                        <td><small>{{ $row->fty_po ?? '' }}</small></td>
+                                        <td><small>{{ $row->pl_number }}</small></td>
                                         <td>{{ $row->mau }}</td>
                                         <td>
                                             <span
@@ -272,7 +324,7 @@
                             </tbody>
                             <tfoot class="table-light fw-bold">
                                 <tr>
-                                    <td colspan="7" class="text-end">TỔNG:</td>
+                                    <td colspan="8" class="text-end">TỔNG:</td>
                                     <td class="text-end">{{ number_format($soanHang->sum('can_xuat'), 2) }}</td>
                                     <td></td>
                                     <td class="text-end text-success">{{ number_format($soanHang->sum('cap_duoc'), 2) }}</td>
@@ -295,7 +347,13 @@
                     </div>
                 </form>
             @else
-                <p class="text-muted text-center mb-0">Không có phiếu nào cần soạn hàng.</p>
+                <p class="text-muted text-center mb-0">
+                    @if ($selectedTracking)
+                        Không có phiếu nào cần soạn hàng cho lô <strong>{{ $selectedTracking }}</strong>.
+                    @else
+                        Không có phiếu nào cần soạn hàng.
+                    @endif
+                </p>
             @endif
         </div>
 

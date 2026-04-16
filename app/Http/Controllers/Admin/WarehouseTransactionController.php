@@ -25,12 +25,25 @@ class WarehouseTransactionController extends Controller
                     ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
                     ->latest()->paginate(15)->withQueryString();
 
-        // ═══ SOẠN HÀNG: Mỗi OrderTracking = 1 phiếu xuất kho ═══
-        // Lấy tracking chưa giao, có order chưa shipped
+        // ═══ SOẠN HÀNG: Phân theo tracking_number (lô giao) ═══
+        // Danh sách tracking_number có sẵn (chưa giao hết)
+        $availableTrackings = OrderTracking::select('tracking_number')
+            ->where('cong_doan', '!=', 'Đã giao')
+            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
+                ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
+            ->distinct()
+            ->pluck('tracking_number')
+            ->sort()
+            ->values();
+
+        $selectedTracking = $request->input('tracking_filter', '');
+
+        // Lấy tracking theo lô đã chọn (hoặc tất cả nếu không filter)
         $trackings = OrderTracking::with('order')
             ->where('cong_doan', '!=', 'Đã giao')
             ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
                 ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
+            ->when($selectedTracking, fn($q) => $q->where('tracking_number', $selectedTracking))
             ->get();
 
         // Tính tồn kho 1 lần cho mỗi ma_hh (tránh N+1)
@@ -50,20 +63,27 @@ class WarehouseTransactionController extends Controller
                 ->sum('sl_dat');
         }
 
-        // ═══ Trừ tồn tuần tự theo ma_hh từ trên xuống ═══
-        // Bước 1: Map dữ liệu cơ bản cho mỗi tracking
-        $soanHangRaw = $trackings->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
+        // ═══ Sắp xếp theo ma_hh rồi fty_po (giống Packing List) ═══
+        $soanHangRaw = $trackings->sortBy([
+            fn($a, $b) => strcmp($a->order->ma_hh ?? '', $b->order->ma_hh ?? ''),
+            fn($a, $b) => strcmp($a->order->fty_po ?? '', $b->order->fty_po ?? ''),
+        ])->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
             $order  = $tracking->order;
             $maHh   = $order->ma_hh;
             $canXuat = $tracking->sl_don_hang ?? $order->yrd ?? 0;
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
 
             return (object) [
                 'tracking_id'   => $tracking->id,
                 'ma_hh'         => $maHh,
+                'ten_hh'        => $hangHoa?->ten_hh ?? '',
+                'nhom_hh'       => $hangHoa?->nhom_hh ?? '',
+                'dinh_muc_thung' => $hangHoa?->dinh_muc_thung ?? null,
                 'pl_number'     => $tracking->pl_number ?? $order->pl_number,
                 'chart'         => $order->chart,
                 'job_no'        => $order->job_no,
                 'fty_po'        => $order->fty_po,
+                'im_number'     => $order->im_number ?? '',
                 'mau'           => $tracking->mau ?? $order->color,
                 'size'          => $tracking->size,
                 'cong_doan'     => $tracking->cong_doan,
@@ -205,7 +225,7 @@ class WarehouseTransactionController extends Controller
 
         return view('admin.warehouse-transactions.index', compact(
             'data', 'tonKho', 'thang', 'nam', 'nhapDates', 'xuatDates',
-            'soanHang', 'soanStats'
+            'soanHang', 'soanStats', 'availableTrackings', 'selectedTracking'
         ));
     }
 
