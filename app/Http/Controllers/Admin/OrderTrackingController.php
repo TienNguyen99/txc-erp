@@ -263,10 +263,19 @@ class OrderTrackingController extends Controller
             ];
         })->values()->sortBy('ma_hh')->values();
 
-        // Gán số thứ tự lệnh con theo ma_hh tăng dần
-        $summary = $summary->map(function ($row, $index) use ($trackingNumber) {
+        // Gán số thứ tự lệnh con theo ma_hh tăng dần + cập nhật tracking_number_child cho từng PO
+        $summary = $summary->map(function ($row, $index) use ($trackingNumber, $trackings) {
             $row->stt = $index + 1;
             $row->lenh_sx = $trackingNumber . '/' . ($index + 1);
+
+            // Gán tracking_number_child cho tất cả tracking rows thuộc nhóm ma_hh này
+            $trackingsInGroup = $trackings->filter(fn($t) => ($t->order->ma_hh ?? $t->size) === $row->ma_hh);
+            foreach ($trackingsInGroup as $t) {
+                if ($t->tracking_number_child !== $row->lenh_sx) {
+                    $t->update(['tracking_number_child' => $row->lenh_sx]);
+                }
+            }
+
             return $row;
         });
 

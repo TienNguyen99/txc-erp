@@ -17,7 +17,7 @@ class OrderTracking extends Model
     ];
 
     protected $fillable = [
-        'order_id', 'tracking_number', 'pl_number', 'size', 'mau', 'kich',
+        'order_id', 'tracking_number', 'tracking_number_child', 'pl_number', 'size', 'mau', 'kich',
         'cong_doan', 'sl_don_hang', 'sl_san_xuat', 'da_tao_lenh_sx',
     ];
 
