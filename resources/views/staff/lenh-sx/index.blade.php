@@ -105,12 +105,6 @@
             transition: width .3s ease;
         }
 
-        .badge-stage {
-            font-size: .7rem;
-            padding: .25rem .5rem;
-            border-radius: 6px;
-        }
-
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
@@ -140,7 +134,7 @@
         @if ($children->isEmpty())
             <div class="empty-state">
                 <i class="fa-solid fa-clipboard-list"></i>
-                <p>Chưa có lệnh con nào được tạo.<br>
+                <p>Chưa có lệnh con nào được lên lệnh.<br>
                     Vui lòng liên hệ quản lý.</p>
             </div>
         @else
@@ -149,12 +143,11 @@
             </div>
 
             @foreach ($children as $child)
-                <a href="{{ route('lenh-sx.scan', [$trackingNumber, explode('/', $child->tracking_number_child)[1] ?? 0]) }}"
-                    class="child-card">
+                <a href="{{ route('lenh-sx.scan', [$trackingNumber, $child->stt]) }}" class="child-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <div class="lenh-code">
-                                <i class="fa-solid fa-clipboard-list me-1"></i>{{ $child->tracking_number_child }}
+                                <i class="fa-solid fa-clipboard-list me-1"></i>{{ $child->lenh_child }}
                             </div>
                             <div class="ma-hh mt-1">{{ $child->ma_hh }}</div>
                             @if ($child->ten_hh)
@@ -162,16 +155,7 @@
                             @endif
                         </div>
                         <div class="text-end">
-                            <span class="badge badge-stage
-                                @if ($child->cong_doan === 'Chờ sản xuất') bg-warning text-dark
-                                @elseif($child->cong_doan === 'Đã chuyển SX') bg-info
-                                @elseif($child->cong_doan === 'Đã nhập kho') bg-success
-                                @else bg-secondary @endif">
-                                {{ $child->cong_doan }}
-                            </span>
-                            <div class="mt-1" style="font-size:.75rem;color:#94a3b8">
-                                {{ $child->so_po }} PO • {{ $child->mau }}
-                            </div>
+                            <span class="badge bg-secondary" style="font-size:.7rem">{{ $child->mau ?: '—' }}</span>
                         </div>
                     </div>
 
@@ -181,13 +165,16 @@
                             <span class="stat-value ms-1">{{ number_format($child->tong_sl, 0) }}</span>
                         </div>
                         <div class="stat-item">
+                            <span class="stat-label">Cần SX</span>
+                            <span class="stat-value ms-1 text-info">{{ number_format($child->sl_can_sx, 0) }}</span>
+                        </div>
+                        <div class="stat-item">
                             <span class="stat-label">Đã SX</span>
-                            <span class="stat-value ms-1 text-info">{{ number_format($child->sl_da_sx, 0) }}</span>
+                            <span class="stat-value ms-1 text-warning">{{ number_format($child->sl_da_sx, 0) }}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Tồn kho</span>
-                            <span
-                                class="stat-value ms-1 {{ $child->ton_kho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($child->ton_kho, 0) }}</span>
+                            <span class="stat-value ms-1 {{ $child->ton_kho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($child->ton_kho, 0) }}</span>
                         </div>
                     </div>
 

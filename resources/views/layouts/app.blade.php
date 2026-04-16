@@ -351,6 +351,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.lenh-san-xuat.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.lenh-san-xuat.index') }}">
+                            <i class="fa-solid fa-clipboard-list me-1"></i>Lệnh SX
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.production-reports.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.production-reports.index') }}">
                             <i class="fa-solid fa-industry me-1"></i>Production
@@ -393,6 +399,8 @@
                                         class="fa-solid fa-file-invoice me-1 text-muted"></i>Đơn hàng</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.order-tracking.index') }}"><i
                                         class="fa-solid fa-truck-fast me-1 text-muted"></i>Order Tracking</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.lenh-san-xuat.index') }}"><i
+                                        class="fa-solid fa-clipboard-list me-1 text-muted"></i>Lệnh Sản Xuất</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.production-reports.index') }}"><i
                                         class="fa-solid fa-industry me-1 text-muted"></i>Báo cáo SX</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.warehouse-transactions.index') }}"><i

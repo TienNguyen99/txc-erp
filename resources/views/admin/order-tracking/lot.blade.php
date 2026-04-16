@@ -91,32 +91,17 @@
             {{-- ═══ BẢNG TIẾN ĐỘ THEO MÃ HH ═══ --}}
             @if ($summary->count())
                 <div class="mb-4">
-                    <form method="POST" action="{{ route('admin.order-tracking.create-production-batch') }}">
-                        @csrf
-                        <input type="hidden" name="tracking_number" value="{{ $trackingNumber }}">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold text-primary mb-0 mb-0">
-                                <i class="fa-solid fa-chart-bar me-1"></i>Tiến độ sản xuất theo Mã HH
-                                <span class="badge bg-dark ms-1">Lệnh tổng: {{ $trackingNumber }}</span>
-                            </h6>
-                            <div class="d-flex gap-2 align-items-center">
-                                <button type="submit" class="btn btn-primary btn-sm ms-2">
-                                    <i class="fa-solid fa-check me-1"></i>Lên lệnh SX
-                                </button>
-                                <a href="{{ route('admin.order-tracking.export-lenh-sx', $trackingNumber) }}"
-                                    class="btn btn-success btn-sm">
-                                    <i class="fa-solid fa-file-excel me-1"></i>In lệnh SX (Excel)
-                                </a>
-                            </div>
-                        </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-primary mb-0">
+                            <i class="fa-solid fa-chart-bar me-1"></i>Tiến độ theo Mã HH
+                            <span class="badge bg-dark ms-1">{{ $trackingNumber }}</span>
+                        </h6>
+                    </div>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered align-middle mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th class="text-center" style="width:40px"><input type="checkbox" id="checkAllMaHh">
-                                        </th>
                                         <th class="text-center">STT</th>
-                                        <th>Lệnh SX</th>
                                         <th>Mã HH</th>
                                         <th class="text-center">Số PO</th>
                                         <th class="text-end">Cần giao</th>
@@ -125,7 +110,6 @@
                                         <th class="text-end">Thiếu / Dư</th>
                                         <th style="min-width:200px">Tiến độ</th>
                                         <th>Trạng thái</th>
-                                        <th class="text-center">Đã lên lệnh</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -145,28 +129,7 @@
                                                     : 0;
                                         @endphp
                                         <tr>
-                                            <td class="text-center">
-                                                @php
-                                                    // Kiểm tra đã lên lệnh SX cho mã HH này trong lô
-                                                    $daLenLenh = \App\Models\OrderTracking::where(
-                                                        'tracking_number',
-                                                        $trackingNumber,
-                                                    )
-                                                        ->where('size', $row->ma_hh)
-                                                        ->where('da_tao_lenh_sx', true)
-                                                        ->exists();
-                                                @endphp
-                                                <input type="checkbox" name="items[{{ $loop->index }}][selected]"
-                                                    value="1" class="mahh-check"
-                                                    @if ($daLenLenh) checked @endif>
-                                                <input type="hidden" name="items[{{ $loop->index }}][ma_hh]"
-                                                    value="{{ $row->ma_hh }}">
-                                            </td>
                                             <td class="text-center fw-bold">{{ $row->stt }}</td>
-                                            <td>
-                                                <span class="badge bg-primary"
-                                                    style="font-size:.8rem">{{ $row->lenh_sx }}</span>
-                                            </td>
                                             <td class="fw-semibold">{{ $row->ma_hh ?: '—' }}</td>
                                             <td class="text-center">{{ $row->so_don }}</td>
                                             <td class="text-end">{{ number_format($row->tong_qty, 2) }}</td>
@@ -188,68 +151,35 @@
                                                         <div class="progress-bar bg-success"
                                                             style="width:{{ $pctKho }}%"
                                                             title="Tồn kho: {{ number_format($row->ton_kho, 0) }}">
-                                                            @if ($pctKho >= 15)
-                                                                {{ $pctKho }}%
-                                                            @endif
+                                                            @if ($pctKho >= 15) {{ $pctKho }}% @endif
                                                         </div>
                                                     @endif
                                                     @if ($pctSx > 0)
                                                         <div class="progress-bar bg-info progress-bar-striped progress-bar-animated"
                                                             style="width:{{ $pctSx }}%"
                                                             title="Đang SX: {{ number_format($row->sl_production, 0) }}">
-                                                            @if ($pctSx >= 15)
-                                                                {{ $pctSx }}%
-                                                            @endif
+                                                            @if ($pctSx >= 15) {{ $pctSx }}% @endif
                                                         </div>
                                                     @endif
                                                     @if ($pctKho == 0 && $pctSx == 0)
-                                                        <div class="progress-bar bg-light text-dark" style="width:100%">
-                                                            Chưa
-                                                            SX
-                                                        </div>
+                                                        <div class="progress-bar bg-light text-dark" style="width:100%">Chưa SX</div>
                                                     @endif
                                                 </div>
-                                                <div class="d-flex justify-content-between"
-                                                    style="font-size:.65rem;margin-top:2px">
-                                                    <span class="text-success"><i
-                                                            class="fa-solid fa-warehouse me-1"></i>Kho</span>
-                                                    <span class="text-info"><i
-                                                            class="fa-solid fa-industry me-1"></i>SX</span>
+                                                <div class="d-flex justify-content-between" style="font-size:.65rem;margin-top:2px">
+                                                    <span class="text-success"><i class="fa-solid fa-warehouse me-1"></i>Kho</span>
+                                                    <span class="text-info"><i class="fa-solid fa-industry me-1"></i>SX</span>
                                                     <span>{{ $row->total_progress }}%</span>
                                                 </div>
                                             </td>
                                             <td>
                                                 @if ($row->du_hang)
-                                                    <span class="badge bg-success"><i
-                                                            class="fa-solid fa-check-circle me-1"></i>Đủ hàng</span>
+                                                    <span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Đủ hàng</span>
                                                 @elseif ($row->sl_production > 0)
-                                                    <span class="badge bg-info"><i
-                                                            class="fa-solid fa-industry me-1"></i>Đang
-                                                        SX</span>
+                                                    <span class="badge bg-info"><i class="fa-solid fa-industry me-1"></i>Đang SX</span>
                                                 @elseif ($row->stage_breakdown->sum() > 0)
-                                                    <span class="badge bg-warning text-dark"><i
-                                                            class="fa-solid fa-clock me-1"></i>Chờ SX</span>
+                                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Chờ SX</span>
                                                 @else
-                                                    <span class="badge bg-danger"><i
-                                                            class="fa-solid fa-triangle-exclamation me-1"></i>Thiếu</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-                                                @php
-                                                    // Lấy trạng thái đã lên lệnh SX cho mã HH này trong lô
-                                                    $daLenLenh = \App\Models\OrderTracking::where(
-                                                        'tracking_number',
-                                                        $trackingNumber,
-                                                    )
-                                                        ->where('size', $row->ma_hh)
-                                                        ->where('da_tao_lenh_sx', true)
-                                                        ->exists();
-                                                @endphp
-                                                @if ($daLenLenh)
-                                                    <span class="badge bg-primary"><i class="fa-solid fa-check"></i> Đã
-                                                        lên lệnh</span>
-                                                @else
-                                                    <span class="badge bg-secondary">Chưa lên lệnh</span>
+                                                    <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Thiếu</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -258,23 +188,14 @@
                                 <tfoot class="table-dark fw-bold">
                                     <tr>
                                         <td colspan="3">Tổng ({{ $summary->count() }} mã)</td>
-                                        <td class="text-center">{{ $summary->sum('so_don') }}</td>
                                         <td class="text-end">{{ number_format($summary->sum('tong_qty'), 2) }}</td>
                                         <td class="text-end">{{ number_format($summary->sum('sl_production'), 2) }}</td>
                                         <td class="text-end">{{ number_format($summary->sum('ton_kho'), 2) }}</td>
+                                        <td colspan="3"></td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
-                    </form>
-                    @section('scripts')
-                        <script>
-                            // Check All for Mã HH
-                            document.getElementById('checkAllMaHh')?.addEventListener('change', function() {
-                                document.querySelectorAll('.mahh-check').forEach(cb => cb.checked = this.checked);
-                            });
-                        </script>
-                    @endsection
                 </div>
         </div>
     </div>

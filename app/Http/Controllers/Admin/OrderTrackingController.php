@@ -197,9 +197,17 @@ class OrderTrackingController extends Controller
             ->update(['tracking_number' => $trackingNumber]);
 
         if ($count === 0) {
-            // Tất cả order đã có tracking → chỉ gán tracking_number
-            return redirect()->route('admin.order-tracking.lot', $trackingNumber)
-                ->with('success', "Đã gán Order Tracking Number: {$trackingNumber}");
+            // Tất cả order đã có tracking → tìm lot cũ để redirect
+            $existingTracking = OrderTracking::whereIn('order_id', $orders->pluck('id'))
+                ->whereNotNull('tracking_number')
+                ->first();
+
+            if ($existingTracking) {
+                return redirect()->route('admin.order-tracking.lot', $existingTracking->tracking_number)
+                    ->with('warning', "Tất cả đơn hàng đã thuộc lô: {$existingTracking->tracking_number}");
+            }
+
+            return redirect()->back()->with('error', 'Tất cả đơn hàng đã có tracking, không thể tạo lô mới.');
         }
 
         return redirect()->route('admin.order-tracking.lot', $trackingNumber)

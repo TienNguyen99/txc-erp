@@ -70,12 +70,11 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                 $sheet = $event->sheet->getDelegate();
 
                 // --- Lấy dữ liệu ---
-                $trackings = OrderTracking::with('order')
-                    ->where('tracking_number', $this->trackingNumber)
-                    ->where('da_tao_lenh_sx', true)
-                    ->get();
-                $orderIds = $trackings->pluck('order_id')->unique();
-                $orders = Order::with('khachHang')->whereIn('id', $orderIds)->get();
+                $lenh = \App\Models\LenhSanXuat::where('lenh_so', $this->trackingNumber)->first();
+                $items = $lenh ? $lenh->items()->where('da_len_lenh', true)->get() : collect();
+
+                // Lấy orders thuộc Chart này
+                $orders = $lenh ? Order::with('khachHang')->where('chart', $lenh->chart)->get() : collect();
 
                 // Thông tin chung
                 $firstOrder = $orders->first();
@@ -164,45 +163,25 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
 
-                // --- DATA ROWS ---
-                $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) {
-                    $totalQty = $group->sum('yrd');
-                    $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
-                    $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
-                    $tonKho = $nhap - $xuat;
-                    $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
-                    $colors = $group->pluck('color')->unique()->filter()->implode(', ');
-
-                    return (object) [
-                        'ma_hh' => $maHh,
-                        'tong_qty' => $totalQty,
-                        'ton_kho' => $tonKho,
-                        'ten_hh' => $hangHoa?->ten_hh ?? '',
-                        'mau' => $colors ?: ($hangHoa?->mau ?? ''),
-                        'kich_co' => $hangHoa?->kich_co ?? '',
-                        'don_vi' => $hangHoa?->don_vi ?? 'YRD',
-                        'hinh_anh' => $hangHoa?->hinh_anh ?? '',
-                        'nhom_hh' => $hangHoa?->nhom_hh ?? '',
-                    ];
-                })->sortKeys()->values();
-
                 $row = 6;
-                $stt = 1;
-                foreach ($summary as $item) {
-                    $lenhSx = $this->trackingNumber . '/' . $stt;
-                    $slPlusHh = $item->tong_qty * (1 + $this->pctHaoHut / 100);
+                foreach ($items as $item) {
+                    $hangHoa = DanhMucHangHoa::where('ma_hh', $item->ma_hh)->first();
+                    $nhap = WarehouseTransaction::where('ma_hh', $item->ma_hh)->nhapKho()->sum('so_luong');
+                    $xuat = WarehouseTransaction::where('ma_hh', $item->ma_hh)->xuatKho()->sum('so_luong');
+                    $tonKho = $nhap - $xuat;
+                    $slPlusHh = $item->sl_can_sx;
 
-                    $sheet->setCellValue('A' . $row, $stt);
-                    $sheet->setCellValue('B' . $row, $lenhSx);
+                    $sheet->setCellValue('A' . $row, $item->stt);
+                    $sheet->setCellValue('B' . $row, $item->lenh_child);
                     $sheet->setCellValue('C' . $row, $item->ma_hh);
-                    $sheet->setCellValue('D' . $row, $item->ten_hh);
+                    $sheet->setCellValue('D' . $row, $hangHoa?->ten_hh ?? $item->ten_hh);
                     $sheet->setCellValue('E' . $row, $item->mau);
-                    $sheet->setCellValue('F' . $row, $item->nhom_hh);
-                    $sheet->setCellValue('G' . $row, $item->kich_co);
-                    $sheet->setCellValue('H' . $row, $item->tong_qty);
-                    $sheet->setCellValue('I' . $row, $item->ton_kho);
+                    $sheet->setCellValue('F' . $row, $hangHoa?->nhom_hh ?? '');
+                    $sheet->setCellValue('G' . $row, $hangHoa?->kich_co ?? '');
+                    $sheet->setCellValue('H' . $row, $item->tong_yrd);
+                    $sheet->setCellValue('I' . $row, $tonKho);
                     $sheet->setCellValue('J' . $row, round($slPlusHh, 2));
-                    $sheet->setCellValue('K' . $row, $item->don_vi);
+                    $sheet->setCellValue('K' . $row, $hangHoa?->don_vi ?? 'YRD');
 
                     $sheet->getStyle("A{$row}:K{$row}")->applyFromArray([
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -212,7 +191,6 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                     $sheet->getStyle("H{$row}:J{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
 
                     $sheet->getRowDimension($row)->setRowHeight(25);
-                    $stt++;
                     $row++;
                 }
 

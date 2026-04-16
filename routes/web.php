@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ProductionReportController;
 use App\Http\Controllers\Admin\WarehouseTransactionController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
+use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
 use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
@@ -70,6 +71,14 @@ Route::middleware('auth')->group(function () {
                ->name('order-tracking.export-lenh-sx');
           Route::resource('order-tracking', OrderTrackingController::class)
                ->parameters(['order-tracking' => 'orderTracking']);
+
+           // Lệnh Sản Xuất (theo Chart)
+           Route::get('lenh-san-xuat', [AdminLenhSanXuatController::class, 'index'])->name('lenh-san-xuat.index');
+           Route::post('lenh-san-xuat', [AdminLenhSanXuatController::class, 'store'])->name('lenh-san-xuat.store');
+           Route::get('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'show'])->name('lenh-san-xuat.show');
+           Route::post('lenh-san-xuat/{lenhSanXuat}/toggle-items', [AdminLenhSanXuatController::class, 'toggleItems'])->name('lenh-san-xuat.toggle-items');
+           Route::get('lenh-san-xuat/{lenhSanXuat}/export', [AdminLenhSanXuatController::class, 'export'])->name('lenh-san-xuat.export');
+           Route::delete('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'destroy'])->name('lenh-san-xuat.destroy');
 
           // Production Reports
           Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])
