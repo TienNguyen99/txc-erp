@@ -20,6 +20,7 @@ class LenhSanXuatController extends Controller
         // Lấy tất cả tracking thuộc lot này
         $trackings = OrderTracking::with('order')
             ->where('tracking_number', $trackingNumber)
+            ->where('da_tao_lenh_sx', true)
             ->get();
 
         if ($trackings->isEmpty()) {
@@ -147,10 +148,10 @@ class LenhSanXuatController extends Controller
 
         $request->validate([
             'cong_doan' => 'required|string',
-            'sl_dat'    => 'required|numeric|min:0',
-            'sl_hu'     => 'nullable|numeric|min:0',
-            'ca'        => 'nullable|string',
-            'ma_nv'     => 'nullable|string|max:100',
+            'sl_dat' => 'required|numeric|min:0',
+            'sl_hu' => 'nullable|numeric|min:0',
+            'ca' => 'nullable|string',
+            'ma_nv' => 'nullable|string|max:100',
         ]);
 
         // Lấy ma_hh từ tracking_number_child
@@ -160,15 +161,15 @@ class LenhSanXuatController extends Controller
         $mau = $tracking?->mau ?? '';
 
         ProductionReport::create([
-            'cong_doan'  => $request->cong_doan,
-            'ngay_sx'    => now()->toDateString(),
-            'ca'         => $request->ca ?? '1',
-            'ma_nv'      => $request->ma_nv ?? '',
-            'lenh_sx'    => $lenhSx,
-            'mau'        => $mau,
-            'size'       => $maHh,
-            'sl_dat'     => $request->sl_dat,
-            'sl_hu'      => $request->sl_hu ?? 0,
+            'cong_doan' => $request->cong_doan,
+            'ngay_sx' => now()->toDateString(),
+            'ca' => $request->ca ?? '1',
+            'ma_nv' => $request->ma_nv ?? '',
+            'lenh_sx' => $lenhSx,
+            'mau' => $mau,
+            'size' => $maHh,
+            'sl_dat' => $request->sl_dat,
+            'sl_hu' => $request->sl_hu ?? 0,
         ]);
 
         return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt])
@@ -185,7 +186,7 @@ class LenhSanXuatController extends Controller
 
         $request->validate([
             'so_luong' => 'required|numeric|min:0.01',
-            'ma_nv'    => 'nullable|string|max:100',
+            'ma_nv' => 'nullable|string|max:100',
         ]);
 
         // Lấy ma_hh từ tracking_number_child
@@ -199,14 +200,14 @@ class LenhSanXuatController extends Controller
 
         WarehouseTransaction::create([
             'cong_doan' => 'NHAPKHO',
-            'ma_hh'     => $maHh,
-            'ngay'      => now()->toDateString(),
-            'size'      => $tracking?->size ?? null,
-            'mau'       => $tracking?->mau ?? null,
-            'so_luong'  => $request->so_luong,
-            'ma_nv'     => $request->ma_nv ?? '',
-            'lenh_sx'   => $lenhSx,
-            'note'      => 'Nhập kho qua QR scan',
+            'ma_hh' => $maHh,
+            'ngay' => now()->toDateString(),
+            'size' => $tracking?->size ?? null,
+            'mau' => $tracking?->mau ?? null,
+            'so_luong' => $request->so_luong,
+            'ma_nv' => $request->ma_nv ?? '',
+            'lenh_sx' => $lenhSx,
+            'note' => 'Nhập kho qua QR scan',
         ]);
 
         return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt])
