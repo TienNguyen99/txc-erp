@@ -31,14 +31,14 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
         $portal = $request->input('login_portal', 'admin');
 
-        // Admin portal: chỉ admin được vào
-        if ($portal === 'admin' && !$user->isAdmin()) {
+        // Admin portal: chỉ admin và manager được vào
+        if ($portal === 'admin' && !$user->isAdmin() && !$user->hasRole('manager')) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()->withInput($request->only('email', 'login_portal'))
-                         ->withErrors(['email' => 'Tài khoản này không có quyền quản trị.']);
+                         ->withErrors(['email' => 'Tài khoản này không có quyền truy cập quản trị.']);
         }
 
         // Staff portal: chỉ staff (hoặc admin cũng được vào)
