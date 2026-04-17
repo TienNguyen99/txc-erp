@@ -164,8 +164,10 @@ class PackingListExport implements WithEvents
                     // Group by fty_po within this product
                     $byPo = $groupTrackings->groupBy(fn($t) => $t->order->fty_po ?? '');
 
+                    $prevJobNoStr = null;
                     foreach ($byPo as $ftyPo => $poTrackings) {
-                        $jobNos = $poTrackings->pluck('order.job_no')->unique()->filter()->implode("\n");
+                        $jobNosArr = $poTrackings->pluck('order.job_no')->unique()->filter()->values();
+                        $jobNoStr = $jobNosArr->implode("\n");
                         $color  = $poTrackings->first()->mau ?? $poTrackings->first()->order->color ?? '';
                         $tGrs   = $poTrackings->sum(fn($t) => $t->order->qty ?? 0);
                         $tYrd   = $poTrackings->sum(fn($t) => $t->sl_don_hang ?? $t->order->yrd ?? 0);
@@ -186,7 +188,10 @@ class PackingListExport implements WithEvents
                                 $nw = round($nwFull * $ratio, 1);
                                 $gw = round($gwFull * $ratio, 3);
 
-                                $sheet->setCellValue("A{$row}", $jobNos);
+                                $showJobNo = ($jobNoStr !== $prevJobNoStr) ? $jobNoStr : '';
+                                $prevJobNoStr = $jobNoStr;
+
+                                $sheet->setCellValue("A{$row}", $showJobNo);
                                 $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
                                 $sheet->setCellValue("B{$row}", $ftyPo);
                                 $sheet->setCellValue("C{$row}", $description);
@@ -217,7 +222,10 @@ class PackingListExport implements WithEvents
                         } else {
                             // No carton spec → single row
                             $cartonNo++;
-                            $sheet->setCellValue("A{$row}", $jobNos);
+                            $showJobNo = ($jobNoStr !== $prevJobNoStr) ? $jobNoStr : '';
+                            $prevJobNoStr = $jobNoStr;
+
+                            $sheet->setCellValue("A{$row}", $showJobNo);
                             $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
                             $sheet->setCellValue("B{$row}", $ftyPo);
                             $sheet->setCellValue("C{$row}", $description);
