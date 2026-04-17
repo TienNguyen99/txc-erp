@@ -12,16 +12,20 @@ return new class extends Migration
     public function up(): void
     {
         // orders -> khách hàng
-        Schema::table('orders', function (Blueprint $table) {
-            $table->unsignedBigInteger('khach_hang_id')->nullable()->after('id');
-            $table->foreign('khach_hang_id')->references('id')->on('danh_muc_khach_hang')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('orders', 'khach_hang_id')) {
+            Schema::table('orders', function (Blueprint $table) {
+                $table->unsignedBigInteger('khach_hang_id')->nullable()->after('id');
+                $table->foreign('khach_hang_id')->references('id')->on('danh_muc_khach_hang')->nullOnDelete();
+            });
+        }
 
         // warehouse_transactions -> hàng hóa (liên kết qua ma_hh)
-        Schema::table('warehouse_transactions', function (Blueprint $table) {
-            $table->unsignedBigInteger('hang_hoa_id')->nullable()->after('ma_hh');
-            $table->foreign('hang_hoa_id')->references('id')->on('danh_muc_hang_hoa')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('warehouse_transactions', 'hang_hoa_id')) {
+            Schema::table('warehouse_transactions', function (Blueprint $table) {
+                $table->unsignedBigInteger('hang_hoa_id')->nullable()->after('ma_hh');
+                $table->foreign('hang_hoa_id')->references('id')->on('danh_muc_hang_hoa')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void

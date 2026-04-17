@@ -25,6 +25,7 @@
                             <th>#</th>
                             <th>Tên</th>
                             <th>Email</th>
+                            <th class="text-center">Phân quyền</th>
                             <th>Ngày tạo</th>
                             <th class="text-center">Hành động</th>
                         </tr>
@@ -35,6 +36,15 @@
                                 <td>{{ $item->id }}</td>
                                 <td>{{ $item->name }}</td>
                                 <td>{{ $item->email }}</td>
+                                <td class="text-center">
+                                    @if($item->hasRole('admin'))
+                                        <span class="badge" style="background:var(--primary);font-size:.78rem">Admin</span>
+                                    @elseif($item->hasRole('staff'))
+                                        <span class="badge bg-secondary" style="font-size:.78rem">Staff</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark" style="font-size:.78rem">Chưa gán</span>
+                                    @endif
+                                </td>
                                 <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                 <td class="text-center">
                                     <a href="{{ route('admin.users.edit', $item) }}" class="btn btn-warning btn-xs"><i
@@ -48,7 +58,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-muted text-center">Không có dữ liệu</td>
+                                <td colspan="6" class="text-muted text-center">Không có dữ liệu</td>
                             </tr>
                         @endforelse
                     </tbody>

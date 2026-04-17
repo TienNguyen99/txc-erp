@@ -338,36 +338,46 @@
             </button>
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto gap-1">
+                    @can('orders.view')
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.orders.index') }}">
                             <i class="fa-solid fa-file-invoice me-1"></i>Order
                         </a>
                     </li>
+                    @endcan
+                    @can('tracking.view')
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.order-tracking.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.order-tracking.index') }}">
                             <i class="fa-solid fa-truck-fast me-1"></i>Order Tracking
                         </a>
                     </li>
+                    @endcan
+                    @can('lenh_sx.view')
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.lenh-san-xuat.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.lenh-san-xuat.index') }}">
                             <i class="fa-solid fa-clipboard-list me-1"></i>Lệnh SX
                         </a>
                     </li>
+                    @endcan
+                    @can('production.view')
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.production-reports.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.production-reports.index') }}">
                             <i class="fa-solid fa-industry me-1"></i>Production
                         </a>
                     </li>
+                    @endcan
+                    @can('warehouse.view')
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.warehouse-transactions.*') ? 'active fw-bold' : '' }}"
                             href="{{ route('admin.warehouse-transactions.index') }}">
                             <i class="fa-solid fa-warehouse me-1"></i>Warehouse
                         </a>
                     </li>
+                    @endcan
                 </ul>
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item dropdown">
@@ -378,6 +388,9 @@
                                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
                             </span>
                             {{ Auth::user()->name ?? 'User' }}
+                            @if(Auth::user()->hasRole('manager'))
+                                <span class="badge ms-1" style="background:#f59e0b;font-size:.65rem;vertical-align:middle">Manager</span>
+                            @endif
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
@@ -386,6 +399,11 @@
                                         {{ Auth::user()->name ?? 'User' }}</div>
                                     <div class="text-muted" style="font-size:.75rem">{{ Auth::user()->email ?? '' }}
                                     </div>
+                                    <div class="mt-1">
+                                        @foreach(Auth::user()->getRoleNames() as $r)
+                                            <span class="badge" style="background:var(--primary);font-size:.65rem">{{ ucfirst($r) }}</span>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </li>
                             <li>
@@ -393,22 +411,36 @@
                             </li>
                             <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}"><i
                                         class="fa-solid fa-gauge-high me-1 text-muted"></i>Dashboard</a></li>
+                            @role('admin')
                             <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i
                                         class="fa-solid fa-users me-1 text-muted"></i>Users</a></li>
+                            @endrole
+                            @can('orders.view')
                             <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i
                                         class="fa-solid fa-file-invoice me-1 text-muted"></i>Đơn hàng</a></li>
+                            @endcan
+                            @can('tracking.view')
                             <li><a class="dropdown-item" href="{{ route('admin.order-tracking.index') }}"><i
                                         class="fa-solid fa-truck-fast me-1 text-muted"></i>Order Tracking</a></li>
+                            @endcan
+                            @can('lenh_sx.view')
                             <li><a class="dropdown-item" href="{{ route('admin.lenh-san-xuat.index') }}"><i
                                         class="fa-solid fa-clipboard-list me-1 text-muted"></i>Lệnh Sản Xuất</a></li>
+                            @endcan
+                            @can('production.view')
                             <li><a class="dropdown-item" href="{{ route('admin.production-reports.index') }}"><i
                                         class="fa-solid fa-industry me-1 text-muted"></i>Báo cáo SX</a></li>
+                            @endcan
+                            @can('warehouse.view')
                             <li><a class="dropdown-item" href="{{ route('admin.warehouse-transactions.index') }}"><i
                                         class="fa-solid fa-warehouse me-1 text-muted"></i>Giao dịch Kho</a></li>
+                            @endcan
+                            @can('catalog.view')
                             <li><a class="dropdown-item" href="{{ route('admin.hang-hoa.index') }}"><i
                                         class="fa-solid fa-box-open me-1 text-muted"></i>Hàng hóa</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.khach-hang.index') }}"><i
                                         class="fa-solid fa-building me-1 text-muted"></i>Khách hàng</a></li>
+                            @endcan
                             <li>
                                 <hr class="dropdown-divider">
                             </li>

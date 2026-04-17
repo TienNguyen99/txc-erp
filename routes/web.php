@@ -35,91 +35,88 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->group(function () {
 
-     // ═══ Admin ═══
-     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
+     // ═══ Admin Panel (admin + manager) ═══
+     Route::prefix('admin')->name('admin.')->middleware('role:admin|manager')->group(function () {
           Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-          // Users
-          Route::resource('users', UserController::class);
+          // ── Users: chỉ admin mới quản lý được ──
+          Route::middleware('role:admin')->group(function () {
+               Route::post('users/{user}/permissions', [UserController::class, 'syncPermissions'])->name('users.sync-permissions');
+               Route::resource('users', UserController::class);
+          });
 
-          // Orders
-          Route::post('orders/import', [OrderController::class, 'import'])->name('orders.import');
-          Route::post('orders/import-customer', [OrderController::class, 'importCustomer'])->name('orders.import-customer');
-          Route::post('orders/assign-pl', [OrderController::class, 'assignPlNumber'])->name('orders.assign-pl');
-          Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
-          Route::get('orders/template', [OrderController::class, 'template'])->name('orders.template');
-          Route::resource('orders', OrderController::class);
+          // ── Orders ──
+          Route::middleware('permission:orders.view')->group(function () {
+               Route::post('orders/import', [OrderController::class, 'import'])->name('orders.import')->middleware('permission:orders.import');
+               Route::post('orders/import-customer', [OrderController::class, 'importCustomer'])->name('orders.import-customer')->middleware('permission:orders.import');
+               Route::post('orders/assign-pl', [OrderController::class, 'assignPlNumber'])->name('orders.assign-pl')->middleware('permission:orders.edit');
+               Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export')->middleware('permission:orders.export');
+               Route::get('orders/template', [OrderController::class, 'template'])->name('orders.template');
+               Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+               Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create')->middleware('permission:orders.create');
+               Route::post('orders', [OrderController::class, 'store'])->name('orders.store')->middleware('permission:orders.create');
+               Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+               Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit')->middleware('permission:orders.edit');
+               Route::put('orders/{order}', [OrderController::class, 'update'])->name('orders.update')->middleware('permission:orders.edit');
+               Route::patch('orders/{order}', [OrderController::class, 'update']);
+               Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy')->middleware('permission:orders.delete');
+          });
 
-          // Order Tracking
-          Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])
-               ->name('order-tracking.lot');
-          Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])
-               ->name('order-tracking.create-batch');
-          Route::post('order-tracking/generate', [OrderTrackingController::class, 'generate'])
-               ->name('order-tracking.generate');
-          Route::post('order-tracking/push-production', [OrderTrackingController::class, 'pushToProduction'])
-               ->name('order-tracking.push-production');
-          Route::post('order-tracking/push-warehouse', [OrderTrackingController::class, 'pushToWarehouse'])
-               ->name('order-tracking.push-warehouse');
-          Route::post('order-tracking/bulk-delete', [OrderTrackingController::class, 'bulkDelete'])
-               ->name('order-tracking.bulk-delete');
-          Route::post('order-tracking/ship-from-stock', [OrderTrackingController::class, 'shipFromStock'])
-               ->name('order-tracking.ship-from-stock');
-          Route::post('order-tracking/create-production-batch', [OrderTrackingController::class, 'createProductionBatch'])
-               ->name('order-tracking.create-production-batch');
-          Route::get('order-tracking/export-lenh-sx/{trackingNumber}', [OrderTrackingController::class, 'exportLenhSx'])
-               ->name('order-tracking.export-lenh-sx');
-          Route::resource('order-tracking', OrderTrackingController::class)
-               ->parameters(['order-tracking' => 'orderTracking']);
+          // ── Order Tracking ──
+          Route::middleware('permission:tracking.view')->group(function () {
+               Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])->name('order-tracking.lot');
+               Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])->name('order-tracking.create-batch')->middleware('permission:tracking.create');
+               Route::post('order-tracking/generate', [OrderTrackingController::class, 'generate'])->name('order-tracking.generate')->middleware('permission:tracking.create');
+               Route::post('order-tracking/push-production', [OrderTrackingController::class, 'pushToProduction'])->name('order-tracking.push-production')->middleware('permission:tracking.edit');
+               Route::post('order-tracking/push-warehouse', [OrderTrackingController::class, 'pushToWarehouse'])->name('order-tracking.push-warehouse')->middleware('permission:tracking.edit');
+               Route::post('order-tracking/bulk-delete', [OrderTrackingController::class, 'bulkDelete'])->name('order-tracking.bulk-delete')->middleware('permission:tracking.delete');
+               Route::post('order-tracking/ship-from-stock', [OrderTrackingController::class, 'shipFromStock'])->name('order-tracking.ship-from-stock')->middleware('permission:tracking.edit');
+               Route::post('order-tracking/create-production-batch', [OrderTrackingController::class, 'createProductionBatch'])->name('order-tracking.create-production-batch')->middleware('permission:tracking.edit');
+               Route::get('order-tracking/export-lenh-sx/{trackingNumber}', [OrderTrackingController::class, 'exportLenhSx'])->name('order-tracking.export-lenh-sx')->middleware('permission:tracking.export');
+               Route::resource('order-tracking', OrderTrackingController::class)->parameters(['order-tracking' => 'orderTracking']);
+          });
 
-           // Lệnh Sản Xuất (theo Chart)
-           Route::get('lenh-san-xuat', [AdminLenhSanXuatController::class, 'index'])->name('lenh-san-xuat.index');
-           Route::post('lenh-san-xuat', [AdminLenhSanXuatController::class, 'store'])->name('lenh-san-xuat.store');
-           Route::get('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'show'])->name('lenh-san-xuat.show');
-           Route::post('lenh-san-xuat/{lenhSanXuat}/toggle-items', [AdminLenhSanXuatController::class, 'toggleItems'])->name('lenh-san-xuat.toggle-items');
-           Route::get('lenh-san-xuat/{lenhSanXuat}/export', [AdminLenhSanXuatController::class, 'export'])->name('lenh-san-xuat.export');
-           Route::delete('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'destroy'])->name('lenh-san-xuat.destroy');
+          // ── Lệnh Sản Xuất ──
+          Route::middleware('permission:lenh_sx.view')->group(function () {
+               Route::get('lenh-san-xuat', [AdminLenhSanXuatController::class, 'index'])->name('lenh-san-xuat.index');
+               Route::post('lenh-san-xuat', [AdminLenhSanXuatController::class, 'store'])->name('lenh-san-xuat.store')->middleware('permission:lenh_sx.create');
+               Route::get('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'show'])->name('lenh-san-xuat.show');
+               Route::post('lenh-san-xuat/{lenhSanXuat}/toggle-items', [AdminLenhSanXuatController::class, 'toggleItems'])->name('lenh-san-xuat.toggle-items')->middleware('permission:lenh_sx.edit');
+               Route::get('lenh-san-xuat/{lenhSanXuat}/export', [AdminLenhSanXuatController::class, 'export'])->name('lenh-san-xuat.export')->middleware('permission:lenh_sx.export');
+               Route::delete('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'destroy'])->name('lenh-san-xuat.destroy')->middleware('permission:lenh_sx.delete');
+          });
 
-          // Production Reports
-          Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])
-               ->name('production-reports.push-warehouse');
-          Route::resource('production-reports', ProductionReportController::class)
-               ->parameters(['production-reports' => 'productionReport']);
+          // ── Production Reports ──
+          Route::middleware('permission:production.view')->group(function () {
+               Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])->name('production-reports.push-warehouse')->middleware('permission:production.edit');
+               Route::resource('production-reports', ProductionReportController::class)->parameters(['production-reports' => 'productionReport']);
+          });
 
-          // Warehouse Transactions
-          Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])
-               ->name('warehouse-transactions.export');
-          Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])
-               ->name('warehouse-transactions.template');
-          Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])
-               ->name('warehouse-transactions.import');
-          Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])
-               ->name('warehouse-transactions.xuat-hang-loat');
-          Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])
-               ->name('warehouse-transactions.nhap-theo-lenh');
-          Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])
-               ->name('warehouse-transactions.store-nhap-theo-lenh');
-          Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])
-               ->name('warehouse-transactions.ton-kho');
-          Route::get('warehouse-transactions/export-packing-list', [WarehouseTransactionController::class, 'exportPackingList'])
-               ->name('warehouse-transactions.export-packing-list');
-          Route::resource('warehouse-transactions', WarehouseTransactionController::class)
-               ->parameters(['warehouse-transactions' => 'warehouseTransaction']);
+          // ── Warehouse Transactions ──
+          Route::middleware('permission:warehouse.view')->group(function () {
+               Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
+               Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');
+               Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
+               Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])->name('warehouse-transactions.xuat-hang-loat')->middleware('permission:warehouse.edit');
+               Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])->name('warehouse-transactions.nhap-theo-lenh');
+               Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])->name('warehouse-transactions.store-nhap-theo-lenh')->middleware('permission:warehouse.create');
+               Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])->name('warehouse-transactions.ton-kho');
+               Route::get('warehouse-transactions/export-packing-list', [WarehouseTransactionController::class, 'exportPackingList'])->name('warehouse-transactions.export-packing-list')->middleware('permission:warehouse.export');
+               Route::resource('warehouse-transactions', WarehouseTransactionController::class)->parameters(['warehouse-transactions' => 'warehouseTransaction']);
+          });
 
-          // Danh mục Hàng hóa
-          Route::post('hang-hoa/import', [DanhMucHangHoaController::class, 'import'])->name('hang-hoa.import');
-          Route::get('hang-hoa/export', [DanhMucHangHoaController::class, 'export'])->name('hang-hoa.export');
-          Route::get('hang-hoa/template', [DanhMucHangHoaController::class, 'template'])->name('hang-hoa.template');
-          Route::resource('hang-hoa', DanhMucHangHoaController::class)
-               ->parameters(['hang-hoa' => 'hangHoa']);
-
-          // Danh mục Khách hàng
-          Route::resource('khach-hang', DanhMucKhachHangController::class)
-               ->parameters(['khach-hang' => 'khachHang']);
+          // ── Danh mục Hàng hóa & Khách hàng ──
+          Route::middleware('permission:catalog.view')->group(function () {
+               Route::post('hang-hoa/import', [DanhMucHangHoaController::class, 'import'])->name('hang-hoa.import')->middleware('permission:catalog.import');
+               Route::get('hang-hoa/export', [DanhMucHangHoaController::class, 'export'])->name('hang-hoa.export')->middleware('permission:catalog.export');
+               Route::get('hang-hoa/template', [DanhMucHangHoaController::class, 'template'])->name('hang-hoa.template');
+               Route::resource('hang-hoa', DanhMucHangHoaController::class)->parameters(['hang-hoa' => 'hangHoa']);
+               Route::resource('khach-hang', DanhMucKhachHangController::class)->parameters(['khach-hang' => 'khachHang']);
+          });
      });
 
      // ═══ Nhân viên (Staff) ═══
-     Route::prefix('staff')->name('staff.')->middleware('role:staff,admin')->group(function () {
+     Route::prefix('staff')->name('staff.')->middleware('role:staff|admin')->group(function () {
           Route::get('/', fn() => redirect()->route('staff.warehouse.index'));
 
           // Warehouse entry
