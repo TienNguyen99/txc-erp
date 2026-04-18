@@ -414,6 +414,10 @@
                             @role('admin')
                             <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i
                                         class="fa-solid fa-users me-1 text-muted"></i>Users</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.settings.index') }}"><i
+                                        class="fa-solid fa-gears me-1 text-muted"></i>Cấu hình hệ thống</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.activity-logs.index') }}"><i
+                                        class="fa-solid fa-list-check me-1 text-muted"></i>Nhật ký (Logs)</a></li>
                             @endrole
                             @can('orders.view')
                             <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i

@@ -43,6 +43,11 @@ Route::middleware('auth')->group(function () {
           Route::middleware('role:admin')->group(function () {
                Route::post('users/{user}/permissions', [UserController::class, 'syncPermissions'])->name('users.sync-permissions');
                Route::resource('users', UserController::class);
+               
+               // Cấu hình & Nhật ký
+               Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+               Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+               Route::get('activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
           });
 
           // ── Orders ──

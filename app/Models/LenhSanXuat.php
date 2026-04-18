@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class LenhSanXuat extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['lenh_so', 'chart', 'nhom_hh', 'pct_hao_hut'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected $table = 'lenh_san_xuat';
 
     protected $fillable = [

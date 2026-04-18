@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class WarehouseTransaction extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['cong_doan', 'ma_hh', 'ngay', 'so_luong', 'lenh_sx'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected $fillable = [
         'cong_doan', 'ma_hh', 'hang_hoa_id', 'ngay', 'size', 'mau',
         'so_luong', 'ma_nv', 'lenh_sx', 'note'

@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Order extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['job_no', 'fty_po', 'color', 'qty', 'status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected $fillable = [
         'khach_hang_id',
         'job_no', 'fty_po', 'im_number', 'color', 'qty', 'unit', 'ma_hh', 'yrd',

@@ -171,6 +171,30 @@
             </div>
         </div>
 
+        {{-- Dashbaord Charts --}}
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4">
+                <div class="card-page h-100">
+                    <h6 class="section-title mb-3">
+                        <i class="fa-solid fa-chart-pie"></i>Trạng thái Đơn hàng
+                    </h6>
+                    <div style="position: relative; height:250px; width:100%">
+                        <canvas id="orderStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card-page h-100">
+                    <h6 class="section-title mb-3">
+                        <i class="fa-solid fa-chart-column"></i>Sản lượng May (7 ngày)
+                    </h6>
+                    <div style="position: relative; height:250px; width:100%">
+                        <canvas id="productionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Recent data tables --}}
         <div class="row g-3">
 
@@ -323,4 +347,80 @@
 
         </div>
     </div>
+@endsection
+
+@section('js')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Doughnut Chart for Order Status
+        const orderCtx = document.getElementById('orderStatusChart').getContext('2d');
+        const chartDataOrder = @json($chartDataOrder);
+        
+        new Chart(orderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartDataOrder.labels.map(l => l.toUpperCase()),
+                datasets: [{
+                    data: chartDataOrder.data,
+                    backgroundColor: [
+                        '#6366f1', // primary
+                        '#10b981', // success
+                        '#f59e0b', // warning
+                        '#ef4444', // danger
+                        '#8b5cf6', // purple
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Bar Chart for Production
+        const prodCtx = document.getElementById('productionChart').getContext('2d');
+        const chartDataProd = @json($chartDataProduction);
+        
+        new Chart(prodCtx, {
+            type: 'bar',
+            data: {
+                labels: chartDataProd.labels,
+                datasets: [{
+                    label: 'Sản lượng đạt',
+                    data: chartDataProd.data,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        border: { display: false }
+                    },
+                    x: {
+                        grid: { display: false },
+                        border: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
 @endsection

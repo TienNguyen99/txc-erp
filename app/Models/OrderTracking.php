@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class OrderTracking extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['tracking_number', 'tracking_number_child', 'cong_doan', 'sl_don_hang', 'sl_san_xuat'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected $table = 'order_tracking';
 
     const STAGES = [
