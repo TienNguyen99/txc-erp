@@ -7,6 +7,7 @@ use App\Exports\LenhSanXuatExport;
 use App\Models\Order;
 use App\Models\OrderTracking;
 use App\Models\ProductionReport;
+use App\Models\Setting;
 use App\Models\WarehouseTransaction;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -559,6 +560,9 @@ class OrderTrackingController extends Controller
         $shipped = 0;
         $errors = [];
 
+        // Lấy tỷ giá mặc định
+        $exchangeRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
+
         foreach ($request->order_ids as $orderId) {
             $order = Order::find($orderId);
             if (!$order || !$order->ma_hh || $order->status === 'shipped')
@@ -577,21 +581,23 @@ class OrderTrackingController extends Controller
 
             // Tạo phiếu xuất kho
             WarehouseTransaction::create([
-                'cong_doan' => 'XUATKHO',
-                'ma_hh' => $order->ma_hh,
-                'ngay' => now()->toDateString(),
-                'size' => $order->tracking()->first()->kich ?? null,
-                'mau' => $order->color,
-                'so_luong' => $canXuat,
-                'lenh_sx' => $order->lenh_sanxuat ?? $order->job_no,
-                'note' => "Xuất giao hàng - Order {$order->job_no} / FTY PO: {$order->fty_po}",
+                'cong_doan'     => 'XUATKHO',
+                'ma_hh'         => $order->ma_hh,
+                'ngay'          => now()->toDateString(),
+                'size'          => $order->tracking()->first()->kich ?? null,
+                'mau'           => $order->color,
+                'so_luong'      => $canXuat,
+                'price_usd'     => $order->price_usd ?? $order->price_usd_auto ?? 0,
+                'exchange_rate' => $exchangeRate,
+                'lenh_sx'       => $order->lenh_sanxuat ?? $order->job_no,
+                'note'          => "Xuất giao hàng - Order {$order->job_no} / FTY PO: {$order->fty_po}",
             ]);
 
             // Cập nhật order → shipped
             $order->update(['status' => 'shipped']);
 
-            // Cập nhật tracking (nếu có) → Đã giao
-            $order->tracking()->update(['cong_doan' => 'Đã giao']);
+            // Cập nhật tracking (nếu có) → shipped
+            $order->tracking()->update(['cong_doan' => 'shipped']);
 
             $shipped++;
         }

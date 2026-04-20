@@ -230,8 +230,8 @@
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
                     </div>
-                    <div class="stat-number">${{ number_format($stats['total_revenue'], 2) }}</div>
-                    <div class="stat-label">Doanh thu tổng</div>
+                    <div class="stat-number">{{ number_format($stats['total_revenue'], 0, ',', '.') }} ₫</div>
+                    <div class="stat-label">Tổng Doanh thu (VND dự kiến)</div>
                 </div>
             </div>
             <div class="col-xl-3 col-lg-4 col-sm-6">
@@ -239,8 +239,8 @@
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="stat-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                     </div>
-                    <div class="stat-number">${{ number_format($stats['shipped_revenue'], 2) }}</div>
-                    <div class="stat-label">Doanh thu đã Giao</div>
+                    <div class="stat-number">{{ number_format($stats['shipped_revenue'], 0, ',', '.') }} ₫</div>
+                    <div class="stat-label">Doanh thu đã Giao (VND thực tế)</div>
                 </div>
             </div>
         </div>

@@ -20,12 +20,14 @@ class WarehouseTransaction extends Model
 
     protected $fillable = [
         'cong_doan', 'ma_hh', 'hang_hoa_id', 'ngay', 'size', 'mau',
-        'so_luong', 'ma_nv', 'lenh_sx', 'note'
+        'so_luong', 'price_usd', 'exchange_rate', 'ma_nv', 'lenh_sx', 'note'
     ];
 
     protected $casts = [
-        'ngay'     => 'date',
-        'so_luong' => 'decimal:2',
+        'ngay'          => 'date',
+        'so_luong'      => 'decimal:2',
+        'price_usd'     => 'decimal:4',
+        'exchange_rate' => 'decimal:2',
     ];
 
     // Scope lọc nhanh

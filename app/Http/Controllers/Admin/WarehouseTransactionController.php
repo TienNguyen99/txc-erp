@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
 use App\Models\Order;
 use App\Models\OrderTracking;
+use App\Models\Setting;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Exports\WarehouseTransactionExport;
@@ -311,6 +312,9 @@ class WarehouseTransactionController extends Controller
         $count = 0;
         $errors = [];
 
+        // Lấy tỷ giá mặc định từ cấu hình hệ thống
+        $exchangeRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
+
         foreach ($request->items as $item) {
             if (empty($item['selected']) || floatval($item['so_luong'] ?? 0) <= 0) {
                 continue;
@@ -336,15 +340,17 @@ class WarehouseTransactionController extends Controller
             $order = $tracking->order;
 
             WarehouseTransaction::create([
-                'cong_doan' => 'XUATKHO',
-                'ma_hh' => $maHh,
-                'ngay' => $request->ngay,
-                'size' => $item['size'] ?? null,
-                'mau' => $item['mau'] ?? null,
-                'so_luong' => $slXuat,
-                'ma_nv' => $request->ma_nv,
-                'lenh_sx' => $order->lenh_sanxuat ?? $order->job_no,
-                'note' => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
+                'cong_doan'     => 'XUATKHO',
+                'ma_hh'         => $maHh,
+                'ngay'          => $request->ngay,
+                'size'          => $item['size'] ?? null,
+                'mau'           => $item['mau'] ?? null,
+                'so_luong'      => $slXuat,
+                'price_usd'     => $order->price_usd ?? $order->price_usd_auto ?? 0,
+                'exchange_rate' => $exchangeRate,
+                'ma_nv'         => $request->ma_nv,
+                'lenh_sx'       => $order->lenh_sanxuat ?? $order->job_no,
+                'note'          => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
             ]);
 
             // Cập nhật tracking → shipped

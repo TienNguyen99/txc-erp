@@ -24,16 +24,22 @@ class AdminDashboardController extends Controller
         ];
 
         // --- Doanh Thu ---
-        $totalRevenue = Order::selectRaw('SUM(qty * price_usd) as total')->value('total') ?? 0;
-        $shippedRevenue = Order::whereIn('status', ['shipped', 'done'])
-                            ->selectRaw('SUM(qty * price_usd) as total')
+        $exchangeRate = \App\Models\Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
+
+        $totalRevenueUsd = Order::selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0;
+        $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
+
+        // Doanh thu xuất kho thực tế theo tỷ giá lúc xuất
+        $shippedRevenueVnd = WarehouseTransaction::where('cong_doan', 'XUATKHO')
+                            ->selectRaw('SUM(so_luong * price_usd * exchange_rate) as total')
                             ->value('total') ?? 0;
-        $stats['total_revenue'] = $totalRevenue;
-        $stats['shipped_revenue'] = $shippedRevenue;
+
+        $stats['total_revenue'] = $totalRevenueVnd;
+        $stats['shipped_revenue'] = $shippedRevenueVnd;
 
         // --- Chart: QTY Shipped vs Remaining ---
-        $shippedQty = Order::whereIn('status', ['shipped', 'done'])->sum('qty');
-        $remainingQty = Order::whereNotIn('status', ['shipped', 'done'])->sum('qty');
+        $shippedQty = Order::whereIn('status', ['shipped', 'done'])->sum('yrd');
+        $remainingQty = Order::whereNotIn('status', ['shipped', 'done'])->sum('yrd');
 
         $chartDataQty = [
             'labels' => ['Đã xuất', 'Còn lại'],
