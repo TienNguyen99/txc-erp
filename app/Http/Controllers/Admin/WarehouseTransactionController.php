@@ -22,13 +22,13 @@ class WarehouseTransactionController extends Controller
     public function index(Request $request)
     {
         $data = WarehouseTransaction::when($request->search, fn($q, $s) => $q->where('lenh_sx', 'like', "%$s%")->orWhere('ma_nv', 'like', "%$s%"))
-                    ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
-                    ->latest()->paginate(15)->withQueryString();
+            ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
+            ->latest()->paginate(15)->withQueryString();
 
         // ═══ SOẠN HÀNG: Phân theo tracking_number (lô giao) ═══
         // Danh sách tracking_number có sẵn (chưa giao hết)
         $availableTrackings = OrderTracking::select('tracking_number')
-            ->where('cong_doan', '!=', 'Đã giao')
+            ->where('cong_doan', '!=', 'shipped')
             ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
                 ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
             ->distinct()
@@ -40,7 +40,7 @@ class WarehouseTransactionController extends Controller
 
         // Lấy tracking theo lô đã chọn (hoặc tất cả nếu không filter)
         $trackings = OrderTracking::with('order')
-            ->where('cong_doan', '!=', 'Đã giao')
+            ->where('cong_doan', '!=', 'shipped')
             ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
                 ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
             ->when($selectedTracking, fn($q) => $q->where('tracking_number', $selectedTracking))
@@ -68,28 +68,28 @@ class WarehouseTransactionController extends Controller
             fn($a, $b) => strcmp($a->order->ma_hh ?? '', $b->order->ma_hh ?? ''),
             fn($a, $b) => strcmp($a->order->fty_po ?? '', $b->order->fty_po ?? ''),
         ])->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
-            $order  = $tracking->order;
-            $maHh   = $order->ma_hh;
+            $order = $tracking->order;
+            $maHh = $order->ma_hh;
             $canXuat = $tracking->sl_don_hang ?? $order->yrd ?? 0;
             $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
 
             return (object) [
-                'tracking_id'   => $tracking->id,
-                'ma_hh'         => $maHh,
-                'ten_hh'        => $hangHoa?->ten_hh ?? '',
-                'nhom_hh'       => $hangHoa?->nhom_hh ?? '',
+                'tracking_id' => $tracking->id,
+                'ma_hh' => $maHh,
+                'ten_hh' => $hangHoa?->ten_hh ?? '',
+                'nhom_hh' => $hangHoa?->nhom_hh ?? '',
                 'dinh_muc_thung' => $hangHoa?->dinh_muc_thung ?? null,
-                'pl_number'     => $tracking->pl_number ?? $order->pl_number,
-                'chart'         => $order->chart,
-                'job_no'        => $order->job_no,
-                'fty_po'        => $order->fty_po,
-                'im_number'     => $order->im_number ?? '',
-                'mau'           => $tracking->mau ?? $order->color,
-                'size'          => $tracking->size,
-                'cong_doan'     => $tracking->cong_doan,
-                'can_xuat'      => $canXuat,
-                'ton_kho_tong'  => $tonKhoMap[$maHh] ?? 0,
-                'dang_sx'       => $dangSxMap[$maHh] ?? 0,
+                'pl_number' => $tracking->pl_number ?? $order->pl_number,
+                'chart' => $order->chart,
+                'job_no' => $order->job_no,
+                'fty_po' => $order->fty_po,
+                'im_number' => $order->im_number ?? '',
+                'mau' => $tracking->mau ?? $order->color,
+                'size' => $tracking->size,
+                'cong_doan' => $tracking->cong_doan,
+                'can_xuat' => $canXuat,
+                'ton_kho_tong' => $tonKhoMap[$maHh] ?? 0,
+                'dang_sx' => $dangSxMap[$maHh] ?? 0,
                 'sig_need_date' => $order->sig_need_date,
             ];
         })->values();
@@ -105,9 +105,9 @@ class WarehouseTransactionController extends Controller
             }
 
             $tonConLai = $tonConLaiMap[$maHh];
-            $canXuat   = $row->can_xuat;
-            $capDuoc   = min($canXuat, max(0, $tonConLai));
-            $thieu     = max(0, $canXuat - $capDuoc);
+            $canXuat = $row->can_xuat;
+            $capDuoc = min($canXuat, max(0, $tonConLai));
+            $thieu = max(0, $canXuat - $capDuoc);
 
             // Trừ tồn cho PO tiếp theo cùng ma_hh
             $tonConLaiMap[$maHh] -= $capDuoc;
@@ -124,33 +124,35 @@ class WarehouseTransactionController extends Controller
             }
 
             $row->ton_con_lai = $tonConLai;
-            $row->cap_duoc    = $capDuoc;
-            $row->thieu       = $thieu;
-            $row->trang_thai  = $trangThai;
+            $row->cap_duoc = $capDuoc;
+            $row->thieu = $thieu;
+            $row->trang_thai = $trangThai;
 
             return $row;
         })->values();
 
         $soanStats = (object) [
-            'tong_phieu'    => $soanHang->count(),
-            'du_hang'       => $soanHang->where('trang_thai', 'du')->count(),
-            'thieu_1_phan'  => $soanHang->where('trang_thai', 'thieu_1_phan')->count(),
-            'dang_sx'       => $soanHang->where('trang_thai', 'dang_sx')->count(),
-            'thieu_hang'    => $soanHang->where('trang_thai', 'thieu')->count(),
+            'tong_phieu' => $soanHang->count(),
+            'du_hang' => $soanHang->where('trang_thai', 'du')->count(),
+            'thieu_1_phan' => $soanHang->where('trang_thai', 'thieu_1_phan')->count(),
+            'dang_sx' => $soanHang->where('trang_thai', 'dang_sx')->count(),
+            'thieu_hang' => $soanHang->where('trang_thai', 'thieu')->count(),
         ];
 
         // ═══ TỒN KHO ═══
         $thang = $request->thang ?? now()->month;
-        $nam   = $request->nam   ?? now()->year;
+        $nam = $request->nam ?? now()->year;
 
         $startOfMonth = Carbon::create($nam, $thang, 1)->startOfMonth();
 
         $makeKey = fn($r) => ($r->ma_hh ?? '') . '|' . ($r->size ?? '') . '|' . ($r->mau ?? '');
 
         $tonDau = WarehouseTransaction::select(
-                'ma_hh', 'size', 'mau',
-                DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE -so_luong END) as ton_dau")
-            )
+            'ma_hh',
+            'size',
+            'mau',
+            DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE -so_luong END) as ton_dau")
+        )
             ->where('ngay', '<', $startOfMonth)
             ->groupBy('ma_hh', 'size', 'mau')
             ->get()->keyBy($makeKey);
@@ -210,22 +212,30 @@ class WarehouseTransactionController extends Controller
             $tonCuoi = $tonDauVal + $tongNhap - $tongXuat;
 
             return [
-                'ma_hh'     => $maHh,
-                'size'      => $size,
-                'mau'       => $mau,
-                'ton_dau'   => $tonDauVal,
+                'ma_hh' => $maHh,
+                'size' => $size,
+                'mau' => $mau,
+                'ton_dau' => $tonDauVal,
                 'nhap_days' => $nhapRows,
                 'tong_nhap' => $tongNhap,
                 'xuat_days' => $xuatRows,
                 'tong_xuat' => $tongXuat,
-                'ton_cuoi'  => $tonCuoi,
-                'can_di'    => $canDi[$maHh] ?? 0,
+                'ton_cuoi' => $tonCuoi,
+                'can_di' => $canDi[$maHh] ?? 0,
             ];
         })->sortBy(['ma_hh', 'mau'])->values();
 
         return view('admin.warehouse-transactions.index', compact(
-            'data', 'tonKho', 'thang', 'nam', 'nhapDates', 'xuatDates',
-            'soanHang', 'soanStats', 'availableTrackings', 'selectedTracking'
+            'data',
+            'tonKho',
+            'thang',
+            'nam',
+            'nhapDates',
+            'xuatDates',
+            'soanHang',
+            'soanStats',
+            'availableTrackings',
+            'selectedTracking'
         ));
     }
 
@@ -238,16 +248,16 @@ class WarehouseTransactionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'cong_doan'   => 'required|in:NHAPKHO,XUATKHO',
-            'ma_hh'       => 'nullable|string',
+            'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
+            'ma_hh' => 'nullable|string',
             'hang_hoa_id' => 'nullable|exists:danh_muc_hang_hoa,id',
-            'ngay'        => 'required|date',
-            'size'        => 'nullable|string',
-            'mau'         => 'nullable|string',
-            'so_luong'    => 'required|numeric|min:0.01',
-            'ma_nv'       => 'nullable|string',
-            'lenh_sx'     => 'nullable|string',
-            'note'        => 'nullable|string',
+            'ngay' => 'required|date',
+            'size' => 'nullable|string',
+            'mau' => 'nullable|string',
+            'so_luong' => 'required|numeric|min:0.01',
+            'ma_nv' => 'nullable|string',
+            'lenh_sx' => 'nullable|string',
+            'note' => 'nullable|string',
         ]);
         WarehouseTransaction::create($validated);
         return redirect()->route('admin.warehouse-transactions.index')->with('success', 'Thêm giao dịch kho thành công.');
@@ -262,16 +272,16 @@ class WarehouseTransactionController extends Controller
     public function update(Request $request, WarehouseTransaction $warehouseTransaction)
     {
         $validated = $request->validate([
-            'cong_doan'   => 'required|in:NHAPKHO,XUATKHO',
-            'ma_hh'       => 'nullable|string',
+            'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
+            'ma_hh' => 'nullable|string',
             'hang_hoa_id' => 'nullable|exists:danh_muc_hang_hoa,id',
-            'ngay'        => 'required|date',
-            'size'        => 'nullable|string',
-            'mau'         => 'nullable|string',
-            'so_luong'    => 'required|numeric|min:0.01',
-            'ma_nv'       => 'nullable|string',
-            'lenh_sx'     => 'nullable|string',
-            'note'        => 'nullable|string',
+            'ngay' => 'required|date',
+            'size' => 'nullable|string',
+            'mau' => 'nullable|string',
+            'so_luong' => 'required|numeric|min:0.01',
+            'ma_nv' => 'nullable|string',
+            'lenh_sx' => 'nullable|string',
+            'note' => 'nullable|string',
         ]);
         $warehouseTransaction->update($validated);
         return redirect()->route('admin.warehouse-transactions.index')->with('success', 'Cập nhật giao dịch kho thành công.');
@@ -289,13 +299,13 @@ class WarehouseTransactionController extends Controller
     public function xuatHangLoat(Request $request)
     {
         $request->validate([
-            'ngay'                 => 'required|date',
-            'ma_nv'                => 'nullable|string',
-            'items'                => 'required|array',
-            'items.*.selected'     => 'required',
-            'items.*.tracking_id'  => 'required|exists:order_tracking,id',
-            'items.*.ma_hh'        => 'required|string',
-            'items.*.so_luong'     => 'required|numeric|min:0.01',
+            'ngay' => 'required|date',
+            'ma_nv' => 'nullable|string',
+            'items' => 'required|array',
+            'items.*.selected' => 'required',
+            'items.*.tracking_id' => 'required|exists:order_tracking,id',
+            'items.*.ma_hh' => 'required|string',
+            'items.*.so_luong' => 'required|numeric|min:0.01',
         ]);
 
         $count = 0;
@@ -307,7 +317,8 @@ class WarehouseTransactionController extends Controller
             }
 
             $tracking = OrderTracking::with('order')->find($item['tracking_id']);
-            if (!$tracking) continue;
+            if (!$tracking)
+                continue;
 
             $maHh = $item['ma_hh'];
             $slXuat = floatval($item['so_luong']);
@@ -326,18 +337,18 @@ class WarehouseTransactionController extends Controller
 
             WarehouseTransaction::create([
                 'cong_doan' => 'XUATKHO',
-                'ma_hh'     => $maHh,
-                'ngay'      => $request->ngay,
-                'size'      => $item['size'] ?? null,
-                'mau'       => $item['mau'] ?? null,
-                'so_luong'  => $slXuat,
-                'ma_nv'     => $request->ma_nv,
-                'lenh_sx'   => $order->lenh_sanxuat ?? $order->job_no,
-                'note'      => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
+                'ma_hh' => $maHh,
+                'ngay' => $request->ngay,
+                'size' => $item['size'] ?? null,
+                'mau' => $item['mau'] ?? null,
+                'so_luong' => $slXuat,
+                'ma_nv' => $request->ma_nv,
+                'lenh_sx' => $order->lenh_sanxuat ?? $order->job_no,
+                'note' => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
             ]);
 
-            // Cập nhật tracking → Đã giao
-            $tracking->update(['cong_doan' => 'Đã giao']);
+            // Cập nhật tracking → shipped
+            $tracking->update(['cong_doan' => 'shipped']);
             $order->updateStatusFromTracking();
 
             $count++;
@@ -384,13 +395,13 @@ class WarehouseTransactionController extends Controller
 
                 return (object) [
                     'order_id' => $order->id,
-                    'ma_hang'  => $order->ma_hh,
-                    'mau'      => $order->color,
-                    'size'     => $order->tracking()->first()->kich ?? null,
-                    'sl_don'   => $order->yrd,
-                    'ton_kho'  => $nhap - $xuat,
-                    'job_no'   => $order->job_no,
-                    'fty_po'   => $order->fty_po,
+                    'ma_hang' => $order->ma_hh,
+                    'mau' => $order->color,
+                    'size' => $order->tracking()->first()->kich ?? null,
+                    'sl_don' => $order->yrd,
+                    'ton_kho' => $nhap - $xuat,
+                    'job_no' => $order->job_no,
+                    'fty_po' => $order->fty_po,
                 ];
             });
         }
@@ -409,40 +420,41 @@ class WarehouseTransactionController extends Controller
     public function storeNhapTheoLenh(Request $request)
     {
         $request->validate([
-            'lenh_sx'      => 'required|string',
-            'ngay'         => 'required|date',
-            'ma_nv'        => 'nullable|string',
-            'rows'         => 'required|array|min:1',
+            'lenh_sx' => 'required|string',
+            'ngay' => 'required|date',
+            'ma_nv' => 'nullable|string',
+            'rows' => 'required|array|min:1',
             'rows.*.ma_hh' => 'required|string',
-            'rows.*.mau'   => 'nullable|string',
-            'rows.*.size'  => 'nullable|string',
+            'rows.*.mau' => 'nullable|string',
+            'rows.*.size' => 'nullable|string',
             'rows.*.so_luong' => 'nullable|numeric|min:0',
         ]);
 
         $count = 0;
         foreach ($request->rows as $row) {
             $sl = floatval($row['so_luong'] ?? 0);
-            if ($sl <= 0) continue;
+            if ($sl <= 0)
+                continue;
 
             WarehouseTransaction::create([
                 'cong_doan' => 'NHAPKHO',
-                'ma_hh'     => $row['ma_hh'],
-                'ngay'      => $request->ngay,
-                'size'      => $row['size'] ?? null,
-                'mau'       => $row['mau'] ?? null,
-                'so_luong'  => $sl,
-                'ma_nv'     => $request->ma_nv,
-                'lenh_sx'   => $request->lenh_sx,
-                'note'      => "Nhập theo lệnh SX",
+                'ma_hh' => $row['ma_hh'],
+                'ngay' => $request->ngay,
+                'size' => $row['size'] ?? null,
+                'mau' => $row['mau'] ?? null,
+                'so_luong' => $sl,
+                'ma_nv' => $request->ma_nv,
+                'lenh_sx' => $request->lenh_sx,
+                'note' => "Nhập theo lệnh SX",
             ]);
 
             // Cập nhật ProductionReport liên quan thành NHAPKHO
             \App\Models\ProductionReport::where('ma_hh', $row['ma_hh'])
                 ->where('lenh_sx', $request->lenh_sx)
-                ->when($row['size'] ?? null, function($q) use ($row) {
+                ->when($row['size'] ?? null, function ($q) use ($row) {
                     $q->where('size', $row['size']);
                 })
-                ->when($row['mau'] ?? null, function($q) use ($row) {
+                ->when($row['mau'] ?? null, function ($q) use ($row) {
                     $q->where('mau', $row['mau']);
                 })
                 ->update(['cong_doan' => 'NHAPKHO']);

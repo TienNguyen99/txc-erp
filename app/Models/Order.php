@@ -20,17 +20,33 @@ class Order extends Model
 
     protected $fillable = [
         'khach_hang_id',
-        'job_no', 'fty_po', 'im_number', 'color', 'qty', 'unit', 'ma_hh', 'yrd',
-        'can_giao_1', 'can_giao_2', 'pl_number', 'tagtime_etc', 'sig_need_date',
-        'chart', 'price_usd_auto', 'price_usd', 'to_khai', 'lenh_sanxuat', 'status',
+        'job_no',
+        'fty_po',
+        'im_number',
+        'color',
+        'qty',
+        'unit',
+        'ma_hh',
+        'yrd',
+        'can_giao_1',
+        'can_giao_2',
+        'pl_number',
+        'tagtime_etc',
+        'sig_need_date',
+        'chart',
+        'price_usd_auto',
+        'price_usd',
+        'to_khai',
+        'lenh_sanxuat',
+        'status',
     ];
 
     protected $casts = [
-        'tagtime_etc'    => 'date',
-        'sig_need_date'  => 'date',
-        'qty'            => 'decimal:2',
-        'yrd'            => 'decimal:2',
-        'price_usd'      => 'decimal:4',
+        'tagtime_etc' => 'date',
+        'sig_need_date' => 'date',
+        'qty' => 'decimal:2',
+        'yrd' => 'decimal:2',
+        'price_usd' => 'decimal:4',
         'price_usd_auto' => 'decimal:4',
     ];
 
@@ -56,7 +72,7 @@ class Order extends Model
         }
 
         $allShipped = $trackings->every(fn($t) => $t->cong_doan === 'Đã giao');
-        $allDone    = $trackings->every(fn($t) => in_array($t->cong_doan, ['Đã nhập kho', 'Đã giao']));
+        $allDone = $trackings->every(fn($t) => in_array($t->cong_doan, ['Đã nhập kho', 'Đã giao']));
 
         if ($allShipped) {
             $this->update(['status' => 'shipped']);

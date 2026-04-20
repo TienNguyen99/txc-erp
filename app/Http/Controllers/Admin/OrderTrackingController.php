@@ -612,8 +612,8 @@ class OrderTrackingController extends Controller
     {
         $request->validate([
             'tracking_number' => 'required|string',
-            'items'           => 'required|array|min:1',
-            'items.*.ma_hh'   => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.ma_hh' => 'required|string',
         ]);
 
         $trackingNumber = $request->tracking_number;
