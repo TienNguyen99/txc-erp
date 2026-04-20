@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
                Route::post('order-tracking/ship-from-stock', [OrderTrackingController::class, 'shipFromStock'])->name('order-tracking.ship-from-stock')->middleware('permission:tracking.edit');
                Route::post('order-tracking/create-production-batch', [OrderTrackingController::class, 'createProductionBatch'])->name('order-tracking.create-production-batch')->middleware('permission:tracking.edit');
                Route::get('order-tracking/export-lenh-sx/{trackingNumber}', [OrderTrackingController::class, 'exportLenhSx'])->name('order-tracking.export-lenh-sx')->middleware('permission:tracking.export');
+               Route::get('order-tracking/export-invoice/{trackingNumber}', [OrderTrackingController::class, 'exportInvoice'])->name('order-tracking.export-invoice')->middleware('permission:tracking.export');
                Route::resource('order-tracking', OrderTrackingController::class)->parameters(['order-tracking' => 'orderTracking']);
           });
 

@@ -121,6 +121,12 @@
                                                         class="btn btn-outline-primary btn-xs">
                                                         <i class="fa-solid fa-eye me-1"></i>Xem
                                                     </a>
+                                                    @can('tracking.export')
+                                                    <a href="{{ route('admin.order-tracking.export-invoice', $tn->tracking_number) }}"
+                                                        class="btn btn-sm btn-outline-success btn-xs" title="Hóa Đơn GTGT">
+                                                        <i class="fa-solid fa-file-invoice-dollar me-1"></i>Xuất VAT
+                                                    </a>
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach

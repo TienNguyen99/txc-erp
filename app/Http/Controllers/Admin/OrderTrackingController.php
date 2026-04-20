@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Exports\LenhSanXuatExport;
+use App\Exports\OrderTrackingInvoiceExport;
 use App\Models\Order;
 use App\Models\OrderTracking;
 use App\Models\ProductionReport;
@@ -654,5 +655,14 @@ class OrderTrackingController extends Controller
         $filename = 'LENH_SX_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
 
         return Excel::download(new LenhSanXuatExport($trackingNumber, $pctHaoHut), $filename);
+    }
+
+    /**
+     * Xuất Excel Hóa Đơn Thương Mại (VAT Invoice).
+     */
+    public function exportInvoice(string $trackingNumber)
+    {
+        $filename = 'INVOICE_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
+        return Excel::download(new OrderTrackingInvoiceExport($trackingNumber), $filename);
     }
 }
