@@ -179,9 +179,17 @@
             font-size: .85rem;
         }
 
-        .qty-cell.text-det { color: #3b82f6; }
-        .qty-cell.text-dh { color: #8b5cf6; }
-        .qty-cell.text-nk { color: #10b981; }
+        .qty-cell.text-det {
+            color: #3b82f6;
+        }
+
+        .qty-cell.text-dh {
+            color: #8b5cf6;
+        }
+
+        .qty-cell.text-nk {
+            color: #10b981;
+        }
     </style>
 @endsection
 
@@ -339,8 +347,7 @@
                                     <select name="lenh_sx_id" class="form-select filter-select" id="lenhSxSelect">
                                         <option value="">-- Chọn lệnh SX --</option>
                                         @foreach($lenhSxList as $lenh)
-                                            <option value="{{ $lenh->id }}"
-                                                {{ $selectedLenhId == $lenh->id ? 'selected' : '' }}>
+                                            <option value="{{ $lenh->id }}" {{ $selectedLenhId == $lenh->id ? 'selected' : '' }}>
                                                 {{ $lenh->lenh_so }} — Chart: {{ $lenh->chart }} ({{ $lenh->nhom_hh }})
                                             </option>
                                         @endforeach
@@ -414,7 +421,8 @@
                                         <tr>
                                             <td class="text-center text-muted">{{ $idx + 1 }}</td>
                                             <td>
-                                                <span class="badge" style="background:#eef2ff;color:var(--primary);font-size:.78rem">
+                                                <span class="badge"
+                                                    style="background:#eef2ff;color:var(--primary);font-size:.78rem">
                                                     {{ $item->lenh_child }}
                                                 </span>
                                             </td>
@@ -456,9 +464,12 @@
                                             <td colspan="5" class="text-end">Tổng cộng</td>
                                             <td class="text-end">{{ number_format($lenhSxItems->sum('tong_yrd'), 2) }}</td>
                                             <td class="text-end">{{ number_format($lenhSxItems->sum('sl_can_sx'), 2) }}</td>
-                                            <td class="text-end qty-cell text-det">{{ number_format($lenhSxItems->sum('sl_det'), 2) }}</td>
-                                            <td class="text-end qty-cell text-dh">{{ number_format($lenhSxItems->sum('sl_dinh_hinh'), 2) }}</td>
-                                            <td class="text-end qty-cell text-nk">{{ number_format($lenhSxItems->sum('sl_nhap_kho'), 2) }}</td>
+                                            <td class="text-end qty-cell text-det">
+                                                {{ number_format($lenhSxItems->sum('sl_det'), 2) }}</td>
+                                            <td class="text-end qty-cell text-dh">
+                                                {{ number_format($lenhSxItems->sum('sl_dinh_hinh'), 2) }}</td>
+                                            <td class="text-end qty-cell text-nk">
+                                                {{ number_format($lenhSxItems->sum('sl_nhap_kho'), 2) }}</td>
                                         </tr>
                                     </tfoot>
                                 @endif
@@ -510,7 +521,7 @@
                                         <td>{{ $o->color }}</td>
                                         <td>{{ number_format($o->qty, 2) }}</td>
                                         <td>
-                                            @php $colors = ['pending'=>'warning','in_production'=>'info','done'=>'success','shipped'=>'primary']; @endphp
+                                            @php $colors = ['pending' => 'warning', 'in_production' => 'info', 'done' => 'success', 'shipped' => 'primary']; @endphp
                                             <span
                                                 class="badge bg-{{ $colors[$o->status] ?? 'secondary' }}">{{ $o->status }}</span>
                                         </td>
@@ -631,107 +642,107 @@
 @endsection
 
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Doughnut Chart for Order Status
-        const orderCtx = document.getElementById('orderStatusChart').getContext('2d');
-        const chartDataOrder = @json($chartDataOrder);
-        
-        new Chart(orderCtx, {
-            type: 'doughnut',
-            data: {
-                labels: chartDataOrder.labels.map(l => l.toUpperCase()),
-                datasets: [{
-                    data: chartDataOrder.data,
-                    backgroundColor: [
-                        '#6366f1', // primary
-                        '#10b981', // success
-                        '#f59e0b', // warning
-                        '#ef4444', // danger
-                        '#8b5cf6', // purple
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
-                    }
-                },
-                cutout: '70%'
-            }
-        });
-        // Doughnut Chart for QTY Status (Shipped vs Remaining)
-        const qtyCtx = document.getElementById('qtyStatusChart').getContext('2d');
-        const chartDataQty = @json($chartDataQty);
-        
-        new Chart(qtyCtx, {
-            type: 'doughnut',
-            data: {
-                labels: chartDataQty.labels,
-                datasets: [{
-                    data: chartDataQty.data,
-                    backgroundColor: [
-                        '#10b981', // success (Shipped)
-                        '#cbd5e1', // slate-300 (Remaining)
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
-                    }
-                },
-                cutout: '70%'
-            }
-        });
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Doughnut Chart for Order Status
+            const orderCtx = document.getElementById('orderStatusChart').getContext('2d');
+            const chartDataOrder = @json($chartDataOrder);
 
-        // Bar Chart for Production
-        const prodCtx = document.getElementById('productionChart').getContext('2d');
-        const chartDataProd = @json($chartDataProduction);
-        
-        new Chart(prodCtx, {
-            type: 'bar',
-            data: {
-                labels: chartDataProd.labels,
-                datasets: [{
-                    label: 'Sản lượng đạt',
-                    data: chartDataProd.data,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+            new Chart(orderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartDataOrder.labels.map(l => l.toUpperCase()),
+                    datasets: [{
+                        data: chartDataOrder.data,
+                        backgroundColor: [
+                            '#6366f1', // primary
+                            '#10b981', // success
+                            '#f59e0b', // warning
+                            '#ef4444', // danger
+                            '#8b5cf6', // purple
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: '#f1f5f9' },
-                        border: { display: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
+                        }
                     },
-                    x: {
-                        grid: { display: false },
-                        border: { display: false }
+                    cutout: '70%'
+                }
+            });
+            // Doughnut Chart for QTY Status (Shipped vs Remaining)
+            const qtyCtx = document.getElementById('qtyStatusChart').getContext('2d');
+            const chartDataQty = @json($chartDataQty);
+
+            new Chart(qtyCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartDataQty.labels,
+                    datasets: [{
+                        data: chartDataQty.data,
+                        backgroundColor: [
+                            '#10b981', // success (Shipped)
+                            '#cbd5e1', // slate-300 (Remaining)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Bar Chart for Production
+            const prodCtx = document.getElementById('productionChart').getContext('2d');
+            const chartDataProd = @json($chartDataProduction);
+
+            new Chart(prodCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartDataProd.labels,
+                    datasets: [{
+                        label: 'Sản lượng đạt',
+                        data: chartDataProd.data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            border: { display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            border: { display: false }
+                        }
                     }
                 }
-            }
+            });
         });
-    });
-</script>
+    </script>
 @endsection

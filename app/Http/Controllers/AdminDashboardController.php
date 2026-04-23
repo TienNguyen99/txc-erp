@@ -16,10 +16,10 @@ class AdminDashboardController extends Controller
     public function index(Request $request)
     {
         $stats = [
-            'users'                  => User::count(),
-            'orders'                 => Order::count(),
-            'order_tracking'         => OrderTracking::count(),
-            'production_reports'     => ProductionReport::count(),
+            'users' => User::count(),
+            'orders' => Order::count(),
+            'order_tracking' => OrderTracking::count(),
+            'production_reports' => ProductionReport::count(),
             'warehouse_transactions' => WarehouseTransaction::count(),
         ];
 
@@ -31,8 +31,8 @@ class AdminDashboardController extends Controller
 
         // Doanh thu xuất kho thực tế theo tỷ giá lúc xuất
         $shippedRevenueVnd = WarehouseTransaction::where('cong_doan', 'XUATKHO')
-                            ->selectRaw('SUM(so_luong * price_usd * exchange_rate) as total')
-                            ->value('total') ?? 0;
+            ->selectRaw('SUM(so_luong * price_usd * exchange_rate) as total')
+            ->value('total') ?? 0;
 
         $stats['total_revenue'] = $totalRevenueVnd;
         $stats['shipped_revenue'] = $shippedRevenueVnd;
@@ -43,12 +43,12 @@ class AdminDashboardController extends Controller
 
         $chartDataQty = [
             'labels' => ['Đã xuất', 'Còn lại'],
-            'data'   => [(float)$shippedQty, (float)$remainingQty]
+            'data' => [(float) $shippedQty, (float) $remainingQty]
         ];
 
-        $recentOrders     = Order::latest()->take(5)->get();
+        $recentOrders = Order::latest()->take(5)->get();
         $recentProduction = ProductionReport::latest()->take(5)->get();
-        $recentWarehouse  = WarehouseTransaction::latest()->take(5)->get();
+        $recentWarehouse = WarehouseTransaction::latest()->take(5)->get();
 
         // --- Chart 1: Order Status Distribution ---
         $orderStatuses = Order::selectRaw('status, count(*) as count')
@@ -56,7 +56,7 @@ class AdminDashboardController extends Controller
             ->pluck('count', 'status')->toArray();
         $chartDataOrder = [
             'labels' => array_keys($orderStatuses),
-            'data'   => array_values($orderStatuses)
+            'data' => array_values($orderStatuses)
         ];
 
         // --- Chart 2: Production output by date (Last 7 days) ---
@@ -72,7 +72,7 @@ class AdminDashboardController extends Controller
 
         $chartDataProduction = [
             'labels' => $last7Days->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))->toArray(),
-            'data'   => $last7Days->map(fn($d) => $productionData[$d] ?? 0)->toArray()
+            'data' => $last7Days->map(fn($d) => $productionData[$d] ?? 0)->toArray()
         ];
 
         // --- Lệnh Sản Xuất Filter ---
@@ -108,9 +108,17 @@ class AdminDashboardController extends Controller
         }
 
         return view('admin.dashboard', compact(
-            'stats', 'recentOrders', 'recentProduction', 'recentWarehouse',
-            'chartDataOrder', 'chartDataProduction', 'chartDataQty',
-            'lenhSxList', 'selectedLenhId', 'lenhSxItems', 'selectedLenh'
+            'stats',
+            'recentOrders',
+            'recentProduction',
+            'recentWarehouse',
+            'chartDataOrder',
+            'chartDataProduction',
+            'chartDataQty',
+            'lenhSxList',
+            'selectedLenhId',
+            'lenhSxItems',
+            'selectedLenh'
         ));
     }
 }
