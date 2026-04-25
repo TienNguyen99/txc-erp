@@ -60,6 +60,25 @@
                             value="{{ old('don_gia', $hangHoa->don_gia ?? 0) }}">
                     </div>
                     <div class="col-md-2">
+                        <label class="form-label fw-semibold">Quy cách đóng gói</label>
+                        <select name="quy_cach" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="Quấn cuộn" {{ old('quy_cach', $hangHoa->quy_cach ?? '') == 'Quấn cuộn' ? 'selected' : '' }}>Quấn cuộn</option>
+                            <option value="Xả thùng" {{ old('quy_cach', $hangHoa->quy_cach ?? '') == 'Xả thùng' ? 'selected' : '' }}>Xả thùng</option>
+                            <option value="Khác" {{ old('quy_cach', $hangHoa->quy_cach ?? '') == 'Khác' ? 'selected' : '' }}>Khác</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Số Yard/Cuộn</label>
+                        <input type="number" step="0.01" name="yards_per_roll" class="form-control"
+                            value="{{ old('yards_per_roll', $hangHoa->yards_per_roll ?? '') }}" placeholder="36">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Số Cuộn/Thùng</label>
+                        <input type="number" name="rolls_per_carton" class="form-control"
+                            value="{{ old('rolls_per_carton', $hangHoa->rolls_per_carton ?? '') }}" placeholder="2, 27...">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold">Định mức thùng <small
                                 class="text-muted">(yard)</small></label>
                         <input type="number" name="dinh_muc_thung" class="form-control"

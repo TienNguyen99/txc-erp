@@ -10,16 +10,18 @@ class DanhMucHangHoa extends Model
 
     protected $fillable = [
         'ma_hh', 'ten_hh', 'mau', 'kich_co', 'nhom_hh', 'don_vi',
-        'don_gia', 'dinh_muc_thung', 'net_weight', 'gross_weight',
+        'don_gia', 'quy_cach', 'yards_per_roll', 'rolls_per_carton', 'dinh_muc_thung', 'net_weight', 'gross_weight',
         'hinh_anh', 'mo_ta', 'active',
     ];
 
     protected $casts = [
-        'don_gia'        => 'decimal:4',
-        'dinh_muc_thung' => 'integer',
-        'net_weight'     => 'decimal:2',
-        'gross_weight'   => 'decimal:2',
-        'active'         => 'boolean',
+        'don_gia'          => 'decimal:4',
+        'yards_per_roll'   => 'decimal:2',
+        'rolls_per_carton' => 'integer',
+        'dinh_muc_thung'   => 'integer',
+        'net_weight'       => 'decimal:2',
+        'gross_weight'     => 'decimal:2',
+        'active'           => 'boolean',
     ];
 
     public function warehouseTransactions()

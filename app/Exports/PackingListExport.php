@@ -153,11 +153,22 @@ class PackingListExport implements WithEvents
                 foreach ($grouped as $maHh => $groupTrackings) {
                     $spec = $cartonSpecs[$maHh] ?? null;
                     $cap  = $spec->dinh_muc_thung ?? null;
+
+                    // Nếu là Quấn cuộn và có khai báo số yard/cuộn + số cuộn/thùng thì ưu tiên tính theo cuộn
+                    if ($spec && $spec->quy_cach === 'Quấn cuộn' && $spec->yards_per_roll > 0 && $spec->rolls_per_carton > 0) {
+                        $cap = $spec->yards_per_roll * $spec->rolls_per_carton;
+                    }
+
                     $nwFull = $spec ? (float) $spec->net_weight : 0;
                     $gwFull = $spec ? (float) $spec->gross_weight : 0;
 
                     $description = $groupTrackings->first()->order->im_number ?? '';
                     $sizeName = $spec->ten_hh ?? $maHh;
+
+                    // Thêm thông tin số cuộn vào sizeName cho rõ nếu là quấn cuộn
+                    if ($spec && $spec->quy_cach === 'Quấn cuộn' && $spec->rolls_per_carton > 0) {
+                        $sizeName .= "\n(" . $spec->rolls_per_carton . " cuộn/thùng)";
+                    }
 
                     $subGrs = 0; $subYrd = 0; $subCQ = 0; $subNW = 0; $subGW = 0;
 
@@ -290,7 +301,7 @@ class PackingListExport implements WithEvents
                 $sheet->getStyle("A{$dataStartRow}:K{$row}")->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                     'font' => ['size' => 9],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
                 ]);
 
                 // ═══ SIGNATURE BLOCK ═══
