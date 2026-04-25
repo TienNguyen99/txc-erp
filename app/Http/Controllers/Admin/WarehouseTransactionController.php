@@ -340,17 +340,17 @@ class WarehouseTransactionController extends Controller
             $order = $tracking->order;
 
             WarehouseTransaction::create([
-                'cong_doan'     => 'XUATKHO',
-                'ma_hh'         => $maHh,
-                'ngay'          => $request->ngay,
-                'size'          => $item['size'] ?? null,
-                'mau'           => $item['mau'] ?? null,
-                'so_luong'      => $slXuat,
-                'price_usd'     => $order->price_usd ?? $order->price_usd_auto ?? 0,
+                'cong_doan' => 'XUATKHO',
+                'ma_hh' => $maHh,
+                'ngay' => $request->ngay,
+                'size' => $item['size'] ?? null,
+                'mau' => $item['mau'] ?? null,
+                'so_luong' => $slXuat,
+                'price_usd' => $order->price_usd ?? $order->price_usd_auto ?? 0,
                 'exchange_rate' => $exchangeRate,
-                'ma_nv'         => $request->ma_nv,
-                'lenh_sx'       => $order->lenh_sanxuat ?? $order->job_no,
-                'note'          => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
+                'ma_nv' => $request->ma_nv,
+                'lenh_sx' => $order->lenh_sanxuat ?? $order->job_no,
+                'note' => "Phiếu XK - Tracking #{$tracking->id} - Job: {$order->job_no}",
             ]);
 
             // Cập nhật tracking → shipped

@@ -24,7 +24,7 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
             DanhMucHangHoa::updateOrCreate(
                 ['ma_hh' => $maHh],
                 array_filter([
-                    'ten_hh'  => $maHh,
+                    'ten_hh'  => $row['ten_hh'] ?? $maHh,
                     'mau'     => $row['color'] ?? null,
                     'don_vi'  => $row['unit'] ?? null,
                     'don_gia' => $priceUsd,
@@ -40,6 +40,7 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
                 'color'  => $row['color'] ?? null,
             ],
             [
+                'ten_hh'         => $row['ten_hh'] ?? null,
                 'fty_po'         => $row['fty_po'] ?? null,
                 'im_number'      => $row['im_number'] ?? null,
                 'unit'           => $row['unit'] ?? null,

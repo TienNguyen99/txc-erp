@@ -75,6 +75,7 @@
                             <th>Color</th>
                             <th>YRD</th>
                             <th>Mã HH</th>
+                            <th>Tên HH</th>
                             <th>PL Number</th>
                             <th>Lệnh SX</th>
                             <th>Status</th>
@@ -92,6 +93,7 @@
                                 <td>{{ $item->color }}</td>
                                 <td>{{ number_format($item->yrd, 2) }}</td>
                                 <td>{{ $item->ma_hh }}</td>
+                                <td>{{ $item->ten_hh }}</td>
                                 <td>{{ $item->pl_number ?: '—' }}</td>
                                 <td>{{ $item->lenh_sanxuat }}</td>
                                 <td>

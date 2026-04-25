@@ -18,6 +18,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
             'qty',
             'unit',
             'ma_hh',
+            'ten_hh',
             'yrd',
             'can_giao_1',
             'can_giao_2',
@@ -35,7 +36,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = 'R'; // 18 columns A-R
+        $lastCol = 'T'; // 20 columns A-T
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [

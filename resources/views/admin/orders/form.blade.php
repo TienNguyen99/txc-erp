@@ -68,6 +68,11 @@
                         <input type="text" name="ma_hh" class="form-control"
                             value="{{ old('ma_hh', $order->ma_hh ?? '') }}">
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tên HH</label>
+                        <input type="text" name="ten_hh" class="form-control"
+                            value="{{ old('ten_hh', $order->ten_hh ?? '') }}">
+                    </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Cần giao 1</label>
                         <input type="number" step="0.01" name="can_giao_1" class="form-control"

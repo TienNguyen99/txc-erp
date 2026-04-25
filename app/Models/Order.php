@@ -27,6 +27,7 @@ class Order extends Model
         'qty',
         'unit',
         'ma_hh',
+        'ten_hh',
         'yrd',
         'can_giao_1',
         'can_giao_2',
