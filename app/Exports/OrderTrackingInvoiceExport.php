@@ -13,10 +13,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class OrderTrackingInvoiceExport implements FromView, ShouldAutoSize, WithStyles
 {
     protected $trackingNumber;
+    protected $exchangeRate;
 
-    public function __construct($trackingNumber)
+    public function __construct($trackingNumber, $exchangeRate = 25400)
     {
         $this->trackingNumber = $trackingNumber;
+        $this->exchangeRate = $exchangeRate;
     }
 
     public function view(): View
@@ -27,7 +29,7 @@ class OrderTrackingInvoiceExport implements FromView, ShouldAutoSize, WithStyles
             ->where('tracking_number', $this->trackingNumber)
             ->get();
 
-        $exchangeRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
+        $exchangeRate = $this->exchangeRate;
 
         $items = [];
         $totalQuantity = 0;

@@ -122,7 +122,7 @@
                                                         <i class="fa-solid fa-eye me-1"></i>Xem
                                                     </a>
                                                     @can('tracking.export')
-                                                    <a href="{{ route('admin.order-tracking.export-invoice', $tn->tracking_number) }}"
+                                                    <a href="#" onclick="exportVat('{{ $tn->tracking_number }}')"
                                                         class="btn btn-sm btn-outline-success btn-xs" title="Hóa Đơn GTGT">
                                                         <i class="fa-solid fa-file-invoice-dollar me-1"></i>Xuất VAT
                                                     </a>
@@ -640,5 +640,13 @@
             maxOptions: null,
             allowEmptyOption: false,
         });
+
+        function exportVat(trackingNumber) {
+            let defaultRate = "{{ \App\Models\Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400 }}";
+            let rate = prompt("Nhập tỷ giá (VND/USD) áp dụng cho Hóa đơn VAT này:", defaultRate);
+            if (rate !== null && rate.trim() !== "") {
+                window.location.href = "{{ route('admin.order-tracking.export-invoice', '') }}/" + trackingNumber + "?exchange_rate=" + rate;
+            }
+        }
     </script>
 @endsection

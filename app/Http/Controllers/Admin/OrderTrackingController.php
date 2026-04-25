@@ -660,9 +660,30 @@ class OrderTrackingController extends Controller
     /**
      * Xuất Excel Hóa Đơn Thương Mại (VAT Invoice).
      */
-    public function exportInvoice(string $trackingNumber)
+    public function exportInvoice(Request $request, string $trackingNumber)
     {
+        $customRate = $request->input('exchange_rate');
+        
+        if ($customRate && is_numeric($customRate)) {
+            // Cập nhật tỷ giá cho các WarehouseTransaction đã xuất kho của lô này (để đồng bộ doanh thu Dashboard)
+            $trackings = OrderTracking::where('tracking_number', $trackingNumber)->get();
+            $orderIds = $trackings->pluck('order_id')->filter();
+            
+            if ($orderIds->count() > 0) {
+                $orders = Order::whereIn('id', $orderIds)->get();
+                $lenhSxList = $orders->pluck('lenh_sanxuat')->merge($orders->pluck('job_no'))->filter()->unique()->toArray();
+                
+                if (count($lenhSxList) > 0) {
+                    WarehouseTransaction::where('cong_doan', 'XUATKHO')
+                        ->whereIn('lenh_sx', $lenhSxList)
+                        ->update(['exchange_rate' => $customRate]);
+                }
+            }
+        } else {
+            $customRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
+        }
+
         $filename = 'INVOICE_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
-        return Excel::download(new OrderTrackingInvoiceExport($trackingNumber), $filename);
+        return Excel::download(new OrderTrackingInvoiceExport($trackingNumber, $customRate), $filename);
     }
 }
