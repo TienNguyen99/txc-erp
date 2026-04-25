@@ -52,9 +52,9 @@ class PackingListSummarySheet implements WithEvents, WithTitle
                 $dataStartRow = $row;
                 $grandTotalPackages = 0;
 
-                // Group by Product Code + Color
+                // Group by Product Code only
                 $grouped = $trackings->groupBy(function($t) {
-                    return ($t->order->ma_hh ?? 'UNKNOWN') . '|' . ($t->mau ?? $t->order->color ?? '');
+                    return ($t->order->ma_hh ?? 'UNKNOWN');
                 });
 
                 $isYellowBg = true;
@@ -76,7 +76,7 @@ class PackingListSummarySheet implements WithEvents, WithTitle
                     }
 
                     $sizeName = $spec->ten_hh ?? $maHh;
-                    $headerText = strtoupper($sizeName . ' ' . $color);
+                    $headerText = $sizeName;
 
                     // Determine background color for this group
                     $bgColor = $isYellowBg ? 'FFFFFF00' : 'FFFFFFFF'; // Yellow or White

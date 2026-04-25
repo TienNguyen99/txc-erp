@@ -645,7 +645,8 @@
             let defaultRate = "{{ \App\Models\Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400 }}";
             let rate = prompt("Nhập tỷ giá (VND/USD) áp dụng cho Hóa đơn VAT này:", defaultRate);
             if (rate !== null && rate.trim() !== "") {
-                window.location.href = "{{ route('admin.order-tracking.export-invoice', '') }}/" + trackingNumber + "?exchange_rate=" + rate;
+                let baseUrl = "{{ route('admin.order-tracking.export-invoice', ['trackingNumber' => '__TRACKING_NUMBER__']) }}";
+                window.location.href = baseUrl.replace('__TRACKING_NUMBER__', trackingNumber) + "?exchange_rate=" + rate;
             }
         }
     </script>
