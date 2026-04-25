@@ -6,14 +6,26 @@ use App\Models\WarehouseTransaction;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class WarehouseTransactionImport implements ToModel, WithHeadingRow, WithValidation
+class WarehouseTransactionImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
     protected int $count = 0;
 
+    public function prepareForValidation($data, $index)
+    {
+        if (isset($data['so_luong'])) {
+            $data['so_luong'] = $this->toNumeric($data['so_luong']);
+        }
+        return $data;
+    }
+
     public function model(array $row)
     {
-        if (empty($row['cong_doan']) || empty($row['so_luong'])) {
+        $so_luong = $this->toNumeric($row['so_luong'] ?? null);
+
+        // Bỏ qua các dòng không có công đoạn hoặc số lượng <= 0
+        if (empty($row['cong_doan']) || $so_luong === null || $so_luong <= 0) {
             return null;
         }
 
@@ -25,7 +37,7 @@ class WarehouseTransactionImport implements ToModel, WithHeadingRow, WithValidat
             'ngay'      => $this->toDate($row['ngay'] ?? null) ?? now()->format('Y-m-d'),
             'size'      => $row['size'] ?? null,
             'mau'       => $row['mau'] ?? null,
-            'so_luong'  => $this->toNumeric($row['so_luong']),
+            'so_luong'  => $so_luong,
             'ma_nv'     => $row['ma_nv'] ?? null,
             'lenh_sx'   => $row['lenh_sx'] ?? null,
             'note'      => $row['note'] ?? null,
@@ -35,8 +47,8 @@ class WarehouseTransactionImport implements ToModel, WithHeadingRow, WithValidat
     public function rules(): array
     {
         return [
-            'cong_doan' => 'required|in:NHAPKHO,XUATKHO,nhapkho,xuatkho',
-            'so_luong'  => 'required|numeric|min:0.01',
+            'cong_doan' => 'nullable|in:NHAPKHO,XUATKHO,nhapkho,xuatkho',
+            'so_luong'  => 'nullable|numeric',
         ];
     }
 
