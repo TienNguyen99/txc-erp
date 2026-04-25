@@ -9,6 +9,13 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class DanhMucHangHoaExport implements FromCollection, WithHeadings, WithMapping
 {
+    private $columns;
+
+    public function __construct()
+    {
+        $this->columns = array_values(array_diff((new DanhMucHangHoa)->getFillable(), ['hinh_anh']));
+    }
+
     public function collection()
     {
         return DanhMucHangHoa::orderBy('ma_hh')->get();
@@ -16,35 +23,11 @@ class DanhMucHangHoaExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return [
-            'ma_hh',
-            'ten_hh',
-            'mau',
-            'kich_co',
-            'nhom_hh',
-            'don_vi',
-            'don_gia',
-            'dinh_muc_thung',
-            'net_weight',
-            'gross_weight',
-            'active',
-        ];
+        return $this->columns;
     }
 
     public function map($row): array
     {
-        return [
-            $row->ma_hh,
-            $row->ten_hh,
-            $row->mau,
-            $row->kich_co,
-            $row->nhom_hh,
-            $row->don_vi,
-            $row->don_gia,
-            $row->dinh_muc_thung,
-            $row->net_weight,
-            $row->gross_weight,
-            $row->active ? 'Yes' : 'No',
-        ];
+        return collect($this->columns)->map(fn($col) => $row->$col)->toArray();
     }
 }

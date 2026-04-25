@@ -11,21 +11,16 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
 {
     public function model(array $row)
     {
+        $fillable = (new DanhMucHangHoa)->getFillable();
+        $data = collect($row)->only($fillable)->toArray();
+        $data['active'] = $data['active'] ?? true;
+        
+        // Remove ma_hh from data since it's used in the search condition
+        unset($data['ma_hh']);
+
         return DanhMucHangHoa::updateOrCreate(
             ['ma_hh' => $row['ma_hh']],
-            [
-                'ten_hh'  => $row['ten_hh'] ?? '',
-                'mau'     => $row['mau'] ?? null,
-                'kich_co' => $row['kich_co'] ?? null,
-                'nhom_hh' => $row['nhom_hh'] ?? null,
-                'don_vi'  => $row['don_vi'] ?? null,
-                'don_gia'       => $row['don_gia'] ?? 0,
-                'dinh_muc_thung'=> $row['dinh_muc_thung'] ?? null,
-                'net_weight'    => $row['net_weight'] ?? null,
-                'gross_weight'  => $row['gross_weight'] ?? null,
-                'mo_ta'         => $row['mo_ta'] ?? null,
-                'active'        => true,
-            ]
+            $data
         );
     }
 
