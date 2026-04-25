@@ -69,10 +69,10 @@ class PackingListSummarySheet implements WithEvents, WithTitle
                     $rollsPerCarton = 0;
                     $yardsPerRoll = 0;
 
-                    if ($spec && $spec->quy_cach === 'Quấn cuộn' && $spec->rolls_per_carton > 0) {
+                    if ($spec && $spec->quy_cach === 'Quấn cuộn' && $spec->yards_per_roll > 0) {
                         $isRoll = true;
-                        $rollsPerCarton = $spec->rolls_per_carton;
-                        $yardsPerRoll = $spec->yards_per_roll > 0 ? $spec->yards_per_roll : ($cap / $spec->rolls_per_carton);
+                        $yardsPerRoll = $spec->yards_per_roll;
+                        $rollsPerCarton = $cap > 0 ? floor($cap / $yardsPerRoll) : 0;
                     }
 
                     $sizeName = $spec->ten_hh ?? $maHh;
@@ -123,8 +123,8 @@ class PackingListSummarySheet implements WithEvents, WithTitle
                         $descText = number_format($qtyFloat, 0, ',', '.') . ' YARD';
                         
                         // Add roll info if full carton
-                        if ($isRoll && abs($qtyFloat - $cap) < 0.01) {
-                            $descText .= "(" . $rollsPerCarton . " ROLL*" . $yardsPerRoll . " YARD)";
+                        if ($isRoll && abs($qtyFloat - $cap) < 0.01 && $rollsPerCarton > 0) {
+                            $descText .= "( " . $rollsPerCarton . " ROLL*" . $yardsPerRoll . " YARD)";
                         }
 
                         $totalYards = $count * $qtyFloat;
