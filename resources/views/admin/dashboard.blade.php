@@ -293,7 +293,7 @@
             <div class="col-lg-4">
                 <div class="card-page h-100">
                     <h6 class="section-title mb-3">
-                        <i class="fa-solid fa-chart-pie"></i>Trạng thái Đơn hàng
+                        <i class="fa-solid fa-chart-pie"></i>Trạng thái Đơn hàng (YRD)
                     </h6>
                     <div style="position: relative; height:250px; width:100%">
                         <canvas id="orderStatusChart"></canvas>
@@ -641,7 +641,7 @@
     </div>
 @endsection
 
-@section('js')
+@section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -652,7 +652,7 @@
             new Chart(orderCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: chartDataOrder.labels.map(l => l.toUpperCase()),
+                    labels: chartDataOrder.labels.map(l => (l || 'N/A').toUpperCase()),
                     datasets: [{
                         data: chartDataOrder.data,
                         backgroundColor: [

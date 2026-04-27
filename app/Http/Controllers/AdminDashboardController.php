@@ -50,10 +50,10 @@ class AdminDashboardController extends Controller
         $recentProduction = ProductionReport::latest()->take(5)->get();
         $recentWarehouse = WarehouseTransaction::latest()->take(5)->get();
 
-        // --- Chart 1: Order Status Distribution ---
-        $orderStatuses = Order::selectRaw('status, count(*) as count')
+        // --- Chart 1: Order Status Distribution (by YRD) ---
+        $orderStatuses = Order::selectRaw('status, sum(yrd) as total_qty')
             ->groupBy('status')
-            ->pluck('count', 'status')->toArray();
+            ->pluck('total_qty', 'status')->toArray();
         $chartDataOrder = [
             'labels' => array_keys($orderStatuses),
             'data' => array_values($orderStatuses)
