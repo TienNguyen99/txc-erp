@@ -31,7 +31,7 @@ class LenhSanXuatController extends Controller
         if (!empty($chartFilter)) {
             $orders = Order::whereIn('chart', $chartFilter)->get();
 
-            $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) {
+            $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) use ($chartFilter) {
                 $totalQty = $group->sum('yrd');
                 $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
 
@@ -41,6 +41,10 @@ class LenhSanXuatController extends Controller
                 $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
                 $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
                 $tonKho = $nhap - $xuat;
+
+                $daLenLenh = LenhSanXuatItem::whereHas('lenhSanXuat', function($q) use ($chartFilter) {
+                    $q->whereIn('chart', $chartFilter);
+                })->where('ma_hh', $maHh)->where('da_len_lenh', true)->exists();
 
                 return (object) [
                     'ma_hh'        => $maHh,
@@ -53,6 +57,7 @@ class LenhSanXuatController extends Controller
                     'ton_kho'      => $tonKho,
                     'thieu'        => max(0, $totalQty - $tonKho),
                     'du_hang'      => $tonKho >= $totalQty,
+                    'da_len_lenh'  => $daLenLenh,
                 ];
             })->sortKeys()->values();
         }
@@ -84,13 +89,6 @@ class LenhSanXuatController extends Controller
 
         $chart = $request->chart;
         $pctHaoHut = $request->input('pct_hao_hut', 10);
-
-        // Kiểm tra đã có lệnh cho Chart này chưa
-        $existing = LenhSanXuat::where('chart', $chart)->first();
-        if ($existing) {
-            return redirect()->route('admin.lenh-san-xuat.show', $existing)
-                ->with('warning', "Chart {$chart} đã có lệnh SX: {$existing->lenh_so}");
-        }
 
         // Lấy orders theo Chart
         $orders = Order::where('chart', $chart)->get();

@@ -14,9 +14,22 @@
                             nhiều)</small></label>
                     <select id="chartSelect" name="chart[]" multiple placeholder="Tìm & chọn Chart...">
                         @foreach ($charts as $c)
+                            @php
+                                $lenhs = \App\Models\LenhSanXuat::where('chart', $c)->get();
+                                $label = $c;
+                                if ($lenhs->count() > 0) {
+                                    $hasDaLenLenh = \App\Models\LenhSanXuatItem::whereIn('lenh_san_xuat_id', $lenhs->pluck('id'))
+                                        ->where('da_len_lenh', true)->exists();
+                                    if ($hasDaLenLenh) {
+                                        $label .= ' (Đã lên lệnh)';
+                                    } else {
+                                        $label .= ' (Có ' . $lenhs->count() . ' lệnh)';
+                                    }
+                                }
+                            @endphp
                             <option value="{{ $c }}"
                                 {{ in_array($c, $chartFilter) ? 'selected' : '' }}>
-                                {{ $c }}</option>
+                                {{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -32,25 +45,45 @@
             @if (!empty($chartFilter))
                 @foreach ($chartFilter as $chart)
                     @php
-                        $daCoLenh = \App\Models\LenhSanXuat::where('chart', $chart)->first();
+                        $lenhs = \App\Models\LenhSanXuat::where('chart', $chart)->get();
+                        $hasLenh = $lenhs->count() > 0;
+                        $isDaLenLenh = false;
+                        if ($hasLenh) {
+                            $isDaLenLenh = \App\Models\LenhSanXuatItem::whereIn('lenh_san_xuat_id', $lenhs->pluck('id'))
+                                ->where('da_len_lenh', true)->exists();
+                        }
                     @endphp
-                    <div class="card {{ $daCoLenh ? 'border-success' : 'border-primary' }} mb-3">
+                    <div class="card {{ $isDaLenLenh ? 'border-success' : 'border-primary' }} mb-3">
                         <div class="card-body py-2 d-flex align-items-center justify-content-between">
                             <div>
-                                <i class="fa-solid fa-chart-pie {{ $daCoLenh ? 'text-success' : 'text-primary' }} me-1"></i>
+                                <i class="fa-solid fa-chart-pie {{ $isDaLenLenh ? 'text-success' : 'text-primary' }} me-1"></i>
                                 <strong>Chart: {{ $chart }}</strong>
-                                @if ($daCoLenh)
+                                @if ($hasLenh)
+                                    <span class="badge bg-secondary ms-2">
+                                        <i class="fa-solid fa-list me-1"></i>Đang có {{ $lenhs->count() }} lệnh
+                                    </span>
+                                @endif
+                                @if ($isDaLenLenh)
                                     <span class="badge bg-success ms-2">
-                                        <i class="fa-solid fa-check me-1"></i>Đã có lệnh: {{ $daCoLenh->lenh_so }}
+                                        <i class="fa-solid fa-check me-1"></i>Đã lên lệnh rồi
                                     </span>
                                 @endif
                             </div>
-                            @if ($daCoLenh)
-                                <a href="{{ route('admin.lenh-san-xuat.show', $daCoLenh) }}"
-                                    class="btn btn-success btn-sm">
-                                    <i class="fa-solid fa-eye me-1"></i>Xem lệnh
-                                </a>
-                            @else
+                            
+                            <div class="d-flex gap-2 align-items-center">
+                                @if ($hasLenh)
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fa-solid fa-eye me-1"></i>Xem lệnh
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            @foreach($lenhs as $l)
+                                                <li><a class="dropdown-item" href="{{ route('admin.lenh-san-xuat.show', $l) }}">{{ $l->lenh_so }}</a></li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
                                 <form method="POST" action="{{ route('admin.lenh-san-xuat.store') }}" class="d-inline">
                                     @csrf
                                     <input type="hidden" name="chart" value="{{ $chart }}">
@@ -59,12 +92,12 @@
                                         <input type="number" name="pct_hao_hut" value="10" min="0" max="100"
                                             step="0.5" class="form-control form-control-sm" style="width:80px">
                                         <button type="submit" class="btn btn-primary btn-sm"
-                                            onclick="return confirm('Tạo lệnh SX cho Chart {{ $chart }}?')">
+                                            onclick="return confirm('Tạo thêm lệnh SX cho Chart {{ $chart }}?')">
                                             <i class="fa-solid fa-plus me-1"></i>Tạo lệnh SX
                                         </button>
                                     </div>
                                 </form>
-                            @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -113,7 +146,9 @@
                                             {{ $diff >= 0 ? '+' : '' }}{{ number_format($diff, 2) }}
                                         </td>
                                         <td>
-                                            @if ($row->du_hang)
+                                            @if ($row->da_len_lenh)
+                                                <span class="badge bg-primary"><i class="fa-solid fa-check me-1"></i>Đã lên lệnh</span>
+                                            @elseif ($row->du_hang)
                                                 <span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Đủ hàng</span>
                                             @elseif ($row->sl_production > 0)
                                                 <span class="badge bg-info"><i class="fa-solid fa-industry me-1"></i>Đang SX</span>
