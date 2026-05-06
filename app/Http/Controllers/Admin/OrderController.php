@@ -16,7 +16,13 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::query();
+        $query = Order::query()->with('khachHang');
+
+        $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
+        $nhomHangs = collect();
+        if ($request->khach_hang_id) {
+            $nhomHangs = \App\Models\KhachHangNhomHang::where('khach_hang_id', $request->khach_hang_id)->get();
+        }
 
         if ($request->filled('bulk')) {
             $lines = preg_split('/[\r\n,;]+/', $request->bulk);
@@ -27,11 +33,13 @@ class OrderController extends Controller
         } else {
             $query->when($request->search, fn($q, $s) => $q->where('job_no', 'like', "%$s%")->orWhere('fty_po', 'like', "%$s%"))
                   ->when($request->status, fn($q, $s) => $q->where('status', $s))
+                  ->when($request->khach_hang_id, fn($q, $id) => $q->where('khach_hang_id', $id))
+                  ->when($request->nhom_hang, fn($q, $nhom) => $q->where('ma_hh', 'like', $nhom . '%'))
                   ->when($request->no_pl, fn($q) => $q->where(fn($q2) => $q2->whereNull('pl_number')->orWhere('pl_number', '')));
         }
 
         $data = $query->latest()->paginate(1000)->withQueryString();
-        return view('admin.orders.index', compact('data'));
+        return view('admin.orders.index', compact('data', 'khachHangs', 'nhomHangs'));
     }
 
     public function create()

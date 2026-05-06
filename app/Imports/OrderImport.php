@@ -21,7 +21,11 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
         $khachHangId = null;
         if (!empty($row['khach_hang_id'])) {
             $val = trim($row['khach_hang_id']);
-            $khachHangId = DanhMucKhachHang::where('ma_kh', $val)->orWhere('id', $val)->value('id');
+            $q = DanhMucKhachHang::where('ma_kh', $val);
+            if (is_numeric($val)) {
+                $q->orWhere('id', $val);
+            }
+            $khachHangId = $q->value('id');
         }
 
         // Tự động tạo/cập nhật danh mục hàng hóa nếu có ma_hh

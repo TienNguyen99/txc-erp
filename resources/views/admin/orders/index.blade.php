@@ -27,9 +27,31 @@
             @include('admin.partials.alert')
 
             <form method="GET" class="row g-2 mb-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <input type="text" name="search" class="form-control form-control-sm"
                         placeholder="Tìm Job No / Fty PO..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="khach_hang_id" class="form-select form-select-sm">
+                        <option value="">-- Khách hàng --</option>
+                        @foreach ($khachHangs as $id => $ten)
+                            <option value="{{ $id }}" {{ request('khach_hang_id') == $id ? 'selected' : '' }}>
+                                {{ $ten }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="nhom_hang" id="nhomHangSelect" class="form-select form-select-sm">
+                        <option value="">-- Nhóm HH --</option>
+                        @if(isset($nhomHangs) && $nhomHangs->count())
+                            @foreach($nhomHangs as $nhom)
+                                <option value="{{ $nhom->ma_nhom }}" {{ request('nhom_hang') == $nhom->ma_nhom ? 'selected' : '' }}>
+                                    {{ $nhom->ten_nhom ?: $nhom->ma_nhom }} ({{ $nhom->ma_nhom }})
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <select name="status" class="form-select form-select-sm">
@@ -71,6 +93,7 @@
                             <th>#</th>
                             <th>Job No</th>
                             <th>Fty PO</th>
+                            <th>Khách hàng</th>
                             <th>IM#</th>
                             <th>Color</th>
                             <th>YRD</th>
@@ -89,6 +112,7 @@
                                 <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
                                 <td class="fw-semibold">{{ $item->job_no }}</td>
                                 <td>{{ $item->fty_po }}</td>
+                                <td>{{ $item->khachHang?->ma_kh ?? '—' }}</td>
                                 <td>{{ $item->im_number }}</td>
                                 <td>{{ $item->color }}</td>
                                 <td>{{ number_format($item->yrd, 2) }}</td>
@@ -328,6 +352,28 @@
 
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('order-check')) updateBar();
+        });
+
+        // Fetch Groups dynamically
+        const khachHangSelect = document.querySelector('select[name="khach_hang_id"]');
+        const nhomHangSelect = document.getElementById('nhomHangSelect');
+
+        khachHangSelect.addEventListener('change', function() {
+            const khId = this.value;
+            if (khId) {
+                fetch('{{ route("admin.khach-hang.get-groups") }}?khach_hang_id=' + khId)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '<option value="">-- Nhóm HH --</option>';
+                        data.forEach(item => {
+                            const name = item.ten_nhom ? item.ten_nhom : item.ma_nhom;
+                            html += `<option value="${item.ma_nhom}">${name} (${item.ma_nhom})</option>`;
+                        });
+                        nhomHangSelect.innerHTML = html;
+                    });
+            } else {
+                nhomHangSelect.innerHTML = '<option value="">-- Nhóm HH --</option>';
+            }
         });
     </script>
 @endsection

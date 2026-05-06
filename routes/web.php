@@ -117,6 +117,9 @@ Route::middleware('auth')->group(function () {
                Route::get('hang-hoa/export', [DanhMucHangHoaController::class, 'export'])->name('hang-hoa.export')->middleware('permission:catalog.export');
                Route::get('hang-hoa/template', [DanhMucHangHoaController::class, 'template'])->name('hang-hoa.template');
                Route::resource('hang-hoa', DanhMucHangHoaController::class)->parameters(['hang-hoa' => 'hangHoa']);
+               
+               Route::get('khach-hang/get-groups', [DanhMucKhachHangController::class, 'getGroups'])->name('khach-hang.get-groups');
+               Route::post('khach-hang/save-groups', [DanhMucKhachHangController::class, 'saveGroups'])->name('khach-hang.save-groups');
                Route::resource('khach-hang', DanhMucKhachHangController::class)->parameters(['khach-hang' => 'khachHang']);
           });
      });
