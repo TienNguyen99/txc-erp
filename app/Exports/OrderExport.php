@@ -19,7 +19,7 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
         return [
             'job_no',
             'fty_po',
-            'khach_hang',
+            'khach_hang_id',
             'im_number',
             'color',
             'unit',
@@ -44,7 +44,7 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
         return [
             $row->job_no,
             $row->fty_po,
-            $row->khachHang?->ten_kh,
+            $row->khachHang?->ma_kh,
             $row->im_number,
             $row->color,
             $row->unit,

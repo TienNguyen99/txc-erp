@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Order;
 use App\Models\DanhMucHangHoa;
+use App\Models\DanhMucKhachHang;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -16,6 +17,12 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
     {
         $maHh     = trim($row['ma_hh'] ?? '');
         $priceUsd = $this->toNumeric($row['price_usd'] ?? null);
+
+        $khachHangId = null;
+        if (!empty($row['khach_hang_id'])) {
+            $val = trim($row['khach_hang_id']);
+            $khachHangId = DanhMucKhachHang::where('ma_kh', $val)->orWhere('id', $val)->value('id');
+        }
 
         // Tự động tạo/cập nhật danh mục hàng hóa nếu có ma_hh
         if ($maHh !== '') {
@@ -40,6 +47,7 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
                 'color'  => $row['color'] ?? null,
             ],
             [
+                'khach_hang_id'  => $khachHangId,
                 'ten_hh'         => $row['ten_hh'] ?? null,
                 'fty_po'         => $row['fty_po'] ?? null,
                 'im_number'      => $row['im_number'] ?? null,

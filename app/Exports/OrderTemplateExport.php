@@ -11,6 +11,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
     public function headings(): array
     {
         return [
+            'khach_hang_id',
             'job_no',
             'fty_po',
             'im_number',
@@ -36,7 +37,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = 'T'; // 20 columns A-T
+        $lastCol = 'U'; // 21 columns A-U
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
