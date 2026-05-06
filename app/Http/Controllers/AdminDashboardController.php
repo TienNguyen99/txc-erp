@@ -16,11 +16,8 @@ class AdminDashboardController extends Controller
     public function index(Request $request)
     {
         $stats = [
-            'users' => User::count(),
             'orders' => Order::count(),
-            'order_tracking' => OrderTracking::count(),
-            'production_reports' => ProductionReport::count(),
-            'warehouse_transactions' => WarehouseTransaction::count(),
+            'pending_orders' => Order::whereIn('status', ['pending', 'in_production'])->count(),
         ];
 
         // --- Doanh Thu ---
@@ -75,50 +72,13 @@ class AdminDashboardController extends Controller
             'data' => $last7Days->map(fn($d) => $productionData[$d] ?? 0)->toArray()
         ];
 
-        // --- Lệnh Sản Xuất Filter ---
-        $lenhSxList = LenhSanXuat::orderByDesc('created_at')->get();
-        $selectedLenhId = $request->input('lenh_sx_id');
-        $lenhSxItems = collect();
-        $selectedLenh = null;
-
-        if ($selectedLenhId) {
-            $selectedLenh = LenhSanXuat::with('items')->find($selectedLenhId);
-            if ($selectedLenh) {
-                $lenhSxItems = $selectedLenh->items
-                    ->where('da_len_lenh', true)
-                    ->map(function ($item) {
-                        // SL công đoạn Dệt
-                        $item->sl_det = ProductionReport::where('lenh_sx', $item->lenh_child)
-                            ->where('cong_doan', 'Dệt')
-                            ->sum('sl_dat');
-
-                        // SL công đoạn Định hình
-                        $item->sl_dinh_hinh = ProductionReport::where('lenh_sx', $item->lenh_child)
-                            ->where('cong_doan', 'Định hình')
-                            ->sum('sl_dat');
-
-                        // SL nhập kho
-                        $item->sl_nhap_kho = WarehouseTransaction::where('lenh_sx', 'like', '%' . $item->lenh_child . '%')
-                            ->where('cong_doan', 'NHAPKHO')
-                            ->sum('so_luong');
-
-                        return $item;
-                    })->values();
-            }
-        }
-
         return view('admin.dashboard', compact(
             'stats',
             'recentOrders',
             'recentProduction',
             'recentWarehouse',
             'chartDataOrder',
-            'chartDataProduction',
-            'chartDataQty',
-            'lenhSxList',
-            'selectedLenhId',
-            'lenhSxItems',
-            'selectedLenh'
+            'chartDataProduction'
         ));
     }
 }

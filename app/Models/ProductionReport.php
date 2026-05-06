@@ -21,7 +21,7 @@ class ProductionReport extends Model
     protected $fillable = [
         'cong_doan', 'ngay_sx', 'ca', 'ma_nv', 'lenh_sx', 'mau', 'size',
         'dinh_muc', 'so_band', 'ns_8h_1may', 'ns_gio_may',
-        'sl_dat', 'sl_hu', 'so_may', 'gio_sx', 'sl_yard_met', 'van_de',
+        'sl_dat', 'sl_hu', 'so_may', 'gio_sx', 'sl_yard_met', 'van_de', 'status',
     ];
 
     protected $casts = [

@@ -211,18 +211,7 @@
 
         {{-- Stat Cards --}}
         <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-lg-4 col-sm-6">
-                <a href="{{ route('admin.users.index') }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-1">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-                        </div>
-                        <div class="stat-number">{{ number_format($stats['users']) }}</div>
-                        <div class="stat-label">Users</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-xl-3 col-lg-4 col-sm-6">
+            <div class="col-xl-3 col-lg-6">
                 <a href="{{ route('admin.orders.index') }}" class="text-decoration-none">
                     <div class="stat-card bg-grad-2">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -233,64 +222,40 @@
                     </div>
                 </a>
             </div>
-            <div class="col-xl-3 col-lg-4 col-sm-6">
+            <div class="col-xl-3 col-lg-6">
+                <a href="{{ route('admin.orders.index', ['status' => 'pending']) }}" class="text-decoration-none">
+                    <div class="stat-card bg-grad-1">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        </div>
+                        <div class="stat-number">{{ number_format($stats['pending_orders']) }}</div>
+                        <div class="stat-label">Đơn đang xử lý</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-xl-3 col-lg-6">
                 <div class="stat-card bg-grad-6">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
                     </div>
                     <div class="stat-number">{{ number_format($stats['total_revenue'], 0, ',', '.') }} ₫</div>
-                    <div class="stat-label">Tổng Doanh thu (VND dự kiến)</div>
+                    <div class="stat-label">Tổng Doanh thu dự kiến</div>
                 </div>
             </div>
-            <div class="col-xl-3 col-lg-4 col-sm-6">
+            <div class="col-xl-3 col-lg-6">
                 <div class="stat-card bg-grad-7">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="stat-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                     </div>
                     <div class="stat-number">{{ number_format($stats['shipped_revenue'], 0, ',', '.') }} ₫</div>
-                    <div class="stat-label">Doanh thu đã Giao (VND thực tế)</div>
+                    <div class="stat-label">Doanh thu đã Giao</div>
                 </div>
-            </div>
-        </div>
-        <div class="row g-3 mb-4">
-            <div class="col-xl-4 col-lg-4 col-sm-6">
-                <a href="{{ route('admin.order-tracking.index') }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-3">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-truck-fast"></i></div>
-                        </div>
-                        <div class="stat-number">{{ number_format($stats['order_tracking']) }}</div>
-                        <div class="stat-label">Order Tracking</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-xl-4 col-lg-4 col-sm-6">
-                <a href="{{ route('admin.production-reports.index') }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-industry"></i></div>
-                        </div>
-                        <div class="stat-number">{{ number_format($stats['production_reports']) }}</div>
-                        <div class="stat-label">Báo cáo SX</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-xl-4 col-lg-4 col-sm-6">
-                <a href="{{ route('admin.warehouse-transactions.index') }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-5">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-warehouse"></i></div>
-                        </div>
-                        <div class="stat-number">{{ number_format($stats['warehouse_transactions']) }}</div>
-                        <div class="stat-label">Giao dịch kho</div>
-                    </div>
-                </a>
             </div>
         </div>
 
         {{-- Dashbaord Charts --}}
         <div class="row g-3 mb-4">
-            <div class="col-lg-4">
+            <div class="col-lg-5">
                 <div class="card-page h-100">
                     <h6 class="section-title mb-3">
                         <i class="fa-solid fa-chart-pie"></i>Trạng thái Đơn hàng (YRD)
@@ -300,20 +265,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-7">
                 <div class="card-page h-100">
                     <h6 class="section-title mb-3">
-                        <i class="fa-solid fa-chart-pie"></i>Tỷ lệ Giao hàng (SP)
-                    </h6>
-                    <div style="position: relative; height:250px; width:100%">
-                        <canvas id="qtyStatusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card-page h-100">
-                    <h6 class="section-title mb-3">
-                        <i class="fa-solid fa-chart-column"></i>Sản lượng May
+                        <i class="fa-solid fa-chart-column"></i>Sản lượng May (7 ngày)
                     </h6>
                     <div style="position: relative; height:250px; width:100%">
                         <canvas id="productionChart"></canvas>
@@ -322,170 +277,7 @@
             </div>
         </div>
 
-        {{-- Lệnh Sản Xuất Filter --}}
-        <div class="row g-3 mb-4">
-            <div class="col-12">
-                <div class="card-page">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="section-title mb-0">
-                            <i class="fa-solid fa-clipboard-list"></i>Theo dõi Lệnh Sản Xuất
-                        </h6>
-                        <a href="{{ route('admin.lenh-san-xuat.index') }}" class="text-decoration-none"
-                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
-                            Quản lý LSX <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
-                        </a>
-                    </div>
 
-                    {{-- Filter --}}
-                    <div class="filter-card mb-3">
-                        <form method="GET" action="{{ route('admin.dashboard') }}" id="lenhSxFilterForm">
-                            <div class="row align-items-end g-2">
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="form-label fw-semibold" style="font-size:.8rem;color:var(--text)">
-                                        <i class="fa-solid fa-filter me-1 text-primary"></i>Chọn Lệnh Sản Xuất
-                                    </label>
-                                    <select name="lenh_sx_id" class="form-select filter-select" id="lenhSxSelect">
-                                        <option value="">-- Chọn lệnh SX --</option>
-                                        @foreach($lenhSxList as $lenh)
-                                            <option value="{{ $lenh->id }}" {{ $selectedLenhId == $lenh->id ? 'selected' : '' }}>
-                                                {{ $lenh->lenh_so }} — Chart: {{ $lenh->chart }} ({{ $lenh->nhom_hh }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary"
-                                        style="border-radius:12px;padding:.6rem 1.2rem;font-size:.85rem;font-weight:600">
-                                        <i class="fa-solid fa-search me-1"></i>Xem
-                                    </button>
-                                </div>
-                                @if($selectedLenhId)
-                                    <div class="col-auto">
-                                        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"
-                                            style="border-radius:12px;padding:.6rem 1.2rem;font-size:.85rem;font-weight:600">
-                                            <i class="fa-solid fa-times me-1"></i>Bỏ lọc
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
-
-                    {{-- Kết quả --}}
-                    @if($selectedLenh)
-                        {{-- Summary pills --}}
-                        <div class="d-flex flex-wrap gap-2 mb-3">
-                            <span class="summary-pill" style="background:rgba(99,102,241,.1);color:#6366f1">
-                                <i class="fa-solid fa-barcode"></i>
-                                {{ $lenhSxItems->count() }} mã hàng
-                            </span>
-                            <span class="summary-pill det">
-                                <i class="fa-solid fa-industry"></i>
-                                Dệt: {{ number_format($lenhSxItems->sum('sl_det'), 2) }}
-                            </span>
-                            <span class="summary-pill dh">
-                                <i class="fa-solid fa-shapes"></i>
-                                Định hình: {{ number_format($lenhSxItems->sum('sl_dinh_hinh'), 2) }}
-                            </span>
-                            <span class="summary-pill nk">
-                                <i class="fa-solid fa-warehouse"></i>
-                                Nhập kho: {{ number_format($lenhSxItems->sum('sl_nhap_kho'), 2) }}
-                            </span>
-                        </div>
-
-                        {{-- Table --}}
-                        <div class="table-responsive">
-                            <table class="table table-hover lenh-sx-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center" style="width:40px">#</th>
-                                        <th>Mã lệnh con</th>
-                                        <th>Mã HH</th>
-                                        <th>Tên HH</th>
-                                        <th>Màu</th>
-                                        <th class="text-end">Tổng YRD</th>
-                                        <th class="text-end">SL cần SX</th>
-                                        <th class="text-end">
-                                            <i class="fa-solid fa-industry me-1"></i>Dệt
-                                        </th>
-                                        <th class="text-end">
-                                            <i class="fa-solid fa-shapes me-1"></i>Định hình
-                                        </th>
-                                        <th class="text-end">
-                                            <i class="fa-solid fa-warehouse me-1"></i>Nhập kho
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($lenhSxItems as $idx => $item)
-                                        <tr>
-                                            <td class="text-center text-muted">{{ $idx + 1 }}</td>
-                                            <td>
-                                                <span class="badge"
-                                                    style="background:#eef2ff;color:var(--primary);font-size:.78rem">
-                                                    {{ $item->lenh_child }}
-                                                </span>
-                                            </td>
-                                            <td class="fw-semibold">{{ $item->ma_hh }}</td>
-                                            <td>{{ $item->ten_hh ?: '—' }}</td>
-                                            <td>
-                                                @if($item->mau)
-                                                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.75rem">
-                                                        {{ $item->mau }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-end fw-semibold">{{ number_format($item->tong_yrd, 2) }}</td>
-                                            <td class="text-end">{{ number_format($item->sl_can_sx, 2) }}</td>
-                                            <td class="text-end qty-cell text-det">
-                                                {{ number_format($item->sl_det, 2) }}
-                                            </td>
-                                            <td class="text-end qty-cell text-dh">
-                                                {{ number_format($item->sl_dinh_hinh, 2) }}
-                                            </td>
-                                            <td class="text-end qty-cell text-nk">
-                                                {{ number_format($item->sl_nhap_kho, 2) }}
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="10" class="text-muted text-center py-4">
-                                                <i class="fa-regular fa-folder-open me-1"></i>
-                                                Chưa có mã hàng nào đã lên lệnh SX trong lệnh này
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                                @if($lenhSxItems->count() > 0)
-                                    <tfoot>
-                                        <tr style="background:#f8fafc;font-weight:700;font-size:.82rem">
-                                            <td colspan="5" class="text-end">Tổng cộng</td>
-                                            <td class="text-end">{{ number_format($lenhSxItems->sum('tong_yrd'), 2) }}</td>
-                                            <td class="text-end">{{ number_format($lenhSxItems->sum('sl_can_sx'), 2) }}</td>
-                                            <td class="text-end qty-cell text-det">
-                                                {{ number_format($lenhSxItems->sum('sl_det'), 2) }}</td>
-                                            <td class="text-end qty-cell text-dh">
-                                                {{ number_format($lenhSxItems->sum('sl_dinh_hinh'), 2) }}</td>
-                                            <td class="text-end qty-cell text-nk">
-                                                {{ number_format($lenhSxItems->sum('sl_nhap_kho'), 2) }}</td>
-                                        </tr>
-                                    </tfoot>
-                                @endif
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="fa-solid fa-hand-pointer text-muted mb-2" style="font-size:2rem;opacity:.4"></i>
-                            <p class="text-muted mb-0" style="font-size:.85rem">
-                                Chọn một lệnh sản xuất ở trên để xem chi tiết mã hàng và tiến độ sản xuất
-                            </p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         {{-- Recent data tables --}}
         <div class="row g-3">
@@ -539,55 +331,9 @@
                 </div>
             </div>
 
-            {{-- Recent Production Reports --}}
-            <div class="col-lg-6">
-                <div class="card-page">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="section-title mb-0">
-                            <i class="fa-solid fa-industry"></i>Báo cáo SX gần đây
-                        </h6>
-                        <a href="{{ route('admin.production-reports.index') }}" class="text-decoration-none"
-                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
-                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
-                        </a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-modern mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Ngày SX</th>
-                                    <th>Ca</th>
-                                    <th>Mã NV</th>
-                                    <th>Lệnh SX</th>
-                                    <th>SL Đạt</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentProduction as $p)
-                                    <tr>
-                                        <td>{{ $p->ngay_sx->format('d/m/Y') }}</td>
-                                        <td><span class="badge" style="background:#eef2ff;color:var(--primary)">Ca
-                                                {{ $p->ca }}</span></td>
-                                        <td>{{ $p->ma_nv }}</td>
-                                        <td class="fw-semibold">{{ $p->lenh_sx }}</td>
-                                        <td>{{ number_format($p->sl_dat, 2) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-muted text-center py-4">
-                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
             {{-- Recent Warehouse --}}
-            <div class="col-12">
-                <div class="card-page">
+            <div class="col-lg-6">
+                <div class="card-page h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="section-title mb-0">
                             <i class="fa-solid fa-warehouse"></i>Giao dịch kho gần đây
@@ -603,10 +349,8 @@
                                 <tr>
                                     <th>Ngày</th>
                                     <th>Loại</th>
-                                    <th>Size</th>
                                     <th>Màu</th>
                                     <th>Số lượng</th>
-                                    <th>Mã NV</th>
                                     <th>Lệnh SX</th>
                                 </tr>
                             </thead>
@@ -618,15 +362,13 @@
                                             <span
                                                 class="badge bg-{{ $w->cong_doan == 'NHAPKHO' ? 'success' : 'danger' }}">{{ $w->cong_doan }}</span>
                                         </td>
-                                        <td>{{ $w->size }}</td>
                                         <td>{{ $w->mau }}</td>
                                         <td class="fw-semibold">{{ number_format($w->so_luong, 2) }}</td>
-                                        <td>{{ $w->ma_nv }}</td>
                                         <td>{{ $w->lenh_sx }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-muted text-center py-4">
+                                        <td colspan="5" class="text-muted text-center py-4">
                                             <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
                                         </td>
                                     </tr>
@@ -661,36 +403,6 @@
                             '#f59e0b', // warning
                             '#ef4444', // danger
                             '#8b5cf6', // purple
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-            // Doughnut Chart for QTY Status (Shipped vs Remaining)
-            const qtyCtx = document.getElementById('qtyStatusChart').getContext('2d');
-            const chartDataQty = @json($chartDataQty);
-
-            new Chart(qtyCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: chartDataQty.labels,
-                    datasets: [{
-                        data: chartDataQty.data,
-                        backgroundColor: [
-                            '#10b981', // success (Shipped)
-                            '#cbd5e1', // slate-300 (Remaining)
                         ],
                         borderWidth: 0,
                         hoverOffset: 4

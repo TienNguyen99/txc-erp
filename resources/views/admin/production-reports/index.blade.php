@@ -3,14 +3,33 @@
     <div class="container-fluid px-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="page-title mb-0"><i class="fa-solid fa-industry me-2"></i>Quản lý Báo cáo Sản xuất</h4>
-            <a href="{{ route('admin.production-reports.create') }}" class="btn btn-primary btn-sm">
-                <i class="fa-solid fa-plus me-1"></i>Thêm Báo cáo
-            </a>
+            <div>
+                <a href="{{ route('admin.production-reports.export', ['thang' => request('thang', now()->month), 'nam' => request('nam', now()->year)]) }}" class="btn btn-success btn-sm me-2">
+                    <i class="fa-solid fa-file-excel me-1"></i>Xuất Excel
+                </a>
+                <a href="{{ route('admin.production-reports.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-plus me-1"></i>Thêm Báo cáo
+                </a>
+            </div>
         </div>
         <div class="card-page">
             @include('admin.partials.alert')
             <form method="GET" class="row g-2 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <select name="thang" class="form-select form-select-sm">
+                        @for ($i = 1; $i <= 12; $i++)
+                            <option value="{{ $i }}" {{ ($thang ?? now()->month) == $i ? 'selected' : '' }}>Tháng {{ $i }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="nam" class="form-select form-select-sm">
+                        @for ($i = now()->year - 2; $i <= now()->year + 1; $i++)
+                            <option value="{{ $i }}" {{ ($nam ?? now()->year) == $i ? 'selected' : '' }}>Năm {{ $i }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <input type="text" name="search" class="form-control form-control-sm"
                         placeholder="Tìm Lệnh SX / Mã NV..." value="{{ request('search') }}">
                 </div>
@@ -35,6 +54,7 @@
                                 <th>Size (Mã HH)</th>
                                 <th>SL Đạt</th>
                                 <th>SL Hư</th>
+                                <th>Trạng thái</th>
                                 <th class="text-center">Hành động</th>
                             </tr>
                         </thead>
@@ -59,7 +79,21 @@
                                     <td>{{ $item->size }}</td>
                                     <td>{{ number_format($item->sl_dat, 2) }}</td>
                                     <td>{{ number_format($item->sl_hu, 2) }}</td>
+                                    <td>
+                                        @if ($item->status === 'approved')
+                                            <span class="badge bg-success">Đã duyệt</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
+                                        @if ($item->status !== 'approved')
+                                        <button type="button" class="btn btn-success btn-xs btn-approve-report"
+                                            data-url="{{ route('admin.production-reports.approve', $item) }}"
+                                            onclick="if(confirm('Bạn xác nhận duyệt báo cáo này?')){let f=document.getElementById('approveReportForm');f.action=this.dataset.url;f.submit();}" title="Duyệt báo cáo">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
+                                        @endif
                                         <a href="{{ route('admin.production-reports.edit', $item) }}"
                                             class="btn btn-warning btn-xs"><i class="fa-solid fa-pen"></i></a>
                                         <button type="button" class="btn btn-danger btn-xs btn-delete-report"
@@ -93,6 +127,10 @@
 
     <form id="deleteReportForm" method="POST" style="display:none">
         @csrf @method('DELETE')
+    </form>
+    
+    <form id="approveReportForm" method="POST" style="display:none">
+        @csrf
     </form>
 
     <script>

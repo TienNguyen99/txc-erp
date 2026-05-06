@@ -5,15 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
+use App\Exports\ProductionReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
 class ProductionReportController extends Controller
 {
     public function index(Request $request)
     {
+        $thang = $request->thang ?? now()->month;
+        $nam = $request->nam ?? now()->year;
+
         $data = ProductionReport::when($request->search, fn($q, $s) => $q->where('lenh_sx', 'like', "%$s%")->orWhere('ma_nv', 'like', "%$s%"))
+                    ->when($request->thang, fn($q, $m) => $q->whereMonth('ngay_sx', $m))
+                    ->when($request->nam, fn($q, $y) => $q->whereYear('ngay_sx', $y))
                     ->latest()->paginate(15)->withQueryString();
-        return view('admin.production-reports.index', compact('data'));
+        return view('admin.production-reports.index', compact('data', 'thang', 'nam'));
     }
 
     public function create()
@@ -164,5 +171,20 @@ class ProductionReportController extends Controller
 
         return redirect()->back()->with('success',
             "Đã gộp {$reports->count()} báo cáo SX thành {$countGroup} phiếu nhập kho theo mã HH.");
+    }
+
+    public function approve(ProductionReport $productionReport)
+    {
+        $productionReport->update(['status' => 'approved']);
+        return redirect()->back()->with('success', 'Đã duyệt báo cáo thành công.');
+    }
+
+    public function export(Request $request)
+    {
+        $thang = $request->thang ?? now()->month;
+        $nam = $request->nam ?? now()->year;
+        $fileName = "Bao_Cao_SX_{$thang}_{$nam}.xlsx";
+        
+        return Excel::download(new ProductionReportExport($thang, $nam), $fileName);
     }
 }

@@ -94,6 +94,8 @@ Route::middleware('auth')->group(function () {
 
           // ── Production Reports ──
           Route::middleware('permission:production.view')->group(function () {
+               Route::get('production-reports/export', [ProductionReportController::class, 'export'])->name('production-reports.export')->middleware('permission:production.export');
+               Route::post('production-reports/{productionReport}/approve', [ProductionReportController::class, 'approve'])->name('production-reports.approve')->middleware('permission:production.edit');
                Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])->name('production-reports.push-warehouse')->middleware('permission:production.edit');
                Route::resource('production-reports', ProductionReportController::class)->parameters(['production-reports' => 'productionReport']);
           });
