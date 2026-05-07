@@ -32,6 +32,9 @@
                         </option>
                     @endforeach
                 </select>
+                <a href="{{ route('admin.warehouse-transactions.lenh-xuat-vat-tu', $lenh->id) }}" class="btn btn-warning btn-sm text-dark">
+                    <i class="fa-solid fa-boxes-stacked me-1"></i>Yêu cầu Xuất vật tư
+                </a>
                 <a href="{{ route('admin.lenh-san-xuat.export', $lenh) }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-file-excel me-1"></i>In lệnh SX (Excel)
                 </a>
@@ -262,6 +265,44 @@
                     </table>
                 </div>
             </div>
+            {{-- ═══ LỊCH SỬ XUẤT VẬT TƯ ═══ --}}
+            @php
+                $xuatVatTuHistory = \App\Models\WarehouseTransaction::where('lenh_sx', $lenh->lenh_so)
+                    ->where('cong_doan', 'XUATKHO')
+                    ->latest('ngay')
+                    ->get();
+            @endphp
+            @if($xuatVatTuHistory->count() > 0)
+            <div class="mb-4 mt-5">
+                <h6 class="fw-bold mb-2 text-warning">
+                    <i class="fa-solid fa-boxes-stacked me-1"></i>Lịch sử Xuất vật tư cho Lệnh này
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover align-middle mb-0">
+                        <thead class="table-warning text-dark">
+                            <tr>
+                                <th>Ngày xuất</th>
+                                <th>Mã NVL</th>
+                                <th>Người xuất</th>
+                                <th class="text-end">Số lượng</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($xuatVatTuHistory as $xuat)
+                                <tr>
+                                    <td>{{ \Carbon\Carbon::parse($xuat->ngay)->format('d/m/Y') }}</td>
+                                    <td class="fw-bold">{{ $xuat->ma_hh }}</td>
+                                    <td>{{ $xuat->ma_nv }}</td>
+                                    <td class="text-end fw-bold text-danger">{{ number_format($xuat->so_luong, 2) }}</td>
+                                    <td>{{ $xuat->note }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 @endsection

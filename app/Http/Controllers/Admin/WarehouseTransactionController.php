@@ -473,6 +473,89 @@ class WarehouseTransactionController extends Controller
             ->with('success', "Đã nhập kho {$count} mục theo lệnh {$request->lenh_sx}.");
     }
 
+    /**
+     * Yêu cầu xuất vật tư cho Lệnh Sản Xuất dựa trên BOM
+     */
+    public function lenhXuatVatTu(\App\Models\LenhSanXuat $lenhSanXuat)
+    {
+        $items = $lenhSanXuat->items()->where('da_len_lenh', true)->get();
+        $materials = [];
+        
+        foreach ($items as $item) {
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $item->ma_hh)->first();
+            if (!$hangHoa) continue;
+            
+            $dinhMucs = \App\Models\DinhMucNvl::with('nguyenLieu')->where('san_pham_id', $hangHoa->id)->get();
+            foreach ($dinhMucs as $dm) {
+                $nl = $dm->nguyenLieu;
+                if (!$nl) continue;
+                
+                $haoHut = 1 + ($dm->ti_le_hao_hut / 100);
+                $reqQty = $item->sl_can_sx * $dm->so_luong * $haoHut;
+                
+                $key = $nl->id;
+                if (!isset($materials[$key])) {
+                    // Tính tồn kho hiện tại
+                    $nhap = WarehouseTransaction::where('ma_hh', $nl->ma_hh)->nhapKho()->sum('so_luong');
+                    $xuat = WarehouseTransaction::where('ma_hh', $nl->ma_hh)->xuatKho()->sum('so_luong');
+                    $tonKho = $nhap - $xuat;
+
+                    // Đã xuất bao nhiêu cho lệnh này?
+                    $daXuatChoLenh = WarehouseTransaction::where('ma_hh', $nl->ma_hh)
+                        ->xuatKho()
+                        ->where('lenh_sx', $lenhSanXuat->lenh_so)
+                        ->sum('so_luong');
+
+                    $materials[$key] = [
+                        'ma_hh' => $nl->ma_hh,
+                        'ten_hh' => $nl->ten_hh,
+                        'dvt' => $nl->don_vi,
+                        'tong_can' => 0,
+                        'ton_kho' => $tonKho,
+                        'da_xuat' => $daXuatChoLenh,
+                    ];
+                }
+                $materials[$key]['tong_can'] += $reqQty;
+            }
+        }
+
+        return view('admin.warehouse-transactions.xuat-vat-tu', compact('lenhSanXuat', 'materials'));
+    }
+
+    public function storeLenhXuatVatTu(Request $request)
+    {
+        $request->validate([
+            'lenh_san_xuat_id' => 'required|exists:lenh_san_xuat,id',
+            'ngay' => 'required|date',
+            'ma_nv' => 'nullable|string',
+            'rows' => 'required|array',
+            'rows.*.ma_hh' => 'required|string',
+            'rows.*.so_luong_xuat' => 'nullable|numeric|min:0',
+        ]);
+
+        $lenh = \App\Models\LenhSanXuat::findOrFail($request->lenh_san_xuat_id);
+        $count = 0;
+
+        foreach ($request->rows as $row) {
+            $sl = floatval($row['so_luong_xuat'] ?? 0);
+            if ($sl <= 0) continue;
+
+            WarehouseTransaction::create([
+                'cong_doan' => 'XUATKHO',
+                'ma_hh' => $row['ma_hh'],
+                'ngay' => $request->ngay,
+                'so_luong' => $sl,
+                'ma_nv' => $request->ma_nv,
+                'lenh_sx' => $lenh->lenh_so,
+                'note' => "Xuất vật tư cho lệnh SX {$lenh->lenh_so}",
+            ]);
+            $count++;
+        }
+
+        return redirect()->route('admin.lenh-san-xuat.show', $lenh->id)
+            ->with('success', "Đã xuất {$count} loại vật tư cho lệnh {$lenh->lenh_so}.");
+    }
+
     public function export()
     {
         return Excel::download(new WarehouseTransactionExport, 'kho_nhap_xuat_' . now()->format('Ymd') . '.xlsx');
