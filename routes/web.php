@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\WarehouseTransactionController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
+use App\Http\Controllers\Admin\QuyTrinhSanXuatController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
 use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
@@ -90,6 +91,8 @@ Route::middleware('auth')->group(function () {
                Route::post('lenh-san-xuat/{lenhSanXuat}/toggle-items', [AdminLenhSanXuatController::class, 'toggleItems'])->name('lenh-san-xuat.toggle-items')->middleware('permission:lenh_sx.edit');
                Route::get('lenh-san-xuat/{lenhSanXuat}/export', [AdminLenhSanXuatController::class, 'export'])->name('lenh-san-xuat.export')->middleware('permission:lenh_sx.export');
                Route::delete('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'destroy'])->name('lenh-san-xuat.destroy')->middleware('permission:lenh_sx.delete');
+               
+               Route::resource('quy-trinh-san-xuat', QuyTrinhSanXuatController::class);
           });
 
           // ── Production Reports ──

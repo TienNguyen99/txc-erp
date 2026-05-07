@@ -361,6 +361,12 @@
                             <i class="fa-solid fa-clipboard-list me-1"></i>Lệnh SX
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.quy-trinh-san-xuat.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.quy-trinh-san-xuat.index') }}">
+                            <i class="fa-solid fa-diagram-project me-1"></i>Quy trình SX
+                        </a>
+                    </li>
                     @endcan
                     @can('production.view')
                     <li class="nav-item">
@@ -430,6 +436,8 @@
                             @can('lenh_sx.view')
                             <li><a class="dropdown-item" href="{{ route('admin.lenh-san-xuat.index') }}"><i
                                         class="fa-solid fa-clipboard-list me-1 text-muted"></i>Lệnh Sản Xuất</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.quy-trinh-san-xuat.index') }}"><i
+                                        class="fa-solid fa-diagram-project me-1 text-muted"></i>Quy trình Sản xuất</a></li>
                             @endcan
                             @can('production.view')
                             <li><a class="dropdown-item" href="{{ route('admin.production-reports.index') }}"><i
