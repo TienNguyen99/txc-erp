@@ -8,6 +8,7 @@ use App\Models\LenhSanXuatItem;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Models\DanhMucHangHoa;
+use App\Models\DinhMucNvl;
 use App\Models\QuyTrinhSanXuat;
 use Illuminate\Http\Request;
 
@@ -212,6 +213,29 @@ class LenhSanXuatController extends Controller
             'lenh_sx' => $lenhSx,
             'note' => 'Nhập kho qua QR scan',
         ]);
+
+        // AUTO BACKFLUSH (Tự động trừ vật tư theo định mức)
+        $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
+        if ($hangHoa) {
+            $dinhMucs = DinhMucNvl::with('nguyenLieu')->where('san_pham_id', $hangHoa->id)->get();
+            foreach ($dinhMucs as $dm) {
+                if (!$dm->nguyenLieu) continue;
+                
+                $haoHut = 1 + ($dm->ti_le_hao_hut / 100);
+                $slVatTuTieuHao = $request->so_luong * $dm->so_luong * $haoHut;
+                
+                if ($slVatTuTieuHao > 0) {
+                    WarehouseTransaction::create([
+                        'cong_doan' => 'XUATKHO',
+                        'ma_hh'     => $dm->nguyenLieu->ma_hh,
+                        'ngay'      => now()->toDateString(),
+                        'so_luong'  => $slVatTuTieuHao,
+                        'lenh_sx'   => $lenhSx,
+                        'note'      => "Auto trừ kho (BOM) từ QR Scan cho SX {$maHh} (SL: {$request->so_luong})",
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt])
             ->with('success', "Đã nhập kho {$request->so_luong} cho mã {$maHh}.");

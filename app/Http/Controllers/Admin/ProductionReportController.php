@@ -8,6 +8,8 @@ use App\Models\WarehouseTransaction;
 use App\Exports\ProductionReportExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use App\Models\DanhMucHangHoa;
+use App\Models\DinhMucNvl;
 
 class ProductionReportController extends Controller
 {
@@ -161,6 +163,30 @@ class ProductionReportController extends Controller
                 'lenh_sx'   => $lenhSxList,
                 'note'      => "Từ SX: {$group->count()} báo cáo, SL đạt: {$totalSlDat}, SL hư: {$totalSlHu}",
             ]);
+
+            // AUTO BACKFLUSH (Tự động trừ vật tư theo định mức)
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
+            if ($hangHoa) {
+                $dinhMucs = DinhMucNvl::with('nguyenLieu')->where('san_pham_id', $hangHoa->id)->get();
+                foreach ($dinhMucs as $dm) {
+                    if (!$dm->nguyenLieu) continue;
+                    
+                    // Hao hụt tính trên tổng số lượng làm ra (kể cả hư)
+                    $haoHut = 1 + ($dm->ti_le_hao_hut / 100);
+                    $slVatTuTieuHao = $totalSlDat * $dm->so_luong * $haoHut;
+                    
+                    if ($slVatTuTieuHao > 0) {
+                        WarehouseTransaction::create([
+                            'cong_doan' => 'XUATKHO',
+                            'ma_hh'     => $dm->nguyenLieu->ma_hh,
+                            'ngay'      => now()->toDateString(),
+                            'so_luong'  => $slVatTuTieuHao,
+                            'lenh_sx'   => $lenhSxList,
+                            'note'      => "Auto trừ kho (BOM) cho sản xuất {$maHh} (SL: {$totalSlDat})",
+                        ]);
+                    }
+                }
+            }
 
             // Cập nhật trạng thái các báo cáo
             foreach ($group as $report) {
