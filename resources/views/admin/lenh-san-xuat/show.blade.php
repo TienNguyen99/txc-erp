@@ -101,7 +101,7 @@
                         <i class="fa-solid fa-chart-bar me-1"></i>Chi tiết lệnh SX theo Mã HH
                     </h6>
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-check me-1"></i>Cập nhật lên lệnh
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Lưu thay đổi (Lên lệnh & SL)
                     </button>
                 </div>
                 <div class="table-responsive">
@@ -141,7 +141,10 @@
                                     <td>{{ $item->ten_hh ?: '—' }}</td>
                                     <td>{{ $item->mau ?: '—' }}</td>
                                     <td class="text-end">{{ number_format($item->tong_yrd, 2) }}</td>
-                                    <td class="text-end text-info fw-semibold">{{ number_format($item->sl_can_sx, 2) }}</td>
+                                    <td class="text-end">
+                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end text-info fw-semibold mx-auto" 
+                                            name="items[{{ $loop->index }}][sl_can_sx]" value="{{ round($item->sl_can_sx, 2) }}" style="width:90px">
+                                    </td>
                                     <td class="text-end {{ $item->sl_da_sx > 0 ? 'text-warning fw-semibold' : 'text-muted' }}">
                                         {{ number_format($item->sl_da_sx, 2) }}
                                     </td>

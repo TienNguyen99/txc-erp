@@ -192,23 +192,30 @@ class LenhSanXuatController extends Controller
     public function toggleItems(Request $request, LenhSanXuat $lenhSanXuat)
     {
         $request->validate([
-            'items'          => 'required|array|min:1',
-            'items.*.id'     => 'required|exists:lenh_san_xuat_items,id',
+            'items'             => 'required|array|min:1',
+            'items.*.id'        => 'required|exists:lenh_san_xuat_items,id',
+            'items.*.sl_can_sx' => 'nullable|numeric|min:0',
         ]);
 
         $count = 0;
         foreach ($request->items as $data) {
             $item = LenhSanXuatItem::find($data['id']);
             if (!$item) continue;
+            
             $newStatus = isset($data['selected']);
-            if ($item->da_len_lenh !== $newStatus) {
-                $item->update(['da_len_lenh' => $newStatus]);
+            $newSlCanSx = isset($data['sl_can_sx']) ? floatval($data['sl_can_sx']) : $item->sl_can_sx;
+            
+            if ($item->da_len_lenh !== $newStatus || $item->sl_can_sx != $newSlCanSx) {
+                $item->update([
+                    'da_len_lenh' => $newStatus,
+                    'sl_can_sx' => $newSlCanSx,
+                ]);
                 $count++;
             }
         }
 
         return redirect()->route('admin.lenh-san-xuat.show', $lenhSanXuat)
-            ->with('success', "Đã cập nhật {$count} lệnh.");
+            ->with('success', "Đã cập nhật {$count} lệnh (Trạng thái lên lệnh và Số lượng cần SX).");
     }
 
     /**
