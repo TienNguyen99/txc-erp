@@ -15,70 +15,101 @@ class AdminDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $stats = [
-            'orders' => Order::count(),
-            'pending_orders' => Order::whereIn('status', ['pending', 'in_production'])->count(),
-        ];
+        // --- Card 1: Đơn chưa hoàn thành ---
+        $totalOrders = Order::count();
+        $pendingOrders = Order::whereNotIn('status', ['shipped', 'done'])->count();
+        $pctPendingOrders = $totalOrders > 0 ? round(($pendingOrders / $totalOrders) * 100, 1) : 0;
 
-        // --- Doanh Thu ---
+        // --- Card 2: Lệnh chưa hoàn thành (OrderTracking) ---
+        $totalTrackings = OrderTracking::count();
+        $pendingTrackings = OrderTracking::whereNotIn('cong_doan', ['Đã nhập kho', 'Đã giao'])->count();
+        $pctPendingTrackings = $totalTrackings > 0 ? round(($pendingTrackings / $totalTrackings) * 100, 1) : 0;
+
+        // --- Card 3: Sản lượng chưa SX ---
+        $totalQtyRequired = Order::sum('yrd');
+        // Tính tổng sản lượng đã nhập kho (coi như đã SX xong)
+        $totalQtyProduced = WarehouseTransaction::nhapKho()->sum('so_luong');
+        $unproducedQty = max(0, $totalQtyRequired - $totalQtyProduced);
+        $pctUnproduced = $totalQtyRequired > 0 ? round(($unproducedQty / $totalQtyRequired) * 100, 1) : 0;
+
+        // --- Card 4: Tỷ lệ hao hụt NVL ---
+        $totalSlDat = ProductionReport::sum('sl_dat');
+        $totalSlHu = ProductionReport::sum('sl_hu');
+        $lossRate = ($totalSlDat + $totalSlHu) > 0 ? round(($totalSlHu / ($totalSlDat + $totalSlHu)) * 100, 2) : 0;
+
+        // --- Doanh thu (Vẫn giữ cho báo cáo chung nếu cần, hoặc ẩn đi) ---
         $exchangeRate = \App\Models\Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
-
         $totalRevenueUsd = Order::selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0;
         $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
 
-        // Doanh thu xuất kho thực tế theo tỷ giá lúc xuất
-        $shippedRevenueVnd = WarehouseTransaction::where('cong_doan', 'XUATKHO')
-            ->selectRaw('SUM(so_luong * price_usd * exchange_rate) as total')
-            ->value('total') ?? 0;
-
-        $stats['total_revenue'] = $totalRevenueVnd;
-        $stats['shipped_revenue'] = $shippedRevenueVnd;
-
-        // --- Chart: QTY Shipped vs Remaining ---
-        $shippedQty = Order::whereIn('status', ['shipped', 'done'])->sum('yrd');
-        $remainingQty = Order::whereNotIn('status', ['shipped', 'done'])->sum('yrd');
-
-        $chartDataQty = [
-            'labels' => ['Đã xuất', 'Còn lại'],
-            'data' => [(float) $shippedQty, (float) $remainingQty]
-        ];
-
-        $recentOrders = Order::latest()->take(5)->get();
-        $recentProduction = ProductionReport::latest()->take(5)->get();
-        $recentWarehouse = WarehouseTransaction::latest()->take(5)->get();
-
-        // --- Chart 1: Order Status Distribution (by YRD) ---
-        $orderStatuses = Order::selectRaw('status, sum(yrd) as total_qty')
-            ->groupBy('status')
-            ->pluck('total_qty', 'status')->toArray();
-        $chartDataOrder = [
-            'labels' => array_keys($orderStatuses),
-            'data' => array_values($orderStatuses)
-        ];
-
-        // --- Chart 2: Production output by date (Last 7 days) ---
+        // --- Chart 1: Sản lượng sản xuất theo thời gian (7 ngày qua) ---
         $last7Days = collect();
         for ($i = 6; $i >= 0; $i--) {
             $last7Days->push(now()->subDays($i)->format('Y-m-d'));
         }
 
-        $productionData = ProductionReport::where('ngay_sx', '>=', now()->subDays(6)->format('Y-m-d'))
+        $productionDataByDate = ProductionReport::where('ngay_sx', '>=', now()->subDays(6)->format('Y-m-d'))
             ->selectRaw('DATE(ngay_sx) as date, sum(sl_dat) as total')
             ->groupBy('date')
             ->pluck('total', 'date')->toArray();
 
-        $chartDataProduction = [
+        $chartDataProductionTime = [
             'labels' => $last7Days->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))->toArray(),
-            'data' => $last7Days->map(fn($d) => $productionData[$d] ?? 0)->toArray()
+            'data' => $last7Days->map(fn($d) => $productionDataByDate[$d] ?? 0)->toArray()
+        ];
+
+        // --- Chart 2: Trạng thái lệnh sản xuất (OrderTracking) ---
+        $trackingStatuses = OrderTracking::selectRaw('cong_doan, count(*) as total_count')
+            ->groupBy('cong_doan')
+            ->pluck('total_count', 'cong_doan')->toArray();
+        $chartDataTrackingStatus = [
+            'labels' => array_keys($trackingStatuses),
+            'data' => array_values($trackingStatuses)
+        ];
+
+        // --- Chart 3: Sản lượng sản xuất theo công đoạn ---
+        $productionByStage = ProductionReport::selectRaw('cong_doan, sum(sl_dat) as total')
+            ->groupBy('cong_doan')
+            ->pluck('total', 'cong_doan')->toArray();
+        $chartDataProductionStage = [
+            'labels' => array_keys($productionByStage),
+            'data' => array_values($productionByStage)
+        ];
+
+        // --- Chart 4: Sản lượng sản xuất theo ca (đơn vị) ---
+        $productionByCa = ProductionReport::selectRaw('ca, sum(sl_dat) as total')
+            ->whereNotNull('ca')->where('ca', '!=', '')
+            ->groupBy('ca')
+            ->pluck('total', 'ca')->toArray();
+        $chartDataProductionCa = [
+            'labels' => array_map(fn($c) => "Ca " . $c, array_keys($productionByCa)),
+            'data' => array_values($productionByCa)
+        ];
+
+        // Gửi dữ liệu ra view
+        $stats = [
+            'pending_orders' => $pendingOrders,
+            'total_orders' => $totalOrders,
+            'pct_pending_orders' => $pctPendingOrders,
+            
+            'pending_trackings' => $pendingTrackings,
+            'total_trackings' => $totalTrackings,
+            'pct_pending_trackings' => $pctPendingTrackings,
+            
+            'unproduced_qty' => $unproducedQty,
+            'total_qty_required' => $totalQtyRequired,
+            'pct_unproduced' => $pctUnproduced,
+            
+            'loss_rate' => $lossRate,
+            'total_revenue' => $totalRevenueVnd,
         ];
 
         return view('admin.dashboard', compact(
             'stats',
-            'recentOrders',
-            'recentProduction',
-            'recentWarehouse',
-            'chartDataOrder',
-            'chartDataProduction'
+            'chartDataProductionTime',
+            'chartDataTrackingStatus',
+            'chartDataProductionStage',
+            'chartDataProductionCa'
         ));
     }
 }

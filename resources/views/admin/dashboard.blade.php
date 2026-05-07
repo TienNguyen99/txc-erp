@@ -209,176 +209,175 @@
             </span>
         </div>
 
-        {{-- Stat Cards --}}
+        {{-- Stat Cards MISA AMIS Style --}}
         <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-lg-6">
-                <a href="{{ route('admin.orders.index') }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-2">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
-                        </div>
-                        <div class="stat-number">{{ number_format($stats['orders']) }}</div>
-                        <div class="stat-label">Tổng Đơn hàng</div>
-                    </div>
-                </a>
-            </div>
+            {{-- Đơn chưa hoàn thành --}}
             <div class="col-xl-3 col-lg-6">
                 <a href="{{ route('admin.orders.index', ['status' => 'pending']) }}" class="text-decoration-none">
-                    <div class="stat-card bg-grad-1">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-dark fw-bold" style="font-size: .95rem">Đơn chưa hoàn thành</div>
+                                <div class="stat-icon" style="background-color: #ffe4e6; color: #f43f5e; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa-solid fa-box"></i>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fs-2 fw-bold text-dark">{{ number_format($stats['pending_orders']) }}</span>
+                            </div>
+                            <div class="d-flex align-items-center" style="font-size: .8rem">
+                                <span class="text-success fw-bold me-1">{{ $stats['pct_pending_orders'] }}%</span>
+                                <span class="text-muted">Tổng số đơn hàng: {{ number_format($stats['total_orders']) }}</span>
+                            </div>
+                            <div class="text-muted mt-2" style="font-size: .7rem">
+                                Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
+                            </div>
                         </div>
-                        <div class="stat-number">{{ number_format($stats['pending_orders']) }}</div>
-                        <div class="stat-label">Đơn đang xử lý</div>
                     </div>
                 </a>
             </div>
+
+            {{-- Lệnh chưa hoàn thành --}}
             <div class="col-xl-3 col-lg-6">
-                <div class="stat-card bg-grad-6">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+                <a href="{{ route('admin.order-tracking.index') }}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-dark fw-bold" style="font-size: .95rem">Lệnh chưa hoàn thành</div>
+                                <div class="stat-icon" style="background-color: #fef3c7; color: #d97706; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa-solid fa-chart-simple"></i>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fs-2 fw-bold text-dark">{{ number_format($stats['pending_trackings']) }}</span>
+                            </div>
+                            <div class="d-flex align-items-center" style="font-size: .8rem">
+                                <span class="text-success fw-bold me-1">{{ $stats['pct_pending_trackings'] }}%</span>
+                                <span class="text-muted">Lệnh đang sản xuất: {{ number_format($stats['total_trackings']) }}</span>
+                            </div>
+                            <div class="text-muted mt-2" style="font-size: .7rem">
+                                Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-number">{{ number_format($stats['total_revenue'], 0, ',', '.') }} ₫</div>
-                    <div class="stat-label">Tổng Doanh thu dự kiến</div>
+                </a>
+            </div>
+
+            {{-- Sản lượng chưa SX --}}
+            <div class="col-xl-3 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-dark fw-bold" style="font-size: .95rem">Sản lượng chưa SX</div>
+                            <div class="stat-icon" style="background-color: #e0e7ff; color: #4f46e5; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-file-invoice"></i>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fs-2 fw-bold text-dark">{{ number_format($stats['unproduced_qty'], 2) }}</span>
+                        </div>
+                        <div class="d-flex align-items-center" style="font-size: .8rem">
+                            <span class="text-success fw-bold me-1">{{ $stats['pct_unproduced'] }}%</span>
+                            <span class="text-muted">Cần sản xuất: {{ number_format($stats['total_qty_required'], 2) }}</span>
+                        </div>
+                        <div class="text-muted mt-2" style="font-size: .7rem">
+                            Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {{-- Tỷ lệ hao hụt NVL --}}
             <div class="col-xl-3 col-lg-6">
-                <div class="stat-card bg-grad-7">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="stat-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-dark fw-bold" style="font-size: .95rem">Tỷ lệ hao hụt NVL</div>
+                            <div class="stat-icon" style="background-color: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fs-2 fw-bold text-dark">{{ $stats['loss_rate'] }} %</span>
+                        </div>
+                        <div class="d-flex align-items-center" style="font-size: .8rem">
+                            <span class="text-danger fw-bold me-1"><i class="fa-solid fa-arrow-trend-down"></i> Tỷ lệ trung bình toàn nhà máy</span>
+                        </div>
+                        <div class="text-muted mt-2" style="font-size: .7rem">
+                            Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
+                        </div>
                     </div>
-                    <div class="stat-number">{{ number_format($stats['shipped_revenue'], 0, ',', '.') }} ₫</div>
-                    <div class="stat-label">Doanh thu đã Giao</div>
                 </div>
             </div>
         </div>
 
-        {{-- Dashbaord Charts --}}
+        {{-- Dashboard Charts MISA Style --}}
         <div class="row g-3 mb-4">
-            <div class="col-lg-5">
-                <div class="card-page h-100">
-                    <h6 class="section-title mb-3">
-                        <i class="fa-solid fa-chart-pie"></i>Trạng thái Đơn hàng (YRD)
-                    </h6>
-                    <div style="position: relative; height:250px; width:100%">
-                        <canvas id="orderStatusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-7">
-                <div class="card-page h-100">
-                    <h6 class="section-title mb-3">
-                        <i class="fa-solid fa-chart-column"></i>Sản lượng May (7 ngày)
-                    </h6>
-                    <div style="position: relative; height:250px; width:100%">
-                        <canvas id="productionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-
-        {{-- Recent data tables --}}
-        <div class="row g-3">
-
-            {{-- Recent Orders --}}
+            {{-- Chart 1: Sản lượng SX theo thời gian --}}
             <div class="col-lg-6">
-                <div class="card-page">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="section-title mb-0">
-                            <i class="fa-solid fa-file-invoice"></i>Đơn hàng gần đây
-                        </h6>
-                        <a href="{{ route('admin.orders.index') }}" class="text-decoration-none"
-                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
-                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
-                        </a>
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo thời gian</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border-0 text-muted" type="button">
+                                7 ngày qua <i class="fa-solid fa-chevron-down ms-1"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-modern mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Job No</th>
-                                    <th>Fty PO</th>
-                                    <th>Màu</th>
-                                    <th>SL</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentOrders as $o)
-                                    <tr>
-                                        <td class="fw-semibold">{{ $o->job_no }}</td>
-                                        <td>{{ $o->fty_po }}</td>
-                                        <td>{{ $o->color }}</td>
-                                        <td>{{ number_format($o->qty, 2) }}</td>
-                                        <td>
-                                            @php $colors = ['pending' => 'warning', 'in_production' => 'info', 'done' => 'success', 'shipped' => 'primary']; @endphp
-                                            <span
-                                                class="badge bg-{{ $colors[$o->status] ?? 'secondary' }}">{{ $o->status }}</span>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-muted text-center py-4">
-                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="card-body">
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="productionTimeChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Recent Warehouse --}}
+            {{-- Chart 2: Trạng thái lệnh SX --}}
             <div class="col-lg-6">
-                <div class="card-page h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="section-title mb-0">
-                            <i class="fa-solid fa-warehouse"></i>Giao dịch kho gần đây
-                        </h6>
-                        <a href="{{ route('admin.warehouse-transactions.index') }}" class="text-decoration-none"
-                            style="font-size:.8rem;font-weight:500;color:var(--primary)">
-                            Xem tất cả <i class="fa-solid fa-arrow-right ms-1" style="font-size:.7rem"></i>
-                        </a>
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Trạng thái lệnh sản xuất</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border-0 text-muted" type="button">
+                                Theo công đoạn <i class="fa-solid fa-chevron-down ms-1"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-modern mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Ngày</th>
-                                    <th>Loại</th>
-                                    <th>Màu</th>
-                                    <th>Số lượng</th>
-                                    <th>Lệnh SX</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentWarehouse as $w)
-                                    <tr>
-                                        <td>{{ $w->ngay->format('d/m/Y') }}</td>
-                                        <td>
-                                            <span
-                                                class="badge bg-{{ $w->cong_doan == 'NHAPKHO' ? 'success' : 'danger' }}">{{ $w->cong_doan }}</span>
-                                        </td>
-                                        <td>{{ $w->mau }}</td>
-                                        <td class="fw-semibold">{{ number_format($w->so_luong, 2) }}</td>
-                                        <td>{{ $w->lenh_sx }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-muted text-center py-4">
-                                            <i class="fa-regular fa-folder-open me-1"></i>Chưa có dữ liệu
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="trackingStatusChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {{-- Chart 3: Sản lượng theo ca (đơn vị) --}}
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo ca</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="productionCaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Chart 4: Sản lượng theo công đoạn --}}
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo công đoạn</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="productionStageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -387,71 +386,99 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Doughnut Chart for Order Status
-            const orderCtx = document.getElementById('orderStatusChart').getContext('2d');
-            const chartDataOrder = @json($chartDataOrder);
-
-            new Chart(orderCtx, {
-                type: 'doughnut',
+            // Chart 1: Sản lượng sản xuất theo thời gian (Bar)
+            const timeCtx = document.getElementById('productionTimeChart').getContext('2d');
+            const dataTime = @json($chartDataProductionTime);
+            new Chart(timeCtx, {
+                type: 'bar',
                 data: {
-                    labels: chartDataOrder.labels.map(l => (l || 'N/A').toUpperCase()),
+                    labels: dataTime.labels,
                     datasets: [{
-                        data: chartDataOrder.data,
-                        backgroundColor: [
-                            '#6366f1', // primary
-                            '#10b981', // success
-                            '#f59e0b', // warning
-                            '#ef4444', // danger
-                            '#8b5cf6', // purple
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
+                        label: 'Sản lượng đạt',
+                        data: dataTime.data,
+                        backgroundColor: '#10b981', // Green color similar to image
+                        borderRadius: 2,
+                        barPercentage: 0.5
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { padding: 20, font: { size: 11, family: "'Inter', sans-serif" } }
-                        }
-                    },
-                    cutout: '70%'
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
                 }
             });
 
-            // Bar Chart for Production
-            const prodCtx = document.getElementById('productionChart').getContext('2d');
-            const chartDataProd = @json($chartDataProduction);
-
-            new Chart(prodCtx, {
-                type: 'bar',
+            // Chart 2: Trạng thái lệnh sản xuất (Doughnut)
+            const statusCtx = document.getElementById('trackingStatusChart').getContext('2d');
+            const dataStatus = @json($chartDataTrackingStatus);
+            new Chart(statusCtx, {
+                type: 'doughnut',
                 data: {
-                    labels: chartDataProd.labels,
+                    labels: dataStatus.labels.map(l => (l || 'N/A')),
                     datasets: [{
-                        label: 'Sản lượng đạt',
-                        data: chartDataProd.data,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4,
+                        data: dataStatus.data,
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { position: 'right', labels: { padding: 20, font: { size: 11 } } }
                     },
+                    cutout: '65%'
+                }
+            });
+
+            // Chart 3: Sản lượng sản xuất theo ca (Bar)
+            const caCtx = document.getElementById('productionCaChart').getContext('2d');
+            const dataCa = @json($chartDataProductionCa);
+            new Chart(caCtx, {
+                type: 'bar',
+                data: {
+                    labels: dataCa.labels,
+                    datasets: [{
+                        label: 'Sản lượng đạt',
+                        data: dataCa.data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 2,
+                        barPercentage: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#f1f5f9' },
-                            border: { display: false }
-                        },
-                        x: {
-                            grid: { display: false },
-                            border: { display: false }
-                        }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
+            // Chart 4: Sản lượng sản xuất theo công đoạn (Bar)
+            const stageCtx = document.getElementById('productionStageChart').getContext('2d');
+            const dataStage = @json($chartDataProductionStage);
+            new Chart(stageCtx, {
+                type: 'bar',
+                data: {
+                    labels: dataStage.labels,
+                    datasets: [{
+                        label: 'Sản lượng đạt',
+                        data: dataStage.data,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 2,
+                        barPercentage: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
                     }
                 }
             });
