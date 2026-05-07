@@ -206,42 +206,101 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                 
                 $row++;
                 
-                // CĐ 1
-                $startCd1 = $row;
-                $sheet->mergeCells("A{$startCd1}:A".($startCd1+7));
-                $sheet->setCellValue("A{$startCd1}", "CĐ 1\n\nDệt Thun Bản");
-                $sheet->mergeCells("B{$startCd1}:B".($startCd1+7));
-                $sheet->setCellValue("B{$startCd1}", "1. CHỈ NGANG\n- POLY 150D\n2. CHỈ DỌC POLY 150D\n3. Su 37");
-                $sheet->mergeCells("C{$startCd1}:C".($startCd1+7));
-                $sheet->mergeCells("D{$startCd1}:D".($startCd1+7));
-                $sheet->setCellValue("D{$startCd1}", "Quy trình dệt thun bản\nNhóm máy ngâm 15\nNhóm máy trung 22\nNhóm su dưới 24\nNhóm su trên 22\nSố bản thun trên 1 máy\nSố sợi dọc trên 1 bản :34\nSố sợi su trên 1 bản: 24\nSố thông su trên 1 máy 8 thông 30 sợi k\nSố cuộn sợi ngang trên 1 máy: 60");
-                $sheet->getStyle("D{$startCd1}")->getFont()->setColor(new Color('FFFF0000'));
+                // Thu thập và tổng hợp BOM
+                $aggregatedBomsByStage = [];
+                $totalMaterials = [];
                 
-                for ($i = $startCd1; $i <= $startCd1+7; $i++) {
-                    $sheet->getStyle("E{$i}:J{$i}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                foreach ($items as $item) {
+                    $hangHoa = DanhMucHangHoa::where('ma_hh', $item->ma_hh)->first();
+                    if (!$hangHoa) continue;
+                    
+                    $dinhMucs = \App\Models\DinhMucNvl::with('nguyenLieu')->where('san_pham_id', $hangHoa->id)->get();
+                    foreach ($dinhMucs as $dm) {
+                        $stage = $dm->cong_doan ?: 'Chung';
+                        $nl = $dm->nguyenLieu;
+                        if (!$nl) continue;
+                        
+                        $haoHut = 1 + ($dm->ti_le_hao_hut / 100);
+                        $reqQty = $item->sl_can_sx * $dm->so_luong * $haoHut;
+                        
+                        // Gom nhóm theo Công đoạn (cho Phân tích công đoạn)
+                        if (!isset($aggregatedBomsByStage[$stage])) {
+                            $aggregatedBomsByStage[$stage] = [];
+                        }
+                        
+                        $key = $nl->id;
+                        if (!isset($aggregatedBomsByStage[$stage][$key])) {
+                            $aggregatedBomsByStage[$stage][$key] = [
+                                'ten_nl' => $nl->ten_hh,
+                                'dinh_muc' => $dm->so_luong,
+                            ];
+                        }
+                        
+                        // Gom nhóm Tổng nguyên liệu (cho Chuẩn bị)
+                        if (!isset($totalMaterials[$key])) {
+                            $totalMaterials[$key] = [
+                                'ma_nl' => $nl->ma_hh,
+                                'ten_nl' => $nl->ten_hh,
+                                'dvt' => $nl->don_vi,
+                                'tong_can' => 0,
+                            ];
+                        }
+                        $totalMaterials[$key]['tong_can'] += $reqQty;
+                    }
                 }
-                $sheet->getStyle("A{$startCd1}:D".($startCd1+7))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                $sheet->getStyle("A{$startCd1}:D{$startCd1}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
-                
-                $row += 8;
-                
-                // CĐ 2
-                $startCd2 = $row;
-                $sheet->setCellValue("A{$startCd2}", "CD 2")->setCellValue("B{$startCd2}", "NGUYÊN LIỆU")->setCellValue("C{$startCd2}", "ĐỊNH MỨC")->setCellValue("D{$startCd2}", "QUY TRÌNH SẢN XUẤT");
-                $sheet->getStyle("A{$startCd2}:D{$startCd2}")->getFont()->setBold(true);
-                for ($i = 0; $i < 5; $i++) {
-                    $sheet->getStyle("A" . ($row + $i) . ":J" . ($row + $i))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                }
-                $row += 5;
 
-                // CĐ 3
-                $startCd3 = $row;
-                $sheet->setCellValue("A{$startCd3}", "CD 3")->setCellValue("B{$startCd3}", "NGUYÊN LIỆU")->setCellValue("C{$startCd3}", "ĐỊNH MỨC")->setCellValue("D{$startCd3}", "QUY TRÌNH SẢN XUẤT");
-                $sheet->getStyle("A{$startCd3}:D{$startCd3}")->getFont()->setBold(true);
-                for ($i = 0; $i < 5; $i++) {
-                    $sheet->getStyle("A" . ($row + $i) . ":J" . ($row + $i))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // In ra các Công đoạn
+                $cdIndex = 1;
+                foreach ($aggregatedBomsByStage as $stage => $mats) {
+                    $startCd = $row;
+                    $numMats = count($mats);
+                    $rowsToMerge = max(3, $numMats); // Ít nhất 3 dòng cho đẹp
+                    $endCd = $startCd + $rowsToMerge - 1;
+                    
+                    $sheet->mergeCells("A{$startCd}:A{$endCd}");
+                    $sheet->setCellValue("A{$startCd}", "CĐ {$cdIndex}\n\n{$stage}");
+                    $sheet->getStyle("A{$startCd}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP)->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    
+                    $matNames = [];
+                    $matDinhMucs = [];
+                    $i = 1;
+                    foreach ($mats as $m) {
+                        $matNames[] = $i . ". " . $m['ten_nl'];
+                        $matDinhMucs[] = $m['dinh_muc'];
+                        $i++;
+                    }
+                    
+                    $sheet->mergeCells("B{$startCd}:B{$endCd}");
+                    $sheet->setCellValue("B{$startCd}", implode("\n", $matNames));
+                    $sheet->getStyle("B{$startCd}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                    
+                    $sheet->mergeCells("C{$startCd}:C{$endCd}");
+                    $sheet->setCellValue("C{$startCd}", implode("\n", $matDinhMucs));
+                    $sheet->getStyle("C{$startCd}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                    
+                    $sheet->mergeCells("D{$startCd}:D{$endCd}");
+                    
+                    for ($r = $startCd; $r <= $endCd; $r++) {
+                        $sheet->getStyle("E{$r}:J{$r}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    }
+                    $sheet->getStyle("A{$startCd}:D{$endCd}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    
+                    $row = $endCd + 1;
+                    $cdIndex++;
                 }
-                $row += 5;
+
+                if (empty($aggregatedBomsByStage)) {
+                    $startCd = $row;
+                    $sheet->mergeCells("A{$startCd}:A".($startCd+2));
+                    $sheet->mergeCells("B{$startCd}:B".($startCd+2));
+                    $sheet->mergeCells("C{$startCd}:C".($startCd+2));
+                    $sheet->mergeCells("D{$startCd}:D".($startCd+2));
+                    for ($r = $startCd; $r <= $startCd+2; $r++) {
+                        $sheet->getStyle("E{$r}:J{$r}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    }
+                    $sheet->getStyle("A{$startCd}:D".($startCd+2))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    $row += 3;
+                }
 
                 // --- 6. CHUẨN BỊ NGUYÊN LIỆU ---
                 $sheet->mergeCells("A{$row}:J{$row}");
@@ -279,11 +338,25 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                 $sheet->getStyle("A".($row-1).":J{$row}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFCCFFCC');
                 $row++;
 
-                // 3 empty rows
-                for ($i = 0; $i < 3; $i++) {
+                $stt = 1;
+                foreach ($totalMaterials as $mat) {
                     $sheet->mergeCells("D{$row}:F{$row}");
+                    $sheet->setCellValue("A{$row}", $stt++);
+                    $sheet->setCellValue("B{$row}", round($mat['tong_can'], 2));
+                    $sheet->setCellValue("C{$row}", $mat['dvt']);
+                    $sheet->setCellValue("D{$row}", $mat['ma_nl'] . ' - ' . $mat['ten_nl']);
+                    
+                    $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("A{$row}:J{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                     $row++;
+                }
+
+                if (empty($totalMaterials)) {
+                    for ($i = 0; $i < 3; $i++) {
+                        $sheet->mergeCells("D{$row}:F{$row}");
+                        $sheet->getStyle("A{$row}:J{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                        $row++;
+                    }
                 }
 
                 // --- 7. CHỮ KÝ ---

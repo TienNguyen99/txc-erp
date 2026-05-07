@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
 use App\Http\Controllers\Admin\QuyTrinhSanXuatController;
+use App\Http\Controllers\Admin\DinhMucNvlController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
 use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
@@ -126,6 +127,12 @@ Route::middleware('auth')->group(function () {
                Route::get('khach-hang/get-groups', [DanhMucKhachHangController::class, 'getGroups'])->name('khach-hang.get-groups');
                Route::post('khach-hang/save-groups', [DanhMucKhachHangController::class, 'saveGroups'])->name('khach-hang.save-groups');
                Route::resource('khach-hang', DanhMucKhachHangController::class)->parameters(['khach-hang' => 'khachHang']);
+
+               // Định mức NVL (BOM)
+               Route::get('dinh-muc-nvl', [DinhMucNvlController::class, 'index'])->name('dinh-muc-nvl.index');
+               Route::get('dinh-muc-nvl/{id}', [DinhMucNvlController::class, 'show'])->name('dinh-muc-nvl.show');
+               Route::post('dinh-muc-nvl/{id}', [DinhMucNvlController::class, 'store'])->name('dinh-muc-nvl.store');
+               Route::delete('dinh-muc-nvl/{id}/{bom_id}', [DinhMucNvlController::class, 'destroy'])->name('dinh-muc-nvl.destroy');
           });
      });
 

@@ -398,6 +398,12 @@
                             <i class="fa-solid fa-diagram-project me-1"></i>Quy trình SX
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.dinh-muc-nvl.*') ? 'active fw-bold' : '' }}"
+                            href="{{ route('admin.dinh-muc-nvl.index') }}">
+                            <i class="fa-solid fa-list-ol me-1"></i>BOM (Định mức)
+                        </a>
+                    </li>
                     @endcan
                     @can('production.view')
                     <li class="nav-item">
@@ -469,6 +475,8 @@
                                         class="fa-solid fa-clipboard-list me-1 text-muted"></i>Lệnh Sản Xuất</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.quy-trinh-san-xuat.index') }}"><i
                                         class="fa-solid fa-diagram-project me-1 text-muted"></i>Quy trình Sản xuất</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.dinh-muc-nvl.index') }}"><i
+                                        class="fa-solid fa-list-ol me-1 text-muted"></i>Định mức NVL (BOM)</a></li>
                             @endcan
                             @can('production.view')
                             <li><a class="dropdown-item" href="{{ route('admin.production-reports.index') }}"><i
