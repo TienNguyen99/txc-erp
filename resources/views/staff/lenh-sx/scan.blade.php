@@ -208,8 +208,9 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Công đoạn</label>
                             <select name="cong_doan" class="form-select" required>
-                                <option value="Dệt">Dệt</option>
-                                <option value="Định hình">Định hình</option>
+                                @foreach($congDoanList as $key => $name)
+                                    <option value="{{ $name }}">{{ $name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="row g-2 mb-3">

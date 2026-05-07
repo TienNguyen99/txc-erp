@@ -8,6 +8,7 @@ use App\Models\LenhSanXuatItem;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Models\DanhMucHangHoa;
+use App\Models\QuyTrinhSanXuat;
 use Illuminate\Http\Request;
 
 class LenhSanXuatController extends Controller
@@ -97,12 +98,51 @@ class LenhSanXuatController extends Controller
             $tonKho = $nhap - $xuat;
         }
 
+        // --- TÌM QUY TRÌNH SẢN XUẤT ÁP DỤNG ---
+        $congDoanList = [];
+        if ($maHh) {
+            // Tìm quy trình đang active và có chứa mã hàng trong mảng JSON san_pham_ap_dung
+            $quyTrinh = QuyTrinhSanXuat::where('trang_thai', 'active')
+                ->whereJsonContains('san_pham_ap_dung', $maHh)
+                ->first();
+
+            if ($quyTrinh && !empty($quyTrinh->flow_data)) {
+                $flow = is_string($quyTrinh->flow_data) ? json_decode($quyTrinh->flow_data, true) : $quyTrinh->flow_data;
+                $nodes = $flow['drawflow']['Home']['data'] ?? [];
+
+                $nodeNames = [
+                    'det' => 'Dệt',
+                    'dinh_hinh' => 'Định hình',
+                    'in_nhuoc' => 'In/Nhuộm',
+                    'cat' => 'Cắt',
+                    'kcs' => 'Kiểm tra (KCS)',
+                    'dong_goi' => 'Đóng gói',
+                    'nhap_kho' => 'Nhập kho',
+                ];
+
+                foreach ($nodes as $node) {
+                    $key = $node['name'] ?? '';
+                    if (isset($nodeNames[$key])) {
+                        $congDoanList[$key] = $nodeNames[$key];
+                    }
+                }
+            }
+        }
+
+        // Nếu không có quy trình cụ thể, fallback về mặc định
+        if (empty($congDoanList)) {
+            $congDoanList = [
+                'det' => 'Dệt',
+                'dinh_hinh' => 'Định hình',
+            ];
+        }
+
         return view('staff.lenh-sx.scan', compact(
             'lenhSx', 'trackingNumber', 'stt',
             'reports', 'hangHoa', 'maHh', 'mau',
             'history', 'warehouseHistory',
             'totalSlDat', 'totalSlHu', 'totalNhapKho',
-            'totalSlDonHang', 'slCanSx', 'tonKho'
+            'totalSlDonHang', 'slCanSx', 'tonKho', 'congDoanList'
         ));
     }
 
