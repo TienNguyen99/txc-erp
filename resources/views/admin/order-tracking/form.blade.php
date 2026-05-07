@@ -74,6 +74,11 @@
                         <input type="number" step="0.01" name="sl_san_xuat" class="form-control"
                             value="{{ old('sl_san_xuat', $orderTracking->sl_san_xuat ?? 0) }}">
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Ngày xe đến lấy hàng</label>
+                        <input type="date" name="ngay_xe_lay_hang" class="form-control"
+                            value="{{ old('ngay_xe_lay_hang', isset($orderTracking) && $orderTracking->ngay_xe_lay_hang ? $orderTracking->ngay_xe_lay_hang->format('Y-m-d') : '') }}">
+                    </div>
                 </div>
                 <div class="mt-4">
                     <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Lưu</button>

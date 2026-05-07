@@ -334,6 +334,7 @@ class OrderTrackingController extends Controller
             'cong_doan' => 'nullable|string',
             'sl_don_hang' => 'nullable|numeric',
             'sl_san_xuat' => 'nullable|numeric',
+            'ngay_xe_lay_hang' => 'nullable|date',
         ]);
         $tracking = OrderTracking::create($validated);
         $tracking->order->updateStatusFromTracking();
@@ -357,6 +358,7 @@ class OrderTrackingController extends Controller
             'cong_doan' => 'nullable|string',
             'sl_don_hang' => 'nullable|numeric',
             'sl_san_xuat' => 'nullable|numeric',
+            'ngay_xe_lay_hang' => 'nullable|date',
         ]);
         $orderTracking->update($validated);
         $orderTracking->order->updateStatusFromTracking();

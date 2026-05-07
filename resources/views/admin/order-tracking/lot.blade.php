@@ -280,6 +280,7 @@
                             <th>Công đoạn</th>
                             <th class="text-end">SL Đơn hàng</th>
                             <th class="text-end">SL Sản xuất</th>
+                            <th>Ngày xe lấy</th>
                             <th>Ngày tạo</th>
                             <th>Cập nhật</th>
                             <th class="text-center">Hành động</th>
@@ -326,6 +327,7 @@
                                 </td>
                                 <td class="text-end">{{ number_format($item->sl_don_hang, 2) }}</td>
                                 <td class="text-end">{{ number_format($item->sl_san_xuat, 2) }}</td>
+                                <td style="font-size:.8rem">{{ $item->ngay_xe_lay_hang ? $item->ngay_xe_lay_hang->format('d/m/Y') : '—' }}</td>
                                 <td style="font-size:.8rem">{{ $item->created_at->format('d/m/Y H:i') }}</td>
                                 <td style="font-size:.8rem">{{ $item->updated_at->format('d/m/Y H:i') }}</td>
                                 <td class="text-center">

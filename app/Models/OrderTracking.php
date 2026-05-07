@@ -13,7 +13,7 @@ class OrderTracking extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['tracking_number', 'tracking_number_child', 'cong_doan', 'sl_don_hang', 'sl_san_xuat'])
+            ->logOnly(['tracking_number', 'tracking_number_child', 'cong_doan', 'ngay_xe_lay_hang', 'sl_don_hang', 'sl_san_xuat'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -37,6 +37,7 @@ class OrderTracking extends Model
         'mau',
         'kich',
         'cong_doan',
+        'ngay_xe_lay_hang',
         'sl_don_hang',
         'sl_san_xuat',
         'da_tao_lenh_sx',
@@ -45,6 +46,7 @@ class OrderTracking extends Model
     protected $casts = [
         'sl_don_hang' => 'decimal:2',
         'sl_san_xuat' => 'decimal:2',
+        'ngay_xe_lay_hang' => 'date',
     ];
 
     /**
