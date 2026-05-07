@@ -146,6 +146,37 @@
             letter-spacing: .5px;
         }
 
+        .table thead th:not(.no-sort) {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+            user-select: none;
+        }
+        
+        .table thead th:not(.no-sort):hover {
+            background: #f1f5f9;
+        }
+
+        .table thead th:not(.no-sort)::after {
+            content: '↕';
+            position: absolute;
+            right: 5px;
+            opacity: 0.3;
+            font-weight: normal;
+        }
+
+        .table thead th.asc::after {
+            content: '↑';
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        .table thead th.desc::after {
+            content: '↓';
+            opacity: 1;
+            color: var(--primary);
+        }
+
         .table tbody td {
             padding: .75rem 1rem;
             border-color: #f1f5f9;
@@ -482,6 +513,62 @@
 
     <!-- Tom Select -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    
+    <!-- Table Sorting Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const getCellValue = (tr, idx) => {
+                let cell = tr.children[idx];
+                if (!cell) return '';
+                // Check if cell has an input value we should sort by
+                let input = cell.querySelector('input');
+                if (input && input.type !== 'checkbox' && input.type !== 'hidden') {
+                    return input.value;
+                }
+                return cell.innerText || cell.textContent;
+            };
+
+            const comparer = (idx, asc) => (a, b) => {
+                let v1 = getCellValue(asc ? a : b, idx).trim().replace(/,/g, '');
+                let v2 = getCellValue(asc ? b : a, idx).trim().replace(/,/g, '');
+                
+                // Remove formatting like currency or units for numeric sorting if needed
+                if(v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2)) {
+                    return parseFloat(v1) - parseFloat(v2);
+                }
+                return v1.toString().localeCompare(v2);
+            };
+
+            document.querySelectorAll('th:not(.no-sort)').forEach(th => th.addEventListener('click', (() => {
+                const table = th.closest('table');
+                if (!table || table.classList.contains('no-sort-table')) return;
+                
+                const tbody = table.querySelector('tbody');
+                if(!tbody) return;
+
+                // Toggle asc/desc class
+                Array.from(th.parentNode.children).forEach(sibling => {
+                    if (sibling !== th) sibling.classList.remove('asc', 'desc');
+                });
+                
+                let asc = true;
+                if (th.classList.contains('asc')) {
+                    th.classList.replace('asc', 'desc');
+                    asc = false;
+                } else if (th.classList.contains('desc')) {
+                    th.classList.replace('desc', 'asc');
+                    asc = true;
+                } else {
+                    th.classList.add('asc');
+                }
+
+                Array.from(tbody.querySelectorAll('tr'))
+                    .sort(comparer(Array.from(th.parentNode.children).indexOf(th), asc))
+                    .forEach(tr => tbody.appendChild(tr));
+            })));
+        });
+    </script>
+
     @yield('scripts')
 </body>
 

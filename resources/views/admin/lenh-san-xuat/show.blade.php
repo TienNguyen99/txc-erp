@@ -108,7 +108,7 @@
                     <table class="table table-sm table-bordered align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th class="text-center" style="width:40px"><input type="checkbox" id="checkAll"></th>
+                                <th class="text-center no-sort" style="width:40px"><input type="checkbox" id="checkAll"></th>
                                 <th class="text-center">STT</th>
                                 <th>Lệnh con</th>
                                 <th>Mã HH</th>
@@ -118,7 +118,7 @@
                                 <th class="text-end">Cần SX</th>
                                 <th class="text-end">Đã SX</th>
                                 <th class="text-end">Tồn kho</th>
-                                <th style="min-width:180px">Tiến độ</th>
+                                <th class="no-sort" style="min-width:180px">Tiến độ</th>
                                 <th class="text-center">Đã lên lệnh</th>
                             </tr>
                         </thead>
@@ -187,11 +187,12 @@
                         </tbody>
                         <tfoot class="table-dark fw-bold">
                             <tr>
-                                <td colspan="6">Tổng ({{ $items->count() }} mã)</td>
-                                <td class="text-end">{{ number_format($items->sum('tong_yrd'), 2) }}</td>
-                                <td class="text-end">{{ number_format($items->sum('sl_can_sx'), 2) }}</td>
-                                <td class="text-end">{{ number_format($items->sum('sl_da_sx'), 2) }}</td>
-                                <td class="text-end">{{ number_format($items->sum('ton_kho'), 2) }}</td>
+                                @php $activeItems = $items->where('da_len_lenh', true); @endphp
+                                <td colspan="6">Tổng ({{ $activeItems->count() }} mã đã lên lệnh)</td>
+                                <td class="text-end">{{ number_format($activeItems->sum('tong_yrd'), 2) }}</td>
+                                <td class="text-end">{{ number_format($activeItems->sum('sl_can_sx'), 2) }}</td>
+                                <td class="text-end">{{ number_format($activeItems->sum('sl_da_sx'), 2) }}</td>
+                                <td class="text-end">{{ number_format($activeItems->sum('ton_kho'), 2) }}</td>
                                 <td colspan="2"></td>
                             </tr>
                         </tfoot>

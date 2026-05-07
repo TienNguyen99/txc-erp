@@ -167,14 +167,17 @@ class LenhSanXuatController extends Controller
             return $item;
         });
 
+        // Lấy danh sách các mã đã lên lệnh để tính tổng
+        $activeItems = $items->where('da_len_lenh', true);
+
         // Stats
         $stats = (object) [
             'total_items'  => $items->count(),
-            'da_len_lenh'  => $items->where('da_len_lenh', true)->count(),
-            'tong_yrd'     => $items->sum('tong_yrd'),
-            'tong_can_sx'  => $items->sum('sl_can_sx'),
-            'tong_da_sx'   => $items->sum('sl_da_sx'),
-            'tong_ton_kho' => $items->sum('ton_kho'),
+            'da_len_lenh'  => $activeItems->count(),
+            'tong_yrd'     => $activeItems->sum('tong_yrd'),
+            'tong_can_sx'  => $activeItems->sum('sl_can_sx'),
+            'tong_da_sx'   => $activeItems->sum('sl_da_sx'),
+            'tong_ton_kho' => $activeItems->sum('ton_kho'),
         ];
 
         // Orders thuộc Chart này
