@@ -61,6 +61,11 @@ class Order extends Model
         return $this->belongsTo(DanhMucKhachHang::class, 'khach_hang_id');
     }
 
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
     /**
      * Tự động cập nhật status dựa trên trạng thái tracking.
      */

@@ -40,9 +40,12 @@ class DanhMucHangHoaController extends Controller
             'dinh_muc_thung'   => 'nullable|integer|min:1',
             'net_weight'     => 'nullable|numeric|min:0',
             'gross_weight'   => 'nullable|numeric|min:0',
-            'hinh_anh'       => 'nullable|image|max:2048',
-            'mo_ta'          => 'nullable|string',
-            'active'         => 'nullable|boolean',
+            'hinh_anh'          => 'nullable|image|max:2048',
+            'mo_ta'             => 'nullable|string',
+            'active'            => 'nullable|boolean',
+            'nha_cung_cap_id'   => 'nullable|exists:nha_cung_cap,id',
+            'gia_nvl'           => 'nullable|numeric|min:0',
+            'ton_toi_thieu'     => 'nullable|integer|min:0',
         ]);
 
         if ($request->hasFile('hinh_anh')) {
@@ -75,9 +78,12 @@ class DanhMucHangHoaController extends Controller
             'dinh_muc_thung'   => 'nullable|integer|min:1',
             'net_weight'     => 'nullable|numeric|min:0',
             'gross_weight'   => 'nullable|numeric|min:0',
-            'hinh_anh'       => 'nullable|image|max:2048',
-            'mo_ta'          => 'nullable|string',
-            'active'         => 'nullable|boolean',
+            'hinh_anh'          => 'nullable|image|max:2048',
+            'mo_ta'             => 'nullable|string',
+            'active'            => 'nullable|boolean',
+            'nha_cung_cap_id'   => 'nullable|exists:nha_cung_cap,id',
+            'gia_nvl'           => 'nullable|numeric|min:0',
+            'ton_toi_thieu'     => 'nullable|integer|min:0',
         ]);
 
         if ($request->hasFile('hinh_anh')) {

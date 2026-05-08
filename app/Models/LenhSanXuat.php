@@ -33,6 +33,11 @@ class LenhSanXuat extends Model
         return $this->hasMany(LenhSanXuatItem::class)->orderBy('stt');
     }
 
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
     /**
      * Sinh mã lệnh: {nhom_hh}-YYYYMMDD-XXX
      */

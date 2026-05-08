@@ -422,7 +422,16 @@
                     </li>
                     @endcan
                 </ul>
-                <ul class="navbar-nav align-items-center">
+                <ul class="navbar-nav align-items-center gap-2">
+                    {{-- Bell Notification --}}
+                    <li class="nav-item">
+                        <a href="{{ route('admin.notifications.index') }}" class="nav-link position-relative" id="bellBtn" title="Thông báo"
+                            style="padding:.4rem .6rem!important">
+                            <i class="fa-solid fa-bell" style="font-size:1.1rem"></i>
+                            <span id="unreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size:.6rem;display:none">0</span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" role="button" href="#" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -491,6 +500,10 @@
                                         class="fa-solid fa-box-open me-1 text-muted"></i>Hàng hóa</a></li>
                             <li><a class="dropdown-item" href="{{ route('admin.khach-hang.index') }}"><i
                                         class="fa-solid fa-building me-1 text-muted"></i>Khách hàng</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.nha-cung-cap.index') }}"><i
+                                        class="fa-solid fa-truck me-1 text-muted"></i>Nhà cung cấp</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.purchase-orders.index') }}"><i
+                                        class="fa-solid fa-cart-shopping me-1 text-muted"></i>Đặt hàng NVL (PO)</a></li>
                             @endcan
                             <li>
                                 <hr class="dropdown-divider">
@@ -578,6 +591,25 @@
     </script>
 
     @yield('scripts')
+
+    <script>
+    // Bell notification poll mỗi 60s
+    function updateBell() {
+        fetch('{{ auth()->check() ? route("admin.notifications.unread-count") : "" }}')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('unreadBadge');
+                if (!badge) return;
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }).catch(() => {});
+    }
+    @auth updateBell(); setInterval(updateBell, 60000); @endauth
+    </script>
 </body>
 
 </html>

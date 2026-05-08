@@ -115,6 +115,43 @@
                         <label class="form-label fw-semibold">Mô tả</label>
                         <textarea name="mo_ta" class="form-control" rows="2">{{ old('mo_ta', $hangHoa->mo_ta ?? '') }}</textarea>
                     </div>
+
+                    {{-- ── Thông tin NVL (Module 1, 3, 9) ── --}}
+                    <div class="col-12 mt-2">
+                        <div class="p-3" style="background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0">
+                            <h6 class="fw-bold text-success mb-3" style="font-size:.85rem">
+                                <i class="fa-solid fa-truck me-1"></i>Thông tin Nguyên Vật Liệu (NVL)
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nhà cung cấp</label>
+                                    <select name="nha_cung_cap_id" class="form-select form-select-sm">
+                                        <option value="">-- Chọn NCC --</option>
+                                        @foreach(\App\Models\NhaCungCap::where('active', true)->orderBy('ten_ncc')->get() as $ncc)
+                                        <option value="{{ $ncc->id }}"
+                                            {{ old('nha_cung_cap_id', $hangHoa->nha_cung_cap_id ?? '') == $ncc->id ? 'selected' : '' }}>
+                                            {{ $ncc->ma_ncc }} – {{ $ncc->ten_ncc }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Giá NVL (VNĐ/đơn vị)
+                                        <small class="text-muted">— dùng tính chi phí SX</small>
+                                    </label>
+                                    <input type="number" step="1" min="0" name="gia_nvl" class="form-control form-control-sm"
+                                        value="{{ old('gia_nvl', $hangHoa->gia_nvl ?? 0) }}" placeholder="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tồn kho tối thiểu
+                                        <small class="text-muted">— cảnh báo khi dưới mức này</small>
+                                    </label>
+                                    <input type="number" min="0" name="ton_toi_thieu" class="form-control form-control-sm"
+                                        value="{{ old('ton_toi_thieu', $hangHoa->ton_toi_thieu ?? 0) }}" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="mt-4">
                     <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Lưu</button>

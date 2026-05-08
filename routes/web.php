@@ -11,6 +11,10 @@ use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
 use App\Http\Controllers\Admin\QuyTrinhSanXuatController;
 use App\Http\Controllers\Admin\DinhMucNvlController;
+use App\Http\Controllers\Admin\NhaCungCapController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\AttachmentController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
 use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
@@ -136,6 +140,24 @@ Route::middleware('auth')->group(function () {
                Route::post('dinh-muc-nvl/{id}', [DinhMucNvlController::class, 'store'])->name('dinh-muc-nvl.store');
                Route::delete('dinh-muc-nvl/{id}/{bom_id}', [DinhMucNvlController::class, 'destroy'])->name('dinh-muc-nvl.destroy');
           });
+
+           // ── Nhà Cung Cấp ──
+           Route::resource('nha-cung-cap', NhaCungCapController::class)->parameters(['nha-cung-cap' => 'nhaCungCap']);
+
+           // ── Purchase Orders (Đặt hàng NVL) ──
+           Route::get('purchase-orders/create-from-bom', [PurchaseOrderController::class, 'createFromBom'])->name('purchase-orders.create-from-bom');
+           Route::post('purchase-orders/{purchaseOrder}/update-status', [PurchaseOrderController::class, 'updateStatus'])->name('purchase-orders.update-status');
+           Route::resource('purchase-orders', PurchaseOrderController::class)->parameters(['purchase-orders' => 'purchaseOrder'])->except(['edit', 'update']);
+
+           // ── Thông báo ──
+           Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+           Route::post('notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+           Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+           Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+           // ── Đính kèm tài liệu ──
+           Route::post('attachments', [AttachmentController::class, 'store'])->name('attachments.store');
+           Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
      });
 
      // ═══ Nhân viên (Staff) ═══

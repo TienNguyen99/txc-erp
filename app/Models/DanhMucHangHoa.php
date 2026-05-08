@@ -12,6 +12,7 @@ class DanhMucHangHoa extends Model
         'ma_hh', 'ten_hh', 'mau', 'kich_co', 'nhom_hh', 'don_vi',
         'don_gia', 'quy_cach', 'yards_per_roll', 'rolls_per_carton', 'dinh_muc_thung', 'net_weight', 'gross_weight',
         'hinh_anh', 'mo_ta', 'active',
+        'nha_cung_cap_id', 'gia_nvl', 'ton_toi_thieu',
     ];
 
     protected $casts = [
@@ -22,11 +23,23 @@ class DanhMucHangHoa extends Model
         'net_weight'       => 'decimal:2',
         'gross_weight'     => 'decimal:2',
         'active'           => 'boolean',
+        'gia_nvl'          => 'decimal:4',
+        'ton_toi_thieu'    => 'integer',
     ];
 
     public function warehouseTransactions()
     {
         return $this->hasMany(WarehouseTransaction::class, 'hang_hoa_id');
+    }
+
+    public function nhaCungCap()
+    {
+        return $this->belongsTo(NhaCungCap::class, 'nha_cung_cap_id');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     /**

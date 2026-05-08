@@ -303,9 +303,93 @@
                 </div>
             </div>
             @endif
+
+            {{-- ═══ CHI PHÍ NVL ƯỚC TÍNH (Module 9) ═══ --}}
+            @php
+                $activeItems2 = $items->where('da_len_lenh', true);
+                $chiPhiRows = [];
+                $tongChiPhi = 0;
+                foreach ($activeItems2 as $item2) {
+                    $hh = \App\Models\DanhMucHangHoa::where('ma_hh', $item2->ma_hh)->first();
+                    if (!$hh) continue;
+                    $boms = \App\Models\DinhMucNvl::where('san_pham_id', $hh->id)->with('nguyenLieu')->get();
+                    foreach ($boms as $bom) {
+                        $nvl = $bom->nguyenLieu;
+                        if (!$nvl) continue;
+                        $sl = $item2->sl_can_sx * $bom->dinh_muc * (1 + ($bom->hao_hut ?? 0) / 100);
+                        $cp = $sl * ($nvl->gia_nvl ?? 0);
+                        $tongChiPhi += $cp;
+                        $chiPhiRows[] = [
+                            'ma_hh'    => $item2->ma_hh,
+                            'ma_nvl'   => $nvl->ma_hh,
+                            'ten_nvl'  => $nvl->ten_hh,
+                            'sl'       => $sl,
+                            'don_gia'  => $nvl->gia_nvl ?? 0,
+                            'chi_phi'  => $cp,
+                        ];
+                    }
+                }
+            @endphp
+            @if(count($chiPhiRows) > 0)
+            <div class="mb-4 mt-4">
+                <h6 class="fw-bold mb-2 text-success">
+                    <i class="fa-solid fa-calculator me-1"></i>Chi phí NVL ước tính
+                    <small class="text-muted fw-normal ms-1" style="font-size:.8rem">(dựa trên BOM + Giá NVL)</small>
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mã TP</th>
+                                <th>Mã NVL</th>
+                                <th>Tên NVL</th>
+                                <th class="text-end">SL cần (có HH)</th>
+                                <th class="text-end">Đơn giá (₫)</th>
+                                <th class="text-end">Chi phí (₫)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($chiPhiRows as $row)
+                            <tr>
+                                <td class="fw-semibold" style="font-size:.8rem">{{ $row['ma_hh'] }}</td>
+                                <td class="fw-semibold text-primary">{{ $row['ma_nvl'] }}</td>
+                                <td>{{ $row['ten_nvl'] }}</td>
+                                <td class="text-end">{{ number_format($row['sl'], 2) }}</td>
+                                <td class="text-end">{{ number_format($row['don_gia'], 0, ',', '.') }}</td>
+                                <td class="text-end fw-semibold text-success">{{ number_format($row['chi_phi'], 0, ',', '.') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" class="text-end fw-bold">Tổng chi phí NVL ước tính:</td>
+                                <td class="text-end fw-bold text-success" style="font-size:1.05rem">
+                                    {{ number_format($tongChiPhi, 0, ',', '.') }} ₫
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <small class="text-muted"><i class="fa-solid fa-circle-info me-1"></i>
+                    Để tính chính xác, hãy cập nhật <strong>Giá NVL</strong> trong Danh mục Hàng hóa.
+                </small>
+            </div>
+            @endif
+
+            {{-- ═══ FILE ĐÍNH KÈM ═══ --}}
+            <div class="mt-4">
+                <h6 class="fw-bold mb-2"><i class="fa-solid fa-paperclip me-2 text-primary"></i>Tài liệu đính kèm</h6>
+                @include('admin.partials.attachments', [
+                    'attachable_type' => 'App\\Models\\LenhSanXuat',
+                    'attachable_id'   => $lenh->id,
+                    'attachments'     => $lenh->attachments ?? collect(),
+                ])
+            </div>
+
         </div>
     </div>
 @endsection
+
 
 @section('scripts')
     <script>
