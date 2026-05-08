@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderTracking;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
+use App\Models\DanhMucHangHoa;
 use App\Models\LenhSanXuat;
 use App\Models\LenhSanXuatItem;
 use Illuminate\Http\Request;
@@ -86,6 +87,66 @@ class AdminDashboardController extends Controller
             'data' => array_values($productionByCa)
         ];
 
+        // --- THEO DÕI LỆNH SẢN XUẤT ---
+        $lenhSxTracking = LenhSanXuat::with('items')
+            ->latest()
+            ->limit(20)
+            ->get()
+            ->map(function ($lenh) {
+                $activeItems = $lenh->items->where('da_len_lenh', true);
+                $totalItems = $lenh->items->count();
+                $activeCount = $activeItems->count();
+                $tongYrd = $activeItems->sum('tong_yrd');
+                $tongCanSx = $activeItems->sum('sl_can_sx');
+
+                // Tính tổng đã SX và tồn kho cho các item đã lên lệnh
+                $tongDaSx = 0;
+                $tongTonKho = 0;
+                foreach ($activeItems as $item) {
+                    $tongDaSx += ProductionReport::where('lenh_sx', $item->lenh_child)->sum('sl_dat');
+                    $nhap = WarehouseTransaction::where('ma_hh', $item->ma_hh)->nhapKho()->sum('so_luong');
+                    $xuat = WarehouseTransaction::where('ma_hh', $item->ma_hh)->xuatKho()->sum('so_luong');
+                    $tongTonKho += ($nhap - $xuat);
+                }
+
+                // Xác định trạng thái
+                $progress = $tongYrd > 0 ? min(100, round(($tongTonKho + $tongDaSx) / $tongYrd * 100)) : 0;
+                if ($activeCount === 0) {
+                    $trangThai = 'new';
+                } elseif ($tongTonKho >= $tongYrd && $tongYrd > 0) {
+                    $trangThai = 'done';
+                } elseif ($tongDaSx > 0) {
+                    $trangThai = 'producing';
+                } else {
+                    $trangThai = 'waiting';
+                }
+
+                return (object) [
+                    'id'           => $lenh->id,
+                    'lenh_so'      => $lenh->lenh_so,
+                    'chart'        => $lenh->chart,
+                    'nhom_hh'      => $lenh->nhom_hh,
+                    'total_items'  => $totalItems,
+                    'active_items' => $activeCount,
+                    'tong_yrd'     => $tongYrd,
+                    'tong_can_sx'  => $tongCanSx,
+                    'tong_da_sx'   => $tongDaSx,
+                    'tong_ton_kho' => $tongTonKho,
+                    'progress'     => $progress,
+                    'trang_thai'   => $trangThai,
+                    'created_at'   => $lenh->created_at,
+                ];
+            });
+
+        // Stats tổng hợp cho section Lệnh SX
+        $lenhSxStats = (object) [
+            'total'     => $lenhSxTracking->count(),
+            'new'       => $lenhSxTracking->where('trang_thai', 'new')->count(),
+            'waiting'   => $lenhSxTracking->where('trang_thai', 'waiting')->count(),
+            'producing' => $lenhSxTracking->where('trang_thai', 'producing')->count(),
+            'done'      => $lenhSxTracking->where('trang_thai', 'done')->count(),
+        ];
+
         // Gửi dữ liệu ra view
         $stats = [
             'pending_orders' => $pendingOrders,
@@ -109,7 +170,9 @@ class AdminDashboardController extends Controller
             'chartDataProductionTime',
             'chartDataTrackingStatus',
             'chartDataProductionStage',
-            'chartDataProductionCa'
+            'chartDataProductionCa',
+            'lenhSxTracking',
+            'lenhSxStats'
         ));
     }
 }

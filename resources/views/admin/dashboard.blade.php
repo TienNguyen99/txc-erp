@@ -379,6 +379,129 @@
                 </div>
             </div>
         </div>
+
+        {{-- ═══════════════════════════════════════════ --}}
+        {{-- THEO DÕI LỆNH SẢN XUẤT                    --}}
+        {{-- ═══════════════════════════════════════════ --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px">
+            <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">
+                        <i class="fa-solid fa-clipboard-list text-primary me-2"></i>Theo dõi Lệnh Sản Xuất
+                    </h6>
+                    <p class="text-muted mb-0" style="font-size:.78rem">Tổng quan tiến độ 20 lệnh gần nhất</p>
+                </div>
+                <a href="{{ route('admin.lenh-san-xuat.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-arrow-right me-1"></i>Xem tất cả
+                </a>
+            </div>
+            <div class="card-body pt-0">
+                {{-- Status Mini Cards --}}
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <span class="summary-pill" style="background:rgba(99,102,241,.1);color:#6366f1">
+                        <i class="fa-solid fa-layer-group"></i> Tổng: {{ $lenhSxStats->total }}
+                    </span>
+                    <span class="summary-pill" style="background:rgba(107,114,128,.1);color:#6b7280">
+                        <i class="fa-solid fa-file-circle-plus"></i> Mới: {{ $lenhSxStats->new }}
+                    </span>
+                    <span class="summary-pill" style="background:rgba(245,158,11,.1);color:#f59e0b">
+                        <i class="fa-solid fa-clock"></i> Chờ SX: {{ $lenhSxStats->waiting }}
+                    </span>
+                    <span class="summary-pill" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                        <i class="fa-solid fa-industry"></i> Đang SX: {{ $lenhSxStats->producing }}
+                    </span>
+                    <span class="summary-pill" style="background:rgba(16,185,129,.1);color:#10b981">
+                        <i class="fa-solid fa-check-circle"></i> Hoàn thành: {{ $lenhSxStats->done }}
+                    </span>
+                </div>
+
+                {{-- Table --}}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0 table-modern">
+                        <thead>
+                            <tr style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Mã lệnh</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Chart</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Nhóm</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-center">Mã HH</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Tổng YRD</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Đã SX</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Tồn kho</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none;min-width:160px">Tiến độ</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-center">Trạng thái</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Ngày tạo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($lenhSxTracking as $lenh)
+                                @php
+                                    $statusMap = [
+                                        'new'       => ['label' => 'Mới tạo', 'color' => '#6b7280', 'bg' => 'rgba(107,114,128,.1)'],
+                                        'waiting'   => ['label' => 'Chờ SX', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,.1)'],
+                                        'producing' => ['label' => 'Đang SX', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,.1)'],
+                                        'done'      => ['label' => 'Hoàn thành', 'color' => '#10b981', 'bg' => 'rgba(16,185,129,.1)'],
+                                    ];
+                                    $s = $statusMap[$lenh->trang_thai] ?? $statusMap['new'];
+                                    $pctKho = $lenh->tong_yrd > 0 ? min(100, round(($lenh->tong_ton_kho / $lenh->tong_yrd) * 100)) : 0;
+                                    $pctSx = $lenh->tong_yrd > 0 ? min(100 - $pctKho, round(($lenh->tong_da_sx / $lenh->tong_yrd) * 100)) : 0;
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('admin.lenh-san-xuat.show', $lenh->id) }}"
+                                           class="fw-bold text-decoration-none" style="color:#6366f1">
+                                            <i class="fa-solid fa-clipboard-list me-1" style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
+                                        </a>
+                                    </td>
+                                    <td><span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:500">{{ $lenh->chart }}</span></td>
+                                    <td><span class="badge" style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span></td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold" style="color:#6366f1">{{ $lenh->active_items }}</span>
+                                        <span class="text-muted" style="font-size:.7rem">/{{ $lenh->total_items }}</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">{{ number_format($lenh->tong_yrd, 0) }}</td>
+                                    <td class="text-end" style="color:#f59e0b;font-weight:600">{{ number_format($lenh->tong_da_sx, 0) }}</td>
+                                    <td class="text-end" style="color:#10b981;font-weight:600">{{ number_format($lenh->tong_ton_kho, 0) }}</td>
+                                    <td>
+                                        <div class="progress" style="height:18px;border-radius:6px;background:#f1f5f9">
+                                            @if ($pctKho > 0)
+                                                <div class="progress-bar" style="width:{{ $pctKho }}%;background:#10b981;border-radius:6px 0 0 6px" title="Tồn kho {{ $pctKho }}%">
+                                                    @if($pctKho >= 12)<span style="font-size:.65rem">{{ $pctKho }}%</span>@endif
+                                                </div>
+                                            @endif
+                                            @if ($pctSx > 0)
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:{{ $pctSx }}%;background:#3b82f6" title="Đang SX {{ $pctSx }}%">
+                                                    @if($pctSx >= 12)<span style="font-size:.65rem">{{ $pctSx }}%</span>@endif
+                                                </div>
+                                            @endif
+                                            @if ($pctKho == 0 && $pctSx == 0)
+                                                <div class="progress-bar" style="width:100%;background:#f1f5f9;color:#94a3b8;font-size:.65rem">0%</div>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-1" style="font-size:.6rem;color:#94a3b8">
+                                            <span><i class="fa-solid fa-warehouse me-1" style="color:#10b981"></i>Kho</span>
+                                            <span><i class="fa-solid fa-industry me-1" style="color:#3b82f6"></i>SX</span>
+                                            <span class="fw-bold" style="color:#334155">{{ $lenh->progress }}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge" style="background:{{ $s['bg'] }};color:{{ $s['color'] }};font-weight:600;font-size:.72rem;padding:.35em .7em;border-radius:6px">
+                                            {{ $s['label'] }}
+                                        </span>
+                                    </td>
+                                    <td style="font-size:.78rem;color:#64748b">{{ $lenh->created_at->format('d/m/Y') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-muted text-center py-4">
+                                        <i class="fa-solid fa-inbox me-2" style="font-size:1.2rem"></i>Chưa có lệnh sản xuất nào
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
