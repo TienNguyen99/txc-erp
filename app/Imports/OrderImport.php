@@ -44,32 +44,49 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
             );
         }
 
-        return Order::updateOrCreate(
-            [
-                'job_no' => $row['job_no'],
-                'ma_hh'  => $row['ma_hh'] ?? null,
-                'color'  => $row['color'] ?? null,
-            ],
-            [
-                'khach_hang_id'  => $khachHangId,
-                'ten_hh'         => $row['ten_hh'] ?? null,
-                'fty_po'         => $row['fty_po'] ?? null,
-                'im_number'      => $row['im_number'] ?? null,
-                'unit'           => $row['unit'] ?? null,
-                'yrd'            => $this->toNumeric($row['yrd'] ?? null),
-                'can_giao_1'     => $this->toNumeric($row['can_giao_1'] ?? null),
-                'can_giao_2'     => $this->toNumeric($row['can_giao_2'] ?? null),
-                'pl_number'      => $row['pl_number'] ?? null,
-                'tagtime_etc'    => $this->toDate($row['tagtime_etc'] ?? null),
-                'sig_need_date'  => $this->toDate($row['sig_need_date'] ?? null),
-                'chart'          => $row['chart'] ?? null,
-                'price_usd_auto' => $this->toNumeric($row['price_usd_auto'] ?? null),
-                'price_usd'      => $this->toNumeric($row['price_usd'] ?? null),
-                'to_khai'        => $row['to_khai'] ?? null,
-                'lenh_sanxuat'   => $row['lenh_sanxuat'] ?? null,
-                'status'         => $row['status'] ?? 'pending',
-            ]
-        );
+        $order = Order::firstOrNew([
+            'job_no' => $row['job_no'],
+            'ma_hh'  => $row['ma_hh'] ?? null,
+            'color'  => $row['color'] ?? null,
+        ]);
+
+        $order->khach_hang_id  = $khachHangId;
+        $order->ten_hh         = $row['ten_hh'] ?? null;
+        $order->fty_po         = $row['fty_po'] ?? null;
+        $order->im_number      = $row['im_number'] ?? null;
+        $order->unit           = $row['unit'] ?? null;
+        $order->yrd            = $this->toNumeric($row['yrd'] ?? null);
+        $order->can_giao_1     = $this->toNumeric($row['can_giao_1'] ?? null);
+        $order->can_giao_2     = $this->toNumeric($row['can_giao_2'] ?? null);
+        $order->pl_number      = $row['pl_number'] ?? null;
+        $order->tagtime_etc    = $this->toDate($row['tagtime_etc'] ?? null);
+        $order->sig_need_date  = $this->toDate($row['sig_need_date'] ?? null);
+        $order->chart          = $row['chart'] ?? null;
+        $order->price_usd_auto = $this->toNumeric($row['price_usd_auto'] ?? null);
+        $order->price_usd      = $this->toNumeric($row['price_usd'] ?? null);
+
+        // Chỉ cập nhật các trường nhạy cảm nếu file Excel thực sự có dữ liệu
+        // Tránh tình trạng file Excel để trống làm mất dữ liệu đã nhập trên phần mềm
+        if (isset($row['to_khai']) && $row['to_khai'] !== '') {
+            $order->to_khai = $row['to_khai'];
+        }
+        if (isset($row['lenh_sanxuat']) && $row['lenh_sanxuat'] !== '') {
+            $order->lenh_sanxuat = $row['lenh_sanxuat'];
+        }
+
+        // Bảo vệ trạng thái (status): Chỉ set về pending nếu là đơn mới
+        // Không hạ cấp status nếu đơn hàng đã vào sản xuất hoặc đã giao
+        if (!$order->exists) {
+            $order->status = $row['status'] ?? 'pending';
+        } else if (isset($row['status']) && $row['status'] !== '') {
+            // Nếu file Excel có ép status và không rỗng, thì có thể cho phép cập nhật
+            // (Tuỳ logic doanh nghiệp, có thể bỏ dòng này nếu không muốn Excel đè status)
+            $order->status = $row['status'];
+        }
+
+        $order->save();
+
+        return $order;
     }
 
     /**
