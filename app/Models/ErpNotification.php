@@ -15,7 +15,7 @@ class ErpNotification extends Model
     protected $casts = ['is_read' => 'boolean'];
 
     /** Tạo thông báo nhanh */
-    public static function push(string $title, string $message = '', string $type = 'info', string $link = '', string $icon = ''): static
+    public static function send(string $title, string $message = '', string $type = 'info', string $link = '', string $icon = ''): static
     {
         $icons = ['info' => 'fa-circle-info', 'warning' => 'fa-triangle-exclamation', 'danger' => 'fa-circle-xmark', 'success' => 'fa-circle-check'];
         return static::create([
@@ -41,7 +41,7 @@ class ErpNotification extends Model
                 $exists = static::where('title', 'like', "%{$hh->ma_hh}%")
                     ->whereDate('created_at', today())->exists();
                 if (!$exists) {
-                    static::push(
+                    static::send(
                         "Tồn kho thấp: {$hh->ma_hh}",
                         "Tồn kho hiện tại: " . number_format($tonKho) . " | Tối thiểu: " . number_format($hh->ton_toi_thieu),
                         'warning',
