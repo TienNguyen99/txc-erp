@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
                // Cấu hình & Nhật ký
                Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
                Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+               Route::post('settings/generate-token', [\App\Http\Controllers\Admin\SettingController::class, 'generateToken'])->name('settings.generate-token');
                Route::get('activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
           });
 

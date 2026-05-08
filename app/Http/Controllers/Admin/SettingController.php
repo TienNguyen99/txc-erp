@@ -34,4 +34,14 @@ class SettingController extends Controller
 
         return redirect()->route('admin.settings.index')->with('success', 'Cập nhật cấu hình thành công!');
     }
+
+    public function generateToken()
+    {
+        $token = bin2hex(random_bytes(32)); // 64-char secure token
+        Setting::updateOrCreate(
+            ['key' => 'api_sync_token'],
+            ['value' => $token, 'description' => 'Token xác thực Google Sheets Sync API', 'type' => 'string']
+        );
+        return redirect()->route('admin.settings.index')->with('success', '✅ API Token đã được tạo. Hãy copy và dán vào Apps Script.');
+    }
 }
