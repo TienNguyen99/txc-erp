@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Exports\Sheets\PackingListDetailSheet;
 use App\Exports\Sheets\PackingListSummarySheet;
+use App\Exports\Sheets\PackingListLabelSheet;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
@@ -23,6 +24,7 @@ class PackingListExport implements WithMultipleSheets
         return [
             new PackingListDetailSheet($this->trackingNumber),
             new PackingListSummarySheet($this->trackingNumber),
+            new PackingListLabelSheet($this->trackingNumber),
         ];
     }
 }

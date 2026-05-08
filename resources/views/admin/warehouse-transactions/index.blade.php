@@ -100,13 +100,12 @@
                 <div class="modal-content">
                     <form method="GET" action="{{ route('admin.warehouse-transactions.export-packing-list') }}">
                         <div class="modal-header">
-                            <h5 class="modal-title"><i class="fa-solid fa-file-invoice me-2"></i>Export Packing List</h5>
+                            <h5 class="modal-title"><i class="fa-solid fa-file-invoice me-2"></i>Packing List & In Tem</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                             <p class="text-muted small mb-3">
-                                Chọn Order Tracking Number để xuất phiếu Packing List (Phiếu xuất kho) theo đúng format
-                                chuẩn.
+                                Chọn Order Tracking Number để xuất file Excel Packing List hoặc chuyển đến trang In Tem dán thùng.
                             </p>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Order Tracking Number</label>
@@ -129,8 +128,11 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
-                            <button type="submit" class="btn btn-dark btn-sm">
-                                <i class="fa-solid fa-download me-1"></i>Export Packing List
+                            <button type="submit" class="btn btn-dark btn-sm" formaction="{{ route('admin.warehouse-transactions.export-packing-list') }}">
+                                <i class="fa-solid fa-file-excel me-1"></i>Xuất Excel
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-sm" formaction="{{ route('admin.warehouse-transactions.print-labels') }}">
+                                <i class="fa-solid fa-print me-1"></i>In Tem
                             </button>
                         </div>
                     </form>
@@ -186,10 +188,14 @@
                     @endif
                 </div>
                 @if ($selectedTracking)
-                    <div class="col-auto ms-auto">
+                    <div class="col-auto ms-auto d-flex gap-2">
                         <a href="{{ route('admin.warehouse-transactions.export-packing-list', ['tracking_number' => $selectedTracking]) }}"
                             class="btn btn-dark btn-sm">
                             <i class="fa-solid fa-file-invoice me-1"></i>Export Packing List: {{ $selectedTracking }}
+                        </a>
+                        <a href="{{ route('admin.warehouse-transactions.print-labels', ['tracking_number' => $selectedTracking]) }}"
+                            class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-print me-1"></i>In Tem Thùng
                         </a>
                     </div>
                 @endif

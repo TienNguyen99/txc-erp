@@ -119,6 +119,8 @@ Route::middleware('auth')->group(function () {
                Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])->name('warehouse-transactions.store-nhap-theo-lenh')->middleware('permission:warehouse.create');
                Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])->name('warehouse-transactions.ton-kho');
                Route::get('warehouse-transactions/export-packing-list', [WarehouseTransactionController::class, 'exportPackingList'])->name('warehouse-transactions.export-packing-list')->middleware('permission:warehouse.export');
+               Route::get('warehouse-transactions/print-labels', [WarehouseTransactionController::class, 'printLabels'])->name('warehouse-transactions.print-labels')->middleware('permission:warehouse.export');
+               Route::post('warehouse-transactions/render-labels', [WarehouseTransactionController::class, 'renderLabels'])->name('warehouse-transactions.render-labels')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/lenh-xuat-vat-tu/{lenhSanXuat}', [WarehouseTransactionController::class, 'lenhXuatVatTu'])->name('warehouse-transactions.lenh-xuat-vat-tu');
                Route::post('warehouse-transactions/lenh-xuat-vat-tu', [WarehouseTransactionController::class, 'storeLenhXuatVatTu'])->name('warehouse-transactions.store-lenh-xuat-vat-tu');
                Route::resource('warehouse-transactions', WarehouseTransactionController::class)->parameters(['warehouse-transactions' => 'warehouseTransaction']);

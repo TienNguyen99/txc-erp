@@ -590,4 +590,121 @@ class WarehouseTransactionController extends Controller
 
         return Excel::download(new PackingListExport($tn), $filename);
     }
+
+    public function printLabels(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string',
+        ]);
+
+        $tn = $request->tracking_number;
+        $trackings = OrderTracking::with('order.khachHang')
+            ->where('tracking_number', $tn)
+            ->get()
+            ->sortBy(fn($t) => $t->order->ma_hh ?? '');
+
+        if ($trackings->isEmpty()) {
+            return redirect()->back()->with('error', 'Không tìm thấy dữ liệu cho Tracking Number này.');
+        }
+
+        $allMaHh = $trackings->pluck('order.ma_hh')->unique()->filter()->values();
+        $cartonSpecs = DanhMucHangHoa::whereIn('ma_hh', $allMaHh)
+            ->whereNotNull('dinh_muc_thung')
+            ->get()
+            ->keyBy('ma_hh');
+
+        $plNumbers  = $trackings->pluck('pl_number')->unique()->filter()->implode(', ');
+        $firstOrder = $trackings->first()->order;
+        $khachHang  = $firstOrder?->khachHang;
+        $shipDate   = $firstOrder?->sig_need_date?->format('d/m/Y') ?? now()->format('d/m/Y');
+
+        $grouped = $trackings->groupBy(fn($t) => $t->order->ma_hh ?? 'UNKNOWN');
+
+        $cartonsData = [];
+
+        foreach ($grouped as $maHh => $groupTrackings) {
+            $spec = $cartonSpecs[$maHh] ?? null;
+            $cap  = $spec->dinh_muc_thung ?? null;
+            $nwFull = $spec ? (float) $spec->net_weight : 0;
+            $gwFull = $spec ? (float) $spec->gross_weight : 0;
+            $sizeName = $spec->ten_hh ?? $maHh;
+            
+            $byPo = $groupTrackings->groupBy(fn($t) => $t->order->fty_po ?? '');
+            
+            foreach ($byPo as $ftyPo => $poTrackings) {
+                $jobNosArr = $poTrackings->pluck('order.job_no')->unique()->filter()->values();
+                $jobNoStr = $jobNosArr->implode(", ");
+                $color  = $poTrackings->first()->mau ?? $poTrackings->first()->order->color ?? '';
+                $tYrd   = $poTrackings->sum(fn($t) => $t->sl_don_hang ?? $t->order->yrd ?? 0);
+                
+                $description = $poTrackings->first()->order->im_number ?? '';
+                $itemCode = trim($sizeName . ' ' . $description);
+
+                if ($cap && $cap > 0) {
+                    $remaining = $tYrd;
+                    while ($remaining > 0) {
+                        $cQty = min($remaining, $cap);
+                        $remaining -= $cQty;
+                        $ratio = $cQty / $cap;
+                        $nw = round($nwFull * $ratio, 1);
+                        $gw = round($gwFull * $ratio, 3);
+                        
+                        $cartonsData[] = [
+                            'date' => $shipDate,
+                            'customer' => $khachHang->ten_kh ?? '',
+                            'pkl' => $plNumbers,
+                            'item_code' => $itemCode,
+                            'color' => $color,
+                            'nw' => $nw,
+                            'gw' => $gw,
+                            'job' => $jobNoStr,
+                            'po' => $ftyPo,
+                            'qty' => $cQty
+                        ];
+                    }
+                } else {
+                    $cartonsData[] = [
+                        'date' => $shipDate,
+                        'customer' => $khachHang->ten_kh ?? '',
+                        'pkl' => $plNumbers,
+                        'item_code' => $itemCode,
+                        'color' => $color,
+                        'nw' => 0,
+                        'gw' => 0,
+                        'job' => $jobNoStr,
+                        'po' => $ftyPo,
+                        'qty' => $tYrd
+                    ];
+                }
+            }
+        }
+
+        $totalCartons = count($cartonsData);
+        foreach ($cartonsData as $idx => &$c) {
+            $c['carton_no'] = $idx + 1;
+            $c['total_cartons'] = $totalCartons;
+        }
+
+        return view('admin.warehouse-transactions.print-labels', compact('tn', 'cartonsData', 'totalCartons'));
+    }
+
+    public function renderLabels(Request $request)
+    {
+        $allLabels = $request->input('labels', []);
+        $selectedLabels = collect($allLabels)
+            ->filter(fn($l) => !empty($l['selected']))
+            ->map(function($l) {
+                $data = json_decode($l['json'] ?? '{}', true);
+                $data['nw'] = $l['nw'] ?? 0;
+                $data['gw'] = $l['gw'] ?? 0;
+                return $data;
+            })
+            ->values();
+
+        if ($selectedLabels->isEmpty()) {
+            return redirect()->back()->with('error', 'Vui lòng chọn ít nhất 1 tem để in.');
+        }
+
+        return view('admin.warehouse-transactions.render-labels', compact('selectedLabels'));
+    }
 }
