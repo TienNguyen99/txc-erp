@@ -218,7 +218,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="text-dark fw-bold" style="font-size: .95rem">Đơn chưa hoàn thành</div>
-                                <div class="stat-icon" style="background-color: #ffe4e6; color: #f43f5e; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <div class="stat-icon"
+                                    style="background-color: #ffe4e6; color: #f43f5e; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                     <i class="fa-solid fa-box"></i>
                                 </div>
                             </div>
@@ -227,7 +228,8 @@
                             </div>
                             <div class="d-flex align-items-center" style="font-size: .8rem">
                                 <span class="text-success fw-bold me-1">{{ $stats['pct_pending_orders'] }}%</span>
-                                <span class="text-muted">Tổng số đơn hàng: {{ number_format($stats['total_orders']) }}</span>
+                                <span class="text-muted">Tổng số đơn hàng:
+                                    {{ number_format($stats['total_orders']) }}</span>
                             </div>
                             <div class="text-muted mt-2" style="font-size: .7rem">
                                 Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
@@ -244,7 +246,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="text-dark fw-bold" style="font-size: .95rem">Lệnh chưa hoàn thành</div>
-                                <div class="stat-icon" style="background-color: #fef3c7; color: #d97706; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <div class="stat-icon"
+                                    style="background-color: #fef3c7; color: #d97706; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                     <i class="fa-solid fa-chart-simple"></i>
                                 </div>
                             </div>
@@ -253,7 +256,8 @@
                             </div>
                             <div class="d-flex align-items-center" style="font-size: .8rem">
                                 <span class="text-success fw-bold me-1">{{ $stats['pct_pending_trackings'] }}%</span>
-                                <span class="text-muted">Lệnh đang sản xuất: {{ number_format($stats['total_trackings']) }}</span>
+                                <span class="text-muted">Lệnh đang sản xuất:
+                                    {{ number_format($stats['total_trackings']) }}</span>
                             </div>
                             <div class="text-muted mt-2" style="font-size: .7rem">
                                 Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
@@ -269,7 +273,8 @@
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="text-dark fw-bold" style="font-size: .95rem">Sản lượng chưa SX</div>
-                            <div class="stat-icon" style="background-color: #e0e7ff; color: #4f46e5; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div class="stat-icon"
+                                style="background-color: #e0e7ff; color: #4f46e5; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fa-solid fa-file-invoice"></i>
                             </div>
                         </div>
@@ -278,7 +283,8 @@
                         </div>
                         <div class="d-flex align-items-center" style="font-size: .8rem">
                             <span class="text-success fw-bold me-1">{{ $stats['pct_unproduced'] }}%</span>
-                            <span class="text-muted">Cần sản xuất: {{ number_format($stats['total_qty_required'], 2) }}</span>
+                            <span class="text-muted">Cần sản xuất:
+                                {{ number_format($stats['total_qty_required'], 2) }}</span>
                         </div>
                         <div class="text-muted mt-2" style="font-size: .7rem">
                             Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
@@ -293,7 +299,8 @@
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="text-dark fw-bold" style="font-size: .95rem">Tỷ lệ hao hụt NVL</div>
-                            <div class="stat-icon" style="background-color: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div class="stat-icon"
+                                style="background-color: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fa-solid fa-list-check"></i>
                             </div>
                         </div>
@@ -301,7 +308,8 @@
                             <span class="fs-2 fw-bold text-dark">{{ $stats['loss_rate'] }} %</span>
                         </div>
                         <div class="d-flex align-items-center" style="font-size: .8rem">
-                            <span class="text-danger fw-bold me-1"><i class="fa-solid fa-arrow-trend-down"></i> Tỷ lệ trung bình toàn nhà máy</span>
+                            <span class="text-danger fw-bold me-1"><i class="fa-solid fa-arrow-trend-down"></i> Tỷ lệ trung
+                                bình toàn nhà máy</span>
                         </div>
                         <div class="text-muted mt-2" style="font-size: .7rem">
                             Số liệu tính đến: {{ now()->format('H:i') }} <i class="fa-solid fa-rotate ms-1"></i>
@@ -313,6 +321,20 @@
 
         {{-- Dashboard Charts MISA Style --}}
         <div class="row g-3 mb-4">
+            {{-- Chart 0: Trạng thái Đơn hàng (Order.status) --}}
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Trạng thái Đơn hàng</h6>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="orderStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Chart 1: Sản lượng SX theo thời gian --}}
             <div class="col-lg-6">
                 <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
@@ -420,80 +442,139 @@
                     <table class="table table-sm table-hover align-middle mb-0 table-modern">
                         <thead>
                             <tr style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Mã lệnh</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Chart</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Nhóm</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-center">Mã HH</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Tổng YRD</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Đã SX</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-end">Tồn kho</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none;min-width:160px">Tiến độ</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none" class="text-center">Trạng thái</th>
-                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">Ngày tạo</th>
+                                <th
+                                    style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">
+                                    Mã lệnh</th>
+                                <th
+                                    style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">
+                                    Chart</th>
+                                <th
+                                    style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">
+                                    Nhóm</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none"
+                                    class="text-center">Mã HH</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none"
+                                    class="text-end">Tổng YRD</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none"
+                                    class="text-end">Đã SX</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none"
+                                    class="text-end">Tồn kho</th>
+                                <th
+                                    style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none;min-width:160px">
+                                    Tiến độ</th>
+                                <th style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none"
+                                    class="text-center">Trạng thái</th>
+                                <th
+                                    style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">
+                                    Ngày tạo</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($lenhSxTracking as $lenh)
                                 @php
                                     $statusMap = [
-                                        'new'       => ['label' => 'Mới tạo', 'color' => '#6b7280', 'bg' => 'rgba(107,114,128,.1)'],
-                                        'waiting'   => ['label' => 'Chờ SX', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,.1)'],
-                                        'producing' => ['label' => 'Đang SX', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,.1)'],
-                                        'done'      => ['label' => 'Hoàn thành', 'color' => '#10b981', 'bg' => 'rgba(16,185,129,.1)'],
+                                        'new' => [
+                                            'label' => 'Mới tạo',
+                                            'color' => '#6b7280',
+                                            'bg' => 'rgba(107,114,128,.1)',
+                                        ],
+                                        'waiting' => [
+                                            'label' => 'Chờ SX',
+                                            'color' => '#f59e0b',
+                                            'bg' => 'rgba(245,158,11,.1)',
+                                        ],
+                                        'producing' => [
+                                            'label' => 'Đang SX',
+                                            'color' => '#3b82f6',
+                                            'bg' => 'rgba(59,130,246,.1)',
+                                        ],
+                                        'done' => [
+                                            'label' => 'Hoàn thành',
+                                            'color' => '#10b981',
+                                            'bg' => 'rgba(16,185,129,.1)',
+                                        ],
                                     ];
                                     $s = $statusMap[$lenh->trang_thai] ?? $statusMap['new'];
-                                    $pctKho = $lenh->tong_yrd > 0 ? min(100, round(($lenh->tong_ton_kho / $lenh->tong_yrd) * 100)) : 0;
-                                    $pctSx = $lenh->tong_yrd > 0 ? min(100 - $pctKho, round(($lenh->tong_da_sx / $lenh->tong_yrd) * 100)) : 0;
+                                    $pctKho =
+                                        $lenh->tong_yrd > 0
+                                            ? min(100, round(($lenh->tong_ton_kho / $lenh->tong_yrd) * 100))
+                                            : 0;
+                                    $pctSx =
+                                        $lenh->tong_yrd > 0
+                                            ? min(100 - $pctKho, round(($lenh->tong_da_sx / $lenh->tong_yrd) * 100))
+                                            : 0;
                                 @endphp
                                 <tr>
                                     <td>
                                         <a href="{{ route('admin.lenh-san-xuat.show', $lenh->id) }}"
-                                           class="fw-bold text-decoration-none" style="color:#6366f1">
-                                            <i class="fa-solid fa-clipboard-list me-1" style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
+                                            class="fw-bold text-decoration-none" style="color:#6366f1">
+                                            <i class="fa-solid fa-clipboard-list me-1"
+                                                style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
                                         </a>
                                     </td>
-                                    <td><span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:500">{{ $lenh->chart }}</span></td>
-                                    <td><span class="badge" style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span></td>
+                                    <td><span class="badge"
+                                            style="background:#f1f5f9;color:#64748b;font-weight:500">{{ $lenh->chart }}</span>
+                                    </td>
+                                    <td><span class="badge"
+                                            style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span>
+                                    </td>
                                     <td class="text-center">
                                         <span class="fw-semibold" style="color:#6366f1">{{ $lenh->active_items }}</span>
                                         <span class="text-muted" style="font-size:.7rem">/{{ $lenh->total_items }}</span>
                                     </td>
                                     <td class="text-end fw-semibold">{{ number_format($lenh->tong_yrd, 0) }}</td>
-                                    <td class="text-end" style="color:#f59e0b;font-weight:600">{{ number_format($lenh->tong_da_sx, 0) }}</td>
-                                    <td class="text-end" style="color:#10b981;font-weight:600">{{ number_format($lenh->tong_ton_kho, 0) }}</td>
+                                    <td class="text-end" style="color:#f59e0b;font-weight:600">
+                                        {{ number_format($lenh->tong_da_sx, 0) }}</td>
+                                    <td class="text-end" style="color:#10b981;font-weight:600">
+                                        {{ number_format($lenh->tong_ton_kho, 0) }}</td>
                                     <td>
                                         <div class="progress" style="height:18px;border-radius:6px;background:#f1f5f9">
                                             @if ($pctKho > 0)
-                                                <div class="progress-bar" style="width:{{ $pctKho }}%;background:#10b981;border-radius:6px 0 0 6px" title="Tồn kho {{ $pctKho }}%">
-                                                    @if($pctKho >= 12)<span style="font-size:.65rem">{{ $pctKho }}%</span>@endif
+                                                <div class="progress-bar"
+                                                    style="width:{{ $pctKho }}%;background:#10b981;border-radius:6px 0 0 6px"
+                                                    title="Tồn kho {{ $pctKho }}%">
+                                                    @if ($pctKho >= 12)
+                                                        <span style="font-size:.65rem">{{ $pctKho }}%</span>
+                                                    @endif
                                                 </div>
                                             @endif
                                             @if ($pctSx > 0)
-                                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:{{ $pctSx }}%;background:#3b82f6" title="Đang SX {{ $pctSx }}%">
-                                                    @if($pctSx >= 12)<span style="font-size:.65rem">{{ $pctSx }}%</span>@endif
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                    style="width:{{ $pctSx }}%;background:#3b82f6"
+                                                    title="Đang SX {{ $pctSx }}%">
+                                                    @if ($pctSx >= 12)
+                                                        <span style="font-size:.65rem">{{ $pctSx }}%</span>
+                                                    @endif
                                                 </div>
                                             @endif
                                             @if ($pctKho == 0 && $pctSx == 0)
-                                                <div class="progress-bar" style="width:100%;background:#f1f5f9;color:#94a3b8;font-size:.65rem">0%</div>
+                                                <div class="progress-bar"
+                                                    style="width:100%;background:#f1f5f9;color:#94a3b8;font-size:.65rem">0%
+                                                </div>
                                             @endif
                                         </div>
-                                        <div class="d-flex justify-content-between mt-1" style="font-size:.6rem;color:#94a3b8">
-                                            <span><i class="fa-solid fa-warehouse me-1" style="color:#10b981"></i>Kho</span>
+                                        <div class="d-flex justify-content-between mt-1"
+                                            style="font-size:.6rem;color:#94a3b8">
+                                            <span><i class="fa-solid fa-warehouse me-1"
+                                                    style="color:#10b981"></i>Kho</span>
                                             <span><i class="fa-solid fa-industry me-1" style="color:#3b82f6"></i>SX</span>
                                             <span class="fw-bold" style="color:#334155">{{ $lenh->progress }}%</span>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge" style="background:{{ $s['bg'] }};color:{{ $s['color'] }};font-weight:600;font-size:.72rem;padding:.35em .7em;border-radius:6px">
+                                        <span class="badge"
+                                            style="background:{{ $s['bg'] }};color:{{ $s['color'] }};font-weight:600;font-size:.72rem;padding:.35em .7em;border-radius:6px">
                                             {{ $s['label'] }}
                                         </span>
                                     </td>
-                                    <td style="font-size:.78rem;color:#64748b">{{ $lenh->created_at->format('d/m/Y') }}</td>
+                                    <td style="font-size:.78rem;color:#64748b">{{ $lenh->created_at->format('d/m/Y') }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="10" class="text-muted text-center py-4">
-                                        <i class="fa-solid fa-inbox me-2" style="font-size:1.2rem"></i>Chưa có lệnh sản xuất nào
+                                        <i class="fa-solid fa-inbox me-2" style="font-size:1.2rem"></i>Chưa có lệnh sản
+                                        xuất nào
                                     </td>
                                 </tr>
                             @endforelse
@@ -508,7 +589,43 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chart 0: Trạng thái Đơn hàng (Doughnut)
+            const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+            const dataOrderStatus = @json($chartDataOrderStatus);
+            new Chart(orderStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: dataOrderStatus.labels,
+                    datasets: [{
+                        data: dataOrderStatus.data,
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#1e293b'],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 16,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${ctx.parsed} đơn`
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
             // Chart 1: Sản lượng sản xuất theo thời gian (Bar)
             const timeCtx = document.getElementById('productionTimeChart').getContext('2d');
             const dataTime = @json($chartDataProductionTime);
@@ -525,11 +642,31 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
-                        x: { grid: { display: false }, border: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
                     }
                 }
             });
@@ -548,9 +685,18 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'right', labels: { padding: 20, font: { size: 11 } } }
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
                     },
                     cutout: '65%'
                 }
@@ -572,11 +718,31 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
-                        x: { grid: { display: false }, border: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
                     }
                 }
             });
@@ -597,11 +763,31 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
-                        x: { grid: { display: false }, border: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
                     }
                 }
             });

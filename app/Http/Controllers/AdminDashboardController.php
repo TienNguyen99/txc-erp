@@ -43,6 +43,25 @@ class AdminDashboardController extends Controller
         $totalRevenueUsd = Order::selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0;
         $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
 
+        // --- Chart 0: Trạng thái đơn hàng (Order.status) ---
+        $orderStatuses = Order::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')->toArray();
+        $statusLabels = [
+            'pending'       => 'Chờ xử lý',
+            'in_production' => 'Đang SX',
+            'done'          => 'Hoàn thành',
+            'shipped'       => 'Đã giao',
+        ];
+        $orderedStatuses = [];
+        foreach ($statusLabels as $key => $label) {
+            $orderedStatuses[$label] = $orderStatuses[$key] ?? 0;
+        }
+        $chartDataOrderStatus = [
+            'labels' => array_keys($orderedStatuses),
+            'data'   => array_values($orderedStatuses),
+        ];
+
         // --- Chart 1: Sản lượng sản xuất theo thời gian (7 ngày qua) ---
         $last7Days = collect();
         for ($i = 6; $i >= 0; $i--) {
@@ -167,6 +186,7 @@ class AdminDashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'stats',
+            'chartDataOrderStatus',
             'chartDataProductionTime',
             'chartDataTrackingStatus',
             'chartDataProductionStage',
