@@ -12,8 +12,8 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
+            --primary: #f7941d;
+            --primary-dark: #e07b08;
             --success: #10b981;
             --bg: #f0f4ff;
         }
@@ -25,7 +25,7 @@
         }
 
         .scan-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            background: linear-gradient(135deg, #f7941d 0%, #e07b08 100%);
             color: #fff;
             padding: 1.5rem 1rem;
             border-radius: 0 0 24px 24px;
@@ -92,7 +92,7 @@
         }
 
         .back-link {
-            color: rgba(255,255,255,.8);
+            color: rgba(255, 255, 255, .8);
             text-decoration: none;
             font-size: .85rem;
             display: inline-flex;
@@ -100,6 +100,7 @@
             gap: .3rem;
             margin-bottom: .5rem;
         }
+
         .back-link:hover {
             color: #fff;
         }
@@ -128,13 +129,15 @@
 
         {{-- Alert --}}
         @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show py-2 mb-3" style="border-radius:12px;font-size:.85rem">
+            <div class="alert alert-success alert-dismissible fade show py-2 mb-3"
+                style="border-radius:12px;font-size:.85rem">
                 <i class="fa-solid fa-check-circle me-1"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" style="font-size:.7rem"></button>
             </div>
         @endif
         @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show py-2 mb-3" style="border-radius:12px;font-size:.85rem">
+            <div class="alert alert-danger alert-dismissible fade show py-2 mb-3"
+                style="border-radius:12px;font-size:.85rem">
                 <i class="fa-solid fa-exclamation-circle me-1"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" style="font-size:.7rem"></button>
             </div>
@@ -166,7 +169,8 @@
                 </div>
                 <div class="info-item">
                     <div class="label">SL hư</div>
-                    <div class="value {{ $totalSlHu > 0 ? 'text-danger' : '' }}">{{ number_format($totalSlHu, 0) }}</div>
+                    <div class="value {{ $totalSlHu > 0 ? 'text-danger' : '' }}">{{ number_format($totalSlHu, 0) }}
+                    </div>
                 </div>
                 <div class="info-item">
                     <div class="label">Đã nhập kho</div>
@@ -174,7 +178,8 @@
                 </div>
                 <div class="info-item">
                     <div class="label">Tồn kho hiện tại</div>
-                    <div class="value {{ $tonKho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($tonKho, 0) }}</div>
+                    <div class="value {{ $tonKho > 0 ? 'text-success' : 'text-danger' }}">
+                        {{ number_format($tonKho, 0) }}</div>
                 </div>
             </div>
             @if ($hangHoa?->hinh_anh)
@@ -208,7 +213,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Công đoạn</label>
                             <select name="cong_doan" class="form-select" required>
-                                @foreach($congDoanList as $key => $name)
+                                @foreach ($congDoanList as $key => $name)
                                     <option value="{{ $name }}">{{ $name }}</option>
                                 @endforeach
                             </select>
@@ -216,13 +221,13 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-semibold">SL Đạt</label>
-                                <input type="number" step="0.01" min="0" name="sl_dat" class="form-control"
-                                    placeholder="0" required inputmode="decimal" autofocus>
+                                <input type="number" step="0.01" min="0" name="sl_dat"
+                                    class="form-control" placeholder="0" required inputmode="decimal" autofocus>
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold">SL Hư</label>
-                                <input type="number" step="0.01" min="0" name="sl_hu" class="form-control"
-                                    placeholder="0" value="0" inputmode="decimal">
+                                <input type="number" step="0.01" min="0" name="sl_hu"
+                                    class="form-control" placeholder="0" value="0" inputmode="decimal">
                             </div>
                         </div>
                         <div class="row g-2 mb-3">
@@ -267,7 +272,8 @@
                                     @if ($h->sl_hu > 0)
                                         <span class="text-danger ms-1">-{{ number_format($h->sl_hu, 0) }}</span>
                                     @endif
-                                    <div class="text-muted" style="font-size:.7rem">{{ $h->created_at->format('d/m H:i') }}</div>
+                                    <div class="text-muted" style="font-size:.7rem">
+                                        {{ $h->created_at->format('d/m H:i') }}</div>
                                 </div>
                             </div>
                         @endforeach
@@ -288,8 +294,8 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-semibold">Số lượng nhập</label>
-                                <input type="number" step="0.01" min="0.01" name="so_luong" class="form-control"
-                                    placeholder="0" required inputmode="decimal">
+                                <input type="number" step="0.01" min="0.01" name="so_luong"
+                                    class="form-control" placeholder="0" required inputmode="decimal">
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold">Mã NV</label>
@@ -299,7 +305,8 @@
                         <div class="p-2 mb-3" style="background:#ecfdf5;border-radius:10px;font-size:.85rem">
                             <div class="d-flex justify-content-between">
                                 <span>Tồn kho hiện tại:</span>
-                                <span class="fw-bold {{ $tonKho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($tonKho, 0) }}</span>
+                                <span
+                                    class="fw-bold {{ $tonKho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($tonKho, 0) }}</span>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-success btn-scan w-100"
@@ -319,14 +326,16 @@
                         @foreach ($warehouseHistory as $wh)
                             <div class="history-item d-flex justify-content-between">
                                 <div>
-                                    <span class="badge bg-success" style="font-size:.7rem">{{ $wh->cong_doan }}</span>
+                                    <span class="badge bg-success"
+                                        style="font-size:.7rem">{{ $wh->cong_doan }}</span>
                                     @if ($wh->ma_nv)
                                         <span class="text-muted ms-1">{{ $wh->ma_nv }}</span>
                                     @endif
                                 </div>
                                 <div class="text-end">
                                     <span class="fw-bold text-success">{{ number_format($wh->so_luong, 0) }}</span>
-                                    <div class="text-muted" style="font-size:.7rem">{{ $wh->created_at->format('d/m H:i') }}</div>
+                                    <div class="text-muted" style="font-size:.7rem">
+                                        {{ $wh->created_at->format('d/m H:i') }}</div>
                                 </div>
                             </div>
                         @endforeach

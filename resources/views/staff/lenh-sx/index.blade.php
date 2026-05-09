@@ -11,8 +11,8 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
+            --primary: #f7941d;
+            --primary-dark: #e07b08;
             --success: #10b981;
             --bg: #f0f4ff;
         }
@@ -24,7 +24,7 @@
         }
 
         .scan-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            background: linear-gradient(135deg, #f7941d 0%, #e07b08 100%);
             color: #fff;
             padding: 1.5rem 1rem;
             border-radius: 0 0 24px 24px;
@@ -101,7 +101,7 @@
         .progress-bar-custom .fill {
             height: 100%;
             border-radius: 3px;
-            background: linear-gradient(90deg, #6366f1, #10b981);
+            background: linear-gradient(90deg, #f7941d, #10b981);
             transition: width .3s ease;
         }
 
@@ -174,7 +174,8 @@
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Tồn kho</span>
-                            <span class="stat-value ms-1 {{ $child->ton_kho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($child->ton_kho, 0) }}</span>
+                            <span
+                                class="stat-value ms-1 {{ $child->ton_kho > 0 ? 'text-success' : 'text-danger' }}">{{ number_format($child->ton_kho, 0) }}</span>
                         </div>
                     </div>
 

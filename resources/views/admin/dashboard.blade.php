@@ -52,7 +52,7 @@
         }
 
         .bg-grad-1 {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #f7941d, #fbb04c);
         }
 
         .bg-grad-2 {
@@ -76,7 +76,7 @@
         }
 
         .bg-grad-7 {
-            background: linear-gradient(135deg, #8b5cf6, #d946ef);
+            background: linear-gradient(135deg, #f7941d, #e07b08);
         }
 
         .section-title {
@@ -104,15 +104,15 @@
 
         /* Production Order Filter Section */
         .filter-card {
-            background: linear-gradient(135deg, rgba(99, 102, 241, .05) 0%, rgba(139, 92, 246, .08) 100%);
-            border: 1px solid rgba(99, 102, 241, .15);
+            background: linear-gradient(135deg, rgba(247, 148, 29, .05) 0%, rgba(247, 148, 29, .09) 100%);
+            border: 1px solid rgba(247, 148, 29, .18);
             border-radius: var(--radius);
             padding: 1.25rem;
         }
 
         .filter-card .filter-select {
             border-radius: 12px;
-            border: 2px solid rgba(99, 102, 241, .2);
+            border: 2px solid rgba(247, 148, 29, .2);
             padding: .6rem 1rem;
             font-size: .85rem;
             font-weight: 500;
@@ -122,11 +122,11 @@
 
         .filter-card .filter-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, .12);
+            box-shadow: 0 0 0 4px rgba(247, 148, 29, .15);
         }
 
         .lenh-sx-table th {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #f7941d, #e07b08);
             color: #fff;
             font-size: .72rem;
             font-weight: 600;
@@ -146,7 +146,7 @@
         }
 
         .lenh-sx-table tbody tr:hover {
-            background: rgba(99, 102, 241, .04);
+            background: rgba(247, 148, 29, .04);
         }
 
         .summary-pill {
@@ -165,8 +165,8 @@
         }
 
         .summary-pill.dh {
-            background: rgba(139, 92, 246, .1);
-            color: #8b5cf6;
+            background: rgba(247, 148, 29, .1);
+            color: #c55f00;
         }
 
         .summary-pill.nk {
@@ -184,7 +184,7 @@
         }
 
         .qty-cell.text-dh {
-            color: #8b5cf6;
+            color: #c55f00;
         }
 
         .qty-cell.text-nk {
@@ -274,7 +274,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="text-dark fw-bold" style="font-size: .95rem">Sản lượng chưa SX</div>
                             <div class="stat-icon"
-                                style="background-color: #e0e7ff; color: #4f46e5; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                style="background-color: #fff0db; color: #c55f00; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fa-solid fa-file-invoice"></i>
                             </div>
                         </div>
@@ -420,7 +420,7 @@
             <div class="card-body pt-0">
                 {{-- Status Mini Cards --}}
                 <div class="d-flex gap-2 flex-wrap mb-3">
-                    <span class="summary-pill" style="background:rgba(99,102,241,.1);color:#6366f1">
+                    <span class="summary-pill" style="background:rgba(247,148,29,.12);color:#c55f00">
                         <i class="fa-solid fa-layer-group"></i> Tổng: {{ $lenhSxStats->total }}
                     </span>
                     <span class="summary-pill" style="background:rgba(107,114,128,.1);color:#6b7280">
@@ -441,7 +441,7 @@
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0 table-modern">
                         <thead>
-                            <tr style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">
+                            <tr style="background:linear-gradient(135deg,#f7941d,#e07b08);color:#fff;">
                                 <th
                                     style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:.6rem .5rem;border:none">
                                     Mã lệnh</th>
@@ -507,7 +507,7 @@
                                 <tr>
                                     <td>
                                         <a href="{{ route('admin.lenh-san-xuat.show', $lenh->id) }}"
-                                            class="fw-bold text-decoration-none" style="color:#6366f1">
+                                            class="fw-bold text-decoration-none" style="color:#c55f00">
                                             <i class="fa-solid fa-clipboard-list me-1"
                                                 style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
                                         </a>
@@ -519,7 +519,7 @@
                                             style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="fw-semibold" style="color:#6366f1">{{ $lenh->active_items }}</span>
+                                        <span class="fw-semibold" style="color:#c55f00">{{ $lenh->active_items }}</span>
                                         <span class="text-muted" style="font-size:.7rem">/{{ $lenh->total_items }}</span>
                                     </td>
                                     <td class="text-end fw-semibold">{{ number_format($lenh->tong_yrd, 0) }}</td>
@@ -680,7 +680,7 @@
                     labels: dataStatus.labels.map(l => (l || 'N/A')),
                     datasets: [{
                         data: dataStatus.data,
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#f7941d'],
                         borderWidth: 0,
                     }]
                 },
