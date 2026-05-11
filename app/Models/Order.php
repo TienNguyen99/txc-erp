@@ -74,6 +74,9 @@ class Order extends Model
         $trackings = $this->tracking()->get();
 
         if ($trackings->isEmpty()) {
+            if ($this->status !== 'pending') {
+                $this->update(['status' => 'pending']);
+            }
             return;
         }
 

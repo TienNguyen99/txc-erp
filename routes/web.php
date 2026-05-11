@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
                Route::post('order-tracking/push-production', [OrderTrackingController::class, 'pushToProduction'])->name('order-tracking.push-production')->middleware('permission:tracking.edit');
                Route::post('order-tracking/push-warehouse', [OrderTrackingController::class, 'pushToWarehouse'])->name('order-tracking.push-warehouse')->middleware('permission:tracking.edit');
                Route::post('order-tracking/bulk-delete', [OrderTrackingController::class, 'bulkDelete'])->name('order-tracking.bulk-delete')->middleware('permission:tracking.delete');
+               Route::delete('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'destroyLot'])->name('order-tracking.destroy-lot')->middleware('permission:tracking.delete');
                Route::post('order-tracking/ship-from-stock', [OrderTrackingController::class, 'shipFromStock'])->name('order-tracking.ship-from-stock')->middleware('permission:tracking.edit');
                Route::post('order-tracking/create-production-batch', [OrderTrackingController::class, 'createProductionBatch'])->name('order-tracking.create-production-batch')->middleware('permission:tracking.edit');
                Route::get('order-tracking/export-lenh-sx/{trackingNumber}', [OrderTrackingController::class, 'exportLenhSx'])->name('order-tracking.export-lenh-sx')->middleware('permission:tracking.export');

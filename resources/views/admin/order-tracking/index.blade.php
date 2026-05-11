@@ -127,6 +127,12 @@
                                                         <i class="fa-solid fa-file-invoice-dollar me-1"></i>Xuất VAT
                                                     </a>
                                                     @endcan
+                                                    @can('tracking.delete')
+                                                    <button type="button" class="btn btn-outline-danger btn-xs ms-1" title="Xóa toàn bộ Lô"
+                                                        onclick="if(confirm('Bạn có chắc chắn muốn XÓA TOÀN BỘ lô {{ $tn->tracking_number }} này không? Tất cả PO bên trong sẽ được trả về trạng thái Pending.')){document.getElementById('deleteForm').action='{{ route('admin.order-tracking.destroy-lot', $tn->tracking_number) }}';document.getElementById('deleteForm').submit();}">
+                                                        <i class="fa-solid fa-trash me-1"></i>Xóa lô
+                                                    </button>
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach

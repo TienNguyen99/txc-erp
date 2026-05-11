@@ -367,8 +367,12 @@ class OrderTrackingController extends Controller
 
     public function destroy(OrderTracking $orderTracking)
     {
+        $order = $orderTracking->order;
         $orderTracking->delete();
-        return redirect()->route('admin.order-tracking.index')->with('success', 'Xóa tracking thành công.');
+        if ($order) {
+            $order->updateStatusFromTracking();
+        }
+        return redirect()->route('admin.order-tracking.index')->with('success', 'Xóa tracking thành công. Đơn hàng gốc đã được cập nhật trạng thái.');
     }
 
     /**
@@ -381,9 +385,20 @@ class OrderTrackingController extends Controller
             'tracking_ids.*' => 'exists:order_tracking,id',
         ]);
 
+        // Lấy danh sách các đơn hàng bị ảnh hưởng trước khi xóa
+        $trackings = OrderTracking::whereIn('id', $request->tracking_ids)->get();
+        $orderIds = $trackings->pluck('order_id')->unique()->filter();
+
         $count = OrderTracking::whereIn('id', $request->tracking_ids)->delete();
 
-        return redirect()->back()->with('success', "Đã xóa {$count} tracking.");
+        // Cập nhật lại status của các đơn hàng bị ảnh hưởng
+        if ($orderIds->isNotEmpty()) {
+            foreach (Order::whereIn('id', $orderIds)->get() as $order) {
+                $order->updateStatusFromTracking();
+            }
+        }
+
+        return redirect()->back()->with('success', "Đã xóa {$count} tracking và hoàn trả trạng thái cho các đơn hàng liên quan.");
     }
 
     /**
@@ -687,5 +702,27 @@ class OrderTrackingController extends Controller
 
         $filename = 'INVOICE_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
         return Excel::download(new OrderTrackingInvoiceExport($trackingNumber, $customRate), $filename);
+    }
+
+    /**
+     * Xóa toàn bộ lô Order Tracking và hoàn trả trạng thái Đơn hàng.
+     */
+    public function destroyLot(string $trackingNumber)
+    {
+        $trackings = OrderTracking::where('tracking_number', $trackingNumber)->get();
+        if ($trackings->isEmpty()) {
+            return redirect()->back()->with('error', 'Không tìm thấy tracking number này.');
+        }
+
+        $orderIds = $trackings->pluck('order_id')->unique()->filter();
+        $count = $trackings->count();
+
+        OrderTracking::where('tracking_number', $trackingNumber)->delete();
+
+        foreach (Order::whereIn('id', $orderIds)->get() as $order) {
+            $order->updateStatusFromTracking();
+        }
+
+        return redirect()->back()->with('success', "Đã xóa toàn bộ Lô {$trackingNumber} ({$count} item) và hoàn trả trạng thái cho các đơn hàng liên quan.");
     }
 }
