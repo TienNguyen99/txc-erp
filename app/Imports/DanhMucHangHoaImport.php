@@ -18,6 +18,18 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
         // Remove ma_hh from data since it's used in the search condition
         unset($data['ma_hh']);
 
+        // Xử lý các cột số không được phép null (khi file Excel để trống)
+        $numericFields = [
+            'don_gia', 'yards_per_roll', 'rolls_per_carton', 'dinh_muc_thung', 
+            'net_weight', 'gross_weight', 'gia_nvl', 'ton_toi_thieu'
+        ];
+        
+        foreach ($numericFields as $field) {
+            if (array_key_exists($field, $data) && ($data[$field] === null || trim($data[$field]) === '')) {
+                $data[$field] = 0;
+            }
+        }
+
         return DanhMucHangHoa::updateOrCreate(
             ['ma_hh' => $row['ma_hh']],
             $data
