@@ -171,7 +171,9 @@ class PackingListDetailSheet implements WithEvents, WithTitle
                     // Group by fty_po within this product
                     $byPo = $groupTrackings->groupBy(fn($t) => $t->order->fty_po ?? '');
 
-                    $prevJobNoStr = null;
+                    $leftovers = []; // To collect remainders across POs
+
+                    // Phase 1: Pack full cartons for each PO
                     foreach ($byPo as $ftyPo => $poTrackings) {
                         $jobNosArr = $poTrackings->pluck('order.job_no')->unique()->filter()->values();
                         $jobNoStr = $jobNosArr->implode("\n");
@@ -183,17 +185,18 @@ class PackingListDetailSheet implements WithEvents, WithTitle
                         $subYrd += $tYrd;
 
                         if ($cap && $cap > 0) {
-                            $remaining = $tYrd;
+                            $fullCartonsCount = floor($tYrd / $cap);
+                            $remainder = fmod((float)$tYrd, (float)$cap);
+
                             $first = true;
+                            $prevJobNoStr = null;
 
-                            while ($remaining > 0) {
+                            // Pack full cartons
+                            for ($i = 0; $i < $fullCartonsCount; $i++) {
                                 $cartonNo++;
-                                $cQty = min($remaining, $cap);
-                                $remaining -= $cQty;
-
-                                $ratio = $cQty / $cap;
-                                $nw = round($nwFull * $ratio, 1);
-                                $gw = round($gwFull * $ratio, 3);
+                                $cQty = $cap;
+                                $nw = $nwFull;
+                                $gw = $gwFull;
 
                                 $showJobNo = ($jobNoStr !== $prevJobNoStr) ? $jobNoStr : '';
                                 $prevJobNoStr = $jobNoStr;
@@ -226,11 +229,24 @@ class PackingListDetailSheet implements WithEvents, WithTitle
 
                                 $row++;
                             }
+
+                            // Save remainder for Phase 2
+                            if ($remainder > 0) {
+                                $leftovers[] = [
+                                    'jobNoStr' => $jobNoStr,
+                                    'ftyPo' => $ftyPo,
+                                    'description' => $description,
+                                    'color' => $color,
+                                    'qty' => $remainder,
+                                    'first' => $first, // if no full cartons, this is the first row for this PO
+                                    'tGrs' => $tGrs,
+                                    'tYrd' => $tYrd,
+                                ];
+                            }
                         } else {
                             // No carton spec → single row
                             $cartonNo++;
-                            $showJobNo = ($jobNoStr !== $prevJobNoStr) ? $jobNoStr : '';
-                            $prevJobNoStr = $jobNoStr;
+                            $showJobNo = $jobNoStr;
 
                             $sheet->setCellValue("A{$row}", $showJobNo);
                             $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
@@ -247,6 +263,65 @@ class PackingListDetailSheet implements WithEvents, WithTitle
                             $sheet->getStyle("E{$row}:F{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
                             $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
                             $row++;
+                        }
+                    }
+
+                    // Phase 2: Pack remainders (leftovers) into mixed cartons
+                    if ($cap && $cap > 0 && count($leftovers) > 0) {
+                        $currentCartonFilled = 0;
+                        $prevJobNoStr = null;
+
+                        foreach ($leftovers as $leftover) {
+                            $remaining = $leftover['qty'];
+                            $first = $leftover['first'];
+
+                            while ($remaining > 0) {
+                                if ($currentCartonFilled == 0 || $currentCartonFilled >= $cap) {
+                                    $cartonNo++;
+                                    $currentCartonFilled = 0;
+                                    $prevJobNoStr = null; // Reset job no display for new carton
+                                }
+
+                                $spaceLeft = $cap - $currentCartonFilled;
+                                $cQty = min($remaining, $spaceLeft);
+                                $remaining -= $cQty;
+                                $currentCartonFilled += $cQty;
+
+                                $ratio = $cQty / $cap;
+                                $nw = round($nwFull * $ratio, 1);
+                                $gw = round($gwFull * $ratio, 3);
+
+                                $showJobNo = ($leftover['jobNoStr'] !== $prevJobNoStr) ? $leftover['jobNoStr'] : '';
+                                $prevJobNoStr = $leftover['jobNoStr'];
+
+                                $sheet->setCellValue("A{$row}", $showJobNo);
+                                $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
+                                $sheet->setCellValue("B{$row}", $leftover['ftyPo']);
+                                $sheet->setCellValue("C{$row}", $leftover['description']);
+                                $sheet->setCellValue("D{$row}", $leftover['color']);
+
+                                if ($first) {
+                                    $sheet->setCellValue("E{$row}", $leftover['tGrs']);
+                                    $sheet->setCellValue("F{$row}", $leftover['tYrd']);
+                                    $first = false;
+                                }
+
+                                $sheet->setCellValue("G{$row}", $cQty);
+                                $sheet->setCellValue("H{$row}", $sizeName);
+                                $sheet->setCellValue("I{$row}", $nw);
+                                $sheet->setCellValue("J{$row}", $gw);
+                                $sheet->setCellValue("K{$row}", $cartonNo);
+
+                                $subCQ += $cQty;
+                                $subNW += $nw;
+                                $subGW += $gw;
+
+                                $sheet->getStyle("E{$row}:F{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+                                $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                                $sheet->getStyle("I{$row}:J{$row}")->getNumberFormat()->setFormatCode('#,##0.0##');
+
+                                $row++;
+                            }
                         }
                     }
 
