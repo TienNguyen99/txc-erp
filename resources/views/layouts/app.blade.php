@@ -800,11 +800,41 @@
     </header>
 
     {{-- ══════════════════ CONTENT ══════════════════ --}}
-    <main id="main-content">
-        <div class="page-content">
+    <main id="main-content" class="d-flex flex-column">
+        <div class="page-content" style="flex: 1;">
             {{ $slot ?? '' }}
             @yield('content')
         </div>
+
+        <footer style="padding: 15px 24px; border-top: 1px solid var(--border); background: var(--surface); font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+            <div>
+                &copy; {{ date('Y') }} TXC ERP. Engineered with <i class="fa-solid fa-heart" style="color: #ef4444; font-size: 0.75rem;"></i> by Tiến.
+            </div>
+            <div>
+                @php
+                    $onlineUsers = \App\Models\User::whereNotNull('last_seen_at')->where('last_seen_at', '>=', now()->subMinutes(5))->get();
+                @endphp
+                <div class="dropdown dropup">
+                    <span data-bs-toggle="dropdown" style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
+                        <span style="color: #10b981; font-size: 0.6rem;"><i class="fa-solid fa-circle"></i></span>
+                        {{ $onlineUsers->count() }} Users Online
+                    </span>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 0.8rem; min-width: 240px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 10px;">
+                        <li class="dropdown-header fw-bold text-dark border-bottom pb-2 mb-1" style="font-size: 0.75rem;">ĐANG HOẠT ĐỘNG (5 PHÚT QUA)</li>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                        @forelse($onlineUsers as $ou)
+                            <li class="px-3 py-1 d-flex justify-content-between align-items-center">
+                                <span class="fw-medium text-dark">{{ $ou->name }}</span>
+                                <span class="badge bg-light text-secondary border" style="font-size: 0.65rem; font-family: monospace;">{{ $ou->last_seen_ip ?? 'N/A' }}</span>
+                            </li>
+                        @empty
+                            <li class="px-3 py-2 text-muted fst-italic">Không có dữ liệu</li>
+                        @endforelse
+                        </div>
+                    </ul>
+                </div>
+            </div>
+        </footer>
     </main>
 
     {{-- Scripts --}}

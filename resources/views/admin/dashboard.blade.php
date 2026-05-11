@@ -190,6 +190,69 @@
         .qty-cell.text-nk {
             color: #10b981;
         }
+
+        /* ── Performance animations (GPU-composited only) ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(.94); }
+            to   { opacity: 1; transform: scale(1);   }
+        }
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        /* Stat cards staggered entrance */
+        .stat-card { animation: fadeUp .45s cubic-bezier(.22,.68,0,1.2) both; }
+        .stat-card:nth-child(1) { animation-delay: .05s; }
+        .stat-card:nth-child(2) { animation-delay: .12s; }
+        .stat-card:nth-child(3) { animation-delay: .19s; }
+        .stat-card:nth-child(4) { animation-delay: .26s; }
+        .stat-card:nth-child(5) { animation-delay: .33s; }
+        .stat-card:nth-child(6) { animation-delay: .40s; }
+        .stat-card .stat-number { animation: countUp .5s .5s ease both; }
+
+        /* Chart cards entrance */
+        .card { animation: scaleIn .4s cubic-bezier(.22,.68,0,1.15) both; will-change: transform, opacity; }
+
+        /* Smooth card hover — transform only (GPU) */
+        .card {
+            transition: transform .22s cubic-bezier(.22,.68,0,1.2),
+                        box-shadow .22s ease;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,.09) !important;
+        }
+
+        /* Table row hover — background only, no reflow */
+        .lenh-sx-table tbody tr {
+            transition: background-color .15s ease;
+        }
+
+        /* Stat card icon pulse on hover */
+        .stat-card:hover .stat-icon {
+            animation: pulse 1s ease infinite;
+        }
+        @keyframes pulse {
+            0%,100% { transform: scale(1); }
+            50%      { transform: scale(1.12); }
+        }
+
+        /* Skeleton shimmer (utility class) */
+        @keyframes shimmer {
+            from { background-position: -400px 0; }
+            to   { background-position: 400px 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 800px 100%;
+            animation: shimmer 1.4s infinite linear;
+            will-change: background-position;
+        }
     </style>
 @endsection
 
@@ -321,66 +384,57 @@
 
         {{-- Dashboard Charts MISA Style --}}
         <div class="row g-3 mb-4">
-            {{-- Chart 0: Trạng thái Đơn hàng (Order.status) --}}
-            <div class="col-lg-6">
-                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
-                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-dark mb-0">Trạng thái Đơn hàng</h6>
+            {{-- Chart 0: Trạng thái Đơn hàng (Doughnut) --}}
+            <div class="col-xl-6 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;border-top:3px solid #f7941d !important">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-pie me-2" style="color:#f7941d"></i>Trạng thái Đơn hàng</h6>
                     </div>
                     <div class="card-body d-flex align-items-center justify-content-center">
-                        <div style="position: relative; height:250px; width:100%">
+                        <div style="position:relative;height:240px;width:100%">
                             <canvas id="orderStatusChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Chart 1: Sản lượng SX theo thời gian --}}
-            <div class="col-lg-6">
-                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
+            {{-- Chart 1: Sản lượng SX theo thời gian (Line) --}}
+            <div class="col-xl-6 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;border-top:3px solid #10b981 !important">
                     <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo thời gian</h6>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-light border-0 text-muted" type="button">
-                                7 ngày qua <i class="fa-solid fa-chevron-down ms-1"></i>
-                            </button>
-                        </div>
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-line me-2" style="color:#10b981"></i>Sản lượng SX theo thời gian</h6>
+                        <span class="badge" style="background:rgba(16,185,129,.1);color:#059669;font-size:.72rem">7 ngày qua</span>
                     </div>
                     <div class="card-body">
-                        <div style="position: relative; height:250px; width:100%">
+                        <div style="position:relative;height:240px;width:100%">
                             <canvas id="productionTimeChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Chart 2: Trạng thái lệnh SX --}}
-            <div class="col-lg-6">
-                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
-                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-dark mb-0">Trạng thái lệnh sản xuất</h6>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-light border-0 text-muted" type="button">
-                                Theo công đoạn <i class="fa-solid fa-chevron-down ms-1"></i>
-                            </button>
-                        </div>
+            {{-- Chart 2: Trạng thái lệnh SX (Doughnut) --}}
+            <div class="col-xl-6 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;border-top:3px solid #3b82f6 !important">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-circle-half-stroke me-2" style="color:#3b82f6"></i>Trạng thái lệnh sản xuất</h6>
                     </div>
                     <div class="card-body d-flex align-items-center justify-content-center">
-                        <div style="position: relative; height:250px; width:100%">
+                        <div style="position:relative;height:240px;width:100%">
                             <canvas id="trackingStatusChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Chart 3: Sản lượng theo ca (đơn vị) --}}
-            <div class="col-lg-6">
-                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
-                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo ca</h6>
+            {{-- Chart 3: Sản lượng theo ca --}}
+            <div class="col-xl-3 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;border-top:3px solid #f7941d !important">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-bar me-2" style="color:#f7941d"></i>Theo ca</h6>
                     </div>
                     <div class="card-body">
-                        <div style="position: relative; height:250px; width:100%">
+                        <div style="position:relative;height:200px;width:100%">
                             <canvas id="productionCaChart"></canvas>
                         </div>
                     </div>
@@ -388,13 +442,13 @@
             </div>
 
             {{-- Chart 4: Sản lượng theo công đoạn --}}
-            <div class="col-lg-6">
-                <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px">
-                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-dark mb-0">Sản lượng sản xuất theo công đoạn</h6>
+            <div class="col-xl-3 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;border-top:3px solid #10b981 !important">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-industry me-2" style="color:#10b981"></i>Theo công đoạn</h6>
                     </div>
                     <div class="card-body">
-                        <div style="position: relative; height:250px; width:100%">
+                        <div style="position:relative;height:200px;width:100%">
                             <canvas id="productionStageChart"></canvas>
                         </div>
                     </div>
@@ -589,8 +643,62 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Chart 0: Trạng thái Đơn hàng (Doughnut)
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ── Shared config ──────────────────────────────────────────
+            const ORANGE      = '#f7941d';
+            const ORANGE_DARK = '#e07b08';
+            const PALETTE     = ['#f7941d','#3b82f6','#10b981','#ef4444','#f59e0b','#8b5cf6'];
+
+            const sharedTooltip = {
+                backgroundColor: '#1e293b',
+                titleColor: '#f8fafc',
+                bodyColor: '#cbd5e1',
+                padding: 12,
+                cornerRadius: 10,
+                borderColor: 'rgba(255,255,255,.08)',
+                borderWidth: 1,
+                displayColors: true,
+                boxWidth: 8, boxHeight: 8, boxPadding: 4,
+                usePointStyle: true,
+            };
+
+            const sharedScales = {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f1f5f9', drawBorder: false },
+                    border: { display: false },
+                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                },
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                },
+            };
+
+            // Plugin: vẽ center-text cho doughnut
+            const doughnutCenterPlugin = {
+                id: 'centerText',
+                afterDraw(chart) {
+                    if (chart.config.type !== 'doughnut') return;
+                    const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const cx = (left + right) / 2, cy = (top + bottom) / 2;
+                    ctx.save();
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 22px Inter, sans-serif';
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillText(total, cx, cy - 8);
+                    ctx.font = '500 10px Inter, sans-serif';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText('Tổng', cx, cy + 12);
+                    ctx.restore();
+                }
+            };
+            Chart.register(doughnutCenterPlugin);
+
+            // ── Chart 0: Trạng thái Đơn hàng (Doughnut) ────────────────
             const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
             const dataOrderStatus = @json($chartDataOrderStatus);
             new Chart(orderStatusCtx, {
@@ -601,110 +709,81 @@
                         data: dataOrderStatus.data,
                         backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#1e293b'],
                         borderWidth: 0,
+                        hoverOffset: 6,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '70%',
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 16,
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.label}: ${ctx.parsed} đơn`
-                            }
-                        }
+                        legend: { position: 'right', labels: { padding: 16, font: { size: 11 }, usePointStyle: true, pointStyleWidth: 8 } },
+                        tooltip: { ...sharedTooltip, callbacks: { label: ctx => `  ${ctx.label}: ${ctx.parsed} đơn` } },
                     },
-                    cutout: '65%'
                 }
             });
 
-            // Chart 1: Sản lượng sản xuất theo thời gian (Bar)
+            // ── Chart 1: Sản lượng SX theo thời gian (Line + area) ─────
             const timeCtx = document.getElementById('productionTimeChart').getContext('2d');
             const dataTime = @json($chartDataProductionTime);
+            const areaGrad = timeCtx.createLinearGradient(0, 0, 0, 250);
+            areaGrad.addColorStop(0, 'rgba(247,148,29,.28)');
+            areaGrad.addColorStop(1, 'rgba(247,148,29,.0)');
             new Chart(timeCtx, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: dataTime.labels,
                     datasets: [{
                         label: 'Sản lượng đạt',
                         data: dataTime.data,
-                        backgroundColor: '#10b981', // Green color similar to image
-                        borderRadius: 2,
-                        barPercentage: 0.5
+                        borderColor: ORANGE,
+                        borderWidth: 2.5,
+                        backgroundColor: areaGrad,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: ORANGE,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                    scales: sharedScales,
                 }
             });
 
-            // Chart 2: Trạng thái lệnh sản xuất (Doughnut)
+            // ── Chart 2: Trạng thái lệnh SX (Doughnut) ─────────────────
             const statusCtx = document.getElementById('trackingStatusChart').getContext('2d');
             const dataStatus = @json($chartDataTrackingStatus);
             new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: dataStatus.labels.map(l => (l || 'N/A')),
+                    labels: dataStatus.labels.map(l => l || 'N/A'),
                     datasets: [{
                         data: dataStatus.data,
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#f7941d'],
+                        backgroundColor: PALETTE,
                         borderWidth: 0,
+                        hoverOffset: 6,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '70%',
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        }
+                        legend: { position: 'right', labels: { padding: 16, font: { size: 11 }, usePointStyle: true, pointStyleWidth: 8 } },
+                        tooltip: sharedTooltip,
                     },
-                    cutout: '65%'
                 }
             });
 
-            // Chart 3: Sản lượng sản xuất theo ca (Bar)
+            // ── Chart 3: Sản lượng theo ca (Bar gradient) ──────────────
             const caCtx = document.getElementById('productionCaChart').getContext('2d');
             const dataCa = @json($chartDataProductionCa);
+            const caGrad = caCtx.createLinearGradient(0, 0, 0, 250);
+            caGrad.addColorStop(0, ORANGE);
+            caGrad.addColorStop(1, 'rgba(247,148,29,.35)');
             new Chart(caCtx, {
                 type: 'bar',
                 data: {
@@ -712,44 +791,25 @@
                     datasets: [{
                         label: 'Sản lượng đạt',
                         data: dataCa.data,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 2,
-                        barPercentage: 0.5
+                        backgroundColor: caGrad,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.55,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                    scales: sharedScales,
                 }
             });
 
-            // Chart 4: Sản lượng sản xuất theo công đoạn (Bar)
+            // ── Chart 4: Sản lượng theo công đoạn (Bar gradient) ───────
             const stageCtx = document.getElementById('productionStageChart').getContext('2d');
             const dataStage = @json($chartDataProductionStage);
+            const stageGrad = stageCtx.createLinearGradient(0, 0, 0, 250);
+            stageGrad.addColorStop(0, '#10b981');
+            stageGrad.addColorStop(1, 'rgba(16,185,129,.3)');
             new Chart(stageCtx, {
                 type: 'bar',
                 data: {
@@ -757,38 +817,16 @@
                     datasets: [{
                         label: 'Sản lượng đạt',
                         data: dataStage.data,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 2,
-                        barPercentage: 0.5
+                        backgroundColor: stageGrad,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.55,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                    scales: sharedScales,
                 }
             });
         });
