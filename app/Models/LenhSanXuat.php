@@ -39,11 +39,15 @@ class LenhSanXuat extends Model
     }
 
     /**
-     * Sinh mã lệnh: {nhom_hh}-YYYYMMDD-XXX
+     * Sinh mã lệnh: {ma_kh}-{nhom_hh}-YYYYMMDD-XXX
      */
-    public static function generateLenhSo(string $nhomHh): string
+    public static function generateLenhSo(string $maKh, string $nhomHh): string
     {
-        $prefix = $nhomHh . '-' . now()->format('Ymd') . '-';
+        // Loại bỏ khoảng trắng và ký tự đặc biệt có thể gây lỗi
+        $maKh = preg_replace('/[^A-Za-z0-9]/', '', $maKh);
+        $nhomHh = preg_replace('/[^A-Za-z0-9]/', '', $nhomHh);
+
+        $prefix = $maKh . '-' . $nhomHh . '-' . now()->format('Ymd') . '-';
         $last = static::where('lenh_so', 'like', $prefix . '%')
             ->orderByDesc('lenh_so')
             ->value('lenh_so');

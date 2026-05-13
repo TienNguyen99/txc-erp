@@ -104,8 +104,12 @@ class LenhSanXuatController extends Controller
         });
         $nhomHh = $nhomHhCounts->countBy()->sortDesc()->keys()->first() ?: 'LSX';
 
+        // Xác định khách hàng
+        $khachHang = $orders->first()->khachHang;
+        $maKh = $khachHang ? $khachHang->ma_kh : 'UNK';
+
         // Tạo lệnh
-        $lenhSo = LenhSanXuat::generateLenhSo($nhomHh);
+        $lenhSo = LenhSanXuat::generateLenhSo($maKh, $nhomHh);
         $lenh = LenhSanXuat::create([
             'lenh_so'     => $lenhSo,
             'chart'       => $chart,
