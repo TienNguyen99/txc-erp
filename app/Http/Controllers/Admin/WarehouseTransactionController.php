@@ -370,9 +370,59 @@ class WarehouseTransactionController extends Controller
             ->with('success', $msg);
     }
 
+    /**
+     * View tổng quan tồn kho hiện tại của từng mã
+     */
     public function tonKho(Request $request)
     {
-        return redirect()->route('admin.warehouse-transactions.index', $request->only('thang', 'nam'));
+        $search = $request->input('search');
+
+        // Lấy tồn kho hiện tại gom nhóm theo mã hàng, size, màu
+        $inventoryQuery = WarehouseTransaction::select(
+                'ma_hh', 'size', 'mau',
+                DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE 0 END) as tong_nhap"),
+                DB::raw("SUM(CASE WHEN cong_doan='XUATKHO' THEN so_luong ELSE 0 END) as tong_xuat"),
+                DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE -so_luong END) as ton_hien_tai")
+            )
+            ->groupBy('ma_hh', 'size', 'mau')
+            ->havingRaw('ton_hien_tai != 0 OR tong_nhap > 0') // Hiện cả những mã có nhập, kể cả khi tồn = 0 để theo dõi
+            ->orderBy('ma_hh');
+            
+        if ($search) {
+            $inventoryQuery->where('ma_hh', 'LIKE', "%{$search}%");
+        }
+
+        $inventory = $inventoryQuery->paginate(20)->withQueryString();
+
+        // Get order quantities needed for these items (can_di)
+        $maHhList = $inventory->pluck('ma_hh')->unique();
+        $canDi = Order::where('status', '!=', 'shipped')
+            ->whereIn('ma_hh', $maHhList)
+            ->groupBy('ma_hh')
+            ->select('ma_hh', DB::raw('SUM(yrd) as tong_yrd'))
+            ->pluck('tong_yrd', 'ma_hh');
+        
+        // Get in-production quantities
+        $dangSx = ProductionReport::where('cong_doan', '!=', 'Đã nhập kho')
+            ->whereIn('size', $maHhList)
+            ->groupBy('size')
+            ->select('size', DB::raw('SUM(sl_dat) as tong_dang_sx'))
+            ->pluck('tong_dang_sx', 'size');
+
+        // Lấy danh mục hàng hóa để thêm thông tin Tên sản phẩm
+        $danhMuc = DanhMucHangHoa::whereIn('ma_hh', $maHhList)
+            ->get()
+            ->keyBy('ma_hh');
+
+        // Enrich the data
+        foreach ($inventory as $item) {
+            $item->can_di = $canDi[$item->ma_hh] ?? 0;
+            $item->dang_sx = $dangSx[$item->ma_hh] ?? 0;
+            $item->ten_hh = $danhMuc[$item->ma_hh]->ten_hh ?? 'N/A';
+            $item->nhom_hh = $danhMuc[$item->ma_hh]->nhom_hh ?? 'N/A';
+        }
+
+        return view('admin.warehouse-transactions.ton-kho', compact('inventory', 'search'));
     }
 
     /**
@@ -455,11 +505,8 @@ class WarehouseTransactionController extends Controller
             ]);
 
             // Cập nhật ProductionReport liên quan thành NHAPKHO
-            \App\Models\ProductionReport::where('ma_hh', $row['ma_hh'])
+            \App\Models\ProductionReport::where('size', $row['ma_hh'])
                 ->where('lenh_sx', $request->lenh_sx)
-                ->when($row['size'] ?? null, function ($q) use ($row) {
-                    $q->where('size', $row['size']);
-                })
                 ->when($row['mau'] ?? null, function ($q) use ($row) {
                     $q->where('mau', $row['mau']);
                 })

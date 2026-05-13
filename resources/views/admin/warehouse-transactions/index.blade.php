@@ -55,6 +55,9 @@
                 <a href="{{ route('admin.warehouse-transactions.nhap-theo-lenh') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-dolly me-1"></i>Nhập kho theo Lệnh SX
                 </a>
+                <a href="{{ route('admin.warehouse-transactions.ton-kho') }}" class="btn btn-info btn-sm text-white">
+                    <i class="fa-solid fa-boxes-stacked me-1"></i>Tổng Quan Tồn Kho
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-plus me-1"></i>Thêm Giao dịch
                 </a>
