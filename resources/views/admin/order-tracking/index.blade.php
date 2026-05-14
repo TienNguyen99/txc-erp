@@ -108,8 +108,7 @@
                                                 <td>
                                                     <a href="{{ route('admin.order-tracking.lot', $tn->tracking_number) }}"
                                                         class="fw-bold text-decoration-none">
-                                                        <i
-                                                            class="fa-solid fa-hashtag text-primary me-1"></i>{{ $tn->tracking_number }}
+                                                        <i class="fa-solid fa-hashtag text-primary me-1"></i>{{ $tn->tracking_number }}
                                                     </a>
                                                 </td>
                                                 <td class="text-center">
@@ -117,6 +116,10 @@
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($tn->created_at)->format('d/m/Y H:i') }}</td>
                                                 <td class="text-center">
+                                                    <button type="button" class="btn btn-outline-secondary btn-xs me-1" 
+                                                        data-bs-toggle="collapse" data-bs-target="#child-{{ $loop->iteration }}">
+                                                        <i class="fa-solid fa-chevron-down"></i> Lệnh con
+                                                    </button>
                                                     <a href="{{ route('admin.order-tracking.lot', $tn->tracking_number) }}"
                                                         class="btn btn-outline-primary btn-xs">
                                                         <i class="fa-solid fa-eye me-1"></i>Xem
@@ -133,6 +136,57 @@
                                                         <i class="fa-solid fa-trash me-1"></i>Xóa lô
                                                     </button>
                                                     @endcan
+                                                </td>
+                                            </tr>
+                                            <tr class="collapse bg-light" id="child-{{ $loop->iteration }}">
+                                                <td colspan="5" class="p-3">
+                                                    <h6 class="fw-bold text-secondary mb-2" style="font-size:.85rem"><i class="fa-solid fa-code-branch me-1"></i>Các lệnh con (Tracking Child)</h6>
+                                                    @if($tn->children->count())
+                                                        <table class="table table-sm table-bordered bg-white mb-0">
+                                                            <thead class="table-secondary" style="font-size:.8rem">
+                                                                <tr>
+                                                                    <th>Lệnh con</th>
+                                                                    <th>Mã HH</th>
+                                                                    <th class="text-end">Tổng SL</th>
+                                                                    <th>Công đoạn hiện tại</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody style="font-size:.85rem">
+                                                                @foreach($tn->children as $child)
+                                                                    <tr>
+                                                                        <td class="fw-semibold text-primary">{{ $child->tracking_number_child ?: 'Chưa có lệnh con' }}</td>
+                                                                        <td>{{ $child->size }}</td>
+                                                                        <td class="text-end">{{ number_format($child->total_sl, 2) }}</td>
+                                                                        <td>
+                                                                            @php
+                                                                                $stageInfo = $stages[$child->cong_doan] ?? ['icon' => 'fa-question', 'color' => 'secondary', 'order' => -1];
+                                                                                $currentOrder = $stageInfo['order'];
+                                                                            @endphp
+                                                                            <div class="d-flex align-items-center gap-1">
+                                                                                @foreach ($stages as $stageName => $info)
+                                                                                    @php
+                                                                                        $isDone = $info['order'] < $currentOrder;
+                                                                                        $isCurrent = $stageName === $child->cong_doan;
+                                                                                    @endphp
+                                                                                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center
+                                                                                        {{ $isCurrent ? 'bg-' . $info['color'] . ' text-white' : ($isDone ? 'bg-' . $info['color'] . ' text-white opacity-50' : 'bg-light text-muted border') }}"
+                                                                                        style="width:22px;height:22px;font-size:.55rem" title="{{ $stageName }}">
+                                                                                        <i class="fa-solid {{ $info['icon'] }}"></i>
+                                                                                    </span>
+                                                                                    @if (!$loop->last)
+                                                                                        <i class="fa-solid fa-chevron-right" style="font-size:.4rem;color:#ccc"></i>
+                                                                                    @endif
+                                                                                @endforeach
+                                                                                <span class="badge bg-{{ $stageInfo['color'] }} ms-2" style="font-size:.65rem">{{ $child->cong_doan }}</span>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    @else
+                                                        <span class="text-muted" style="font-size:.8rem">Chưa có lệnh con nào được tạo.</span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

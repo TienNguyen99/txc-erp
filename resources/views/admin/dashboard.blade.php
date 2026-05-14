@@ -560,68 +560,122 @@
                                 @endphp
                                 <tr>
                                     <td>
-                                        <a href="{{ route('admin.lenh-san-xuat.show', $lenh->id) }}"
-                                            class="fw-bold text-decoration-none" style="color:#c55f00">
-                                            <i class="fa-solid fa-clipboard-list me-1"
-                                                style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
-                                        </a>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" class="btn btn-sm btn-light border-0 shadow-sm"
+                                                data-bs-toggle="collapse" data-bs-target="#dash-child-{{ $lenh->id }}" 
+                                                style="width:24px; height:24px; padding:0; display:flex; align-items:center; justify-content:center; color:#c55f00; transition: transform 0.2s">
+                                                <i class="fa-solid fa-chevron-down" style="font-size: .65rem;"></i>
+                                            </button>
+                                            <a href="{{ route('admin.lenh-san-xuat.show', $lenh->id) }}"
+                                                class="fw-bold text-decoration-none" style="color:#c55f00">
+                                                <i class="fa-solid fa-clipboard-list me-1" style="font-size:.75rem"></i>{{ $lenh->lenh_so }}
+                                            </a>
+                                        </div>
                                     </td>
-                                    <td><span class="badge"
-                                            style="background:#f1f5f9;color:#64748b;font-weight:500">{{ $lenh->chart }}</span>
-                                    </td>
-                                    <td><span class="badge"
-                                            style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span>
-                                    </td>
+                                    <td><span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:500">{{ $lenh->chart }}</span></td>
+                                    <td><span class="badge" style="background:rgba(59,130,246,.1);color:#3b82f6;font-weight:500">{{ $lenh->nhom_hh }}</span></td>
                                     <td class="text-center">
                                         <span class="fw-semibold" style="color:#c55f00">{{ $lenh->active_items }}</span>
                                         <span class="text-muted" style="font-size:.7rem">/{{ $lenh->total_items }}</span>
                                     </td>
                                     <td class="text-end fw-semibold">{{ number_format($lenh->tong_yrd, 0) }}</td>
-                                    <td class="text-end" style="color:#f59e0b;font-weight:600">
-                                        {{ number_format($lenh->tong_da_sx, 0) }}</td>
-                                    <td class="text-end" style="color:#10b981;font-weight:600">
-                                        {{ number_format($lenh->tong_ton_kho, 0) }}</td>
+                                    <td class="text-end" style="color:#f59e0b;font-weight:600">{{ number_format($lenh->tong_da_sx, 0) }}</td>
+                                    <td class="text-end" style="color:#10b981;font-weight:600">{{ number_format($lenh->tong_ton_kho, 0) }}</td>
                                     <td>
                                         <div class="progress" style="height:18px;border-radius:6px;background:#f1f5f9">
                                             @if ($pctKho > 0)
-                                                <div class="progress-bar"
-                                                    style="width:{{ $pctKho }}%;background:#10b981;border-radius:6px 0 0 6px"
-                                                    title="Tồn kho {{ $pctKho }}%">
-                                                    @if ($pctKho >= 12)
-                                                        <span style="font-size:.65rem">{{ $pctKho }}%</span>
-                                                    @endif
+                                                <div class="progress-bar" style="width:{{ $pctKho }}%;background:#10b981;border-radius:6px 0 0 6px" title="Tồn kho {{ $pctKho }}%">
+                                                    @if ($pctKho >= 12) <span style="font-size:.65rem">{{ $pctKho }}%</span> @endif
                                                 </div>
                                             @endif
                                             @if ($pctSx > 0)
-                                                <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                                    style="width:{{ $pctSx }}%;background:#3b82f6"
-                                                    title="Đang SX {{ $pctSx }}%">
-                                                    @if ($pctSx >= 12)
-                                                        <span style="font-size:.65rem">{{ $pctSx }}%</span>
-                                                    @endif
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:{{ $pctSx }}%;background:#3b82f6" title="Đang SX {{ $pctSx }}%">
+                                                    @if ($pctSx >= 12) <span style="font-size:.65rem">{{ $pctSx }}%</span> @endif
                                                 </div>
                                             @endif
                                             @if ($pctKho == 0 && $pctSx == 0)
-                                                <div class="progress-bar"
-                                                    style="width:100%;background:#f1f5f9;color:#94a3b8;font-size:.65rem">0%
-                                                </div>
+                                                <div class="progress-bar" style="width:100%;background:#f1f5f9;color:#94a3b8;font-size:.65rem">0%</div>
                                             @endif
                                         </div>
-                                        <div class="d-flex justify-content-between mt-1"
-                                            style="font-size:.6rem;color:#94a3b8">
-                                            <span><i class="fa-solid fa-warehouse me-1"
-                                                    style="color:#10b981"></i>Kho</span>
+                                        <div class="d-flex justify-content-between mt-1" style="font-size:.6rem;color:#94a3b8">
+                                            <span><i class="fa-solid fa-warehouse me-1" style="color:#10b981"></i>Kho</span>
                                             <span><i class="fa-solid fa-industry me-1" style="color:#3b82f6"></i>SX</span>
                                             <span class="fw-bold" style="color:#334155">{{ $lenh->progress }}%</span>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge"
-                                            style="background:{{ $s['bg'] }};color:{{ $s['color'] }};font-weight:600;font-size:.72rem;padding:.35em .7em;border-radius:6px">
+                                        <span class="badge" style="background:{{ $s['bg'] }};color:{{ $s['color'] }};font-weight:600;font-size:.72rem;padding:.35em .7em;border-radius:6px">
                                             {{ $s['label'] }}
                                         </span>
                                     </td>
-                                    <td style="font-size:.78rem;color:#64748b">{{ $lenh->created_at->format('d/m/Y') }}
+                                    <td style="font-size:.78rem;color:#64748b">{{ $lenh->created_at->format('d/m/Y') }}</td>
+                                </tr>
+                                <tr class="collapse" id="dash-child-{{ $lenh->id }}" style="background: #f8fafc;">
+                                    <td colspan="10" class="p-3 border-bottom">
+                                        <div class="card shadow-none border-0" style="background: transparent;">
+                                            <div class="card-body p-0">
+                                                <h6 class="fw-bold mb-2 d-flex align-items-center" style="font-size:.85rem; color:#64748b">
+                                                    <i class="fa-solid fa-diagram-project text-primary me-2"></i>Chi tiết các lệnh con thuộc <span class="text-dark ms-1">{{ $lenh->lenh_so }}</span>
+                                                </h6>
+                                                @php
+                                                    $activeItemsList = isset($lenh->items) ? $lenh->items->where('da_len_lenh', true) : collect();
+                                                @endphp
+                                                @if($activeItemsList->count())
+                                                    <div class="table-responsive bg-white rounded shadow-sm border" style="border-color:#e2e8f0;">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead style="background:#f1f5f9;">
+                                                                <tr>
+                                                                    <th style="font-size:.75rem; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0" class="ps-3">Lệnh con</th>
+                                                                    <th style="font-size:.75rem; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0">Mã HH</th>
+                                                                    <th style="font-size:.75rem; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0" class="text-end">Cần SX</th>
+                                                                    <th style="font-size:.75rem; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0" class="text-center">Trạng thái</th>
+                                                                    <th style="font-size:.75rem; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0" class="pe-3">Công đoạn hiện tại</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach($activeItemsList as $child)
+                                                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                                        <td class="ps-3 fw-bold text-primary" style="font-size:.8rem;">{{ $child->lenh_child }}</td>
+                                                                        <td class="fw-semibold text-dark" style="font-size:.8rem;">{{ $child->ma_hh }}</td>
+                                                                        <td class="text-end fw-semibold" style="font-size:.8rem;">{{ number_format($child->sl_can_sx, 2) }}</td>
+                                                                        <td class="text-center">
+                                                                            <span class="badge" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fa-solid fa-check me-1"></i>Đã lên</span>
+                                                                        </td>
+                                                                        <td class="pe-3">
+                                                                            @php
+                                                                                $stageInfo = $stages[$child->cong_doan] ?? ['icon' => 'fa-question', 'color' => 'secondary', 'order' => -1];
+                                                                                $currentOrder = $stageInfo['order'];
+                                                                            @endphp
+                                                                            <div class="d-flex align-items-center gap-1">
+                                                                                @foreach ($stages as $stageName => $info)
+                                                                                    @php
+                                                                                        $isDone = $info['order'] < $currentOrder;
+                                                                                        $isCurrent = $stageName === $child->cong_doan;
+                                                                                    @endphp
+                                                                                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm
+                                                                                        {{ $isCurrent ? 'bg-' . $info['color'] . ' text-white' : ($isDone ? 'bg-' . $info['color'] . ' text-white opacity-50' : 'bg-light text-muted border border-light') }}"
+                                                                                        style="width:24px;height:24px;font-size:.6rem; transition: transform .2s" title="{{ $stageName }}">
+                                                                                        <i class="fa-solid {{ $info['icon'] }}"></i>
+                                                                                    </span>
+                                                                                    @if (!$loop->last)
+                                                                                        <i class="fa-solid fa-chevron-right" style="font-size:.45rem;color:#cbd5e1"></i>
+                                                                                    @endif
+                                                                                @endforeach
+                                                                                <span class="badge bg-{{ $stageInfo['color'] }} ms-2 shadow-sm" style="font-size:.68rem">{{ $child->cong_doan }}</span>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                @else
+                                                    <div class="alert alert-light text-muted mb-0 border shadow-sm" style="font-size:.85rem">
+                                                        <i class="fa-solid fa-circle-info me-1"></i>Chưa có lệnh con nào được tạo.
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

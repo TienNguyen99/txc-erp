@@ -107,16 +107,29 @@ class AdminDashboardController extends Controller
         ];
 
         // --- THEO DÕI LỆNH SẢN XUẤT ---
-        $lenhSxTracking = LenhSanXuat::with('items')
-            ->latest()
-            ->limit(20)
+        $latestLenh = LenhSanXuat::with('items')->latest()->limit(20)->get();
+        
+        $allChildNos = collect();
+        foreach ($latestLenh as $lenh) {
+            $allChildNos = $allChildNos->merge($lenh->items->pluck('lenh_child'));
+        }
+
+        $trackingStages = OrderTracking::whereIn('tracking_number_child', $allChildNos)
+            ->select('tracking_number_child', 'cong_doan')
             ->get()
-            ->map(function ($lenh) {
+            ->keyBy('tracking_number_child');
+
+        $lenhSxTracking = $latestLenh->map(function ($lenh) use ($trackingStages) {
                 $activeItems = $lenh->items->where('da_len_lenh', true);
                 $totalItems = $lenh->items->count();
                 $activeCount = $activeItems->count();
                 $tongYrd = $activeItems->sum('tong_yrd');
                 $tongCanSx = $activeItems->sum('sl_can_sx');
+
+                // Gán công đoạn cho từng item
+                foreach ($lenh->items as $item) {
+                    $item->cong_doan = $trackingStages[$item->lenh_child]->cong_doan ?? 'Chờ sản xuất';
+                }
 
                 // Tính tổng đã SX và tồn kho cho các item đã lên lệnh
                 $tongDaSx = 0;
@@ -154,6 +167,7 @@ class AdminDashboardController extends Controller
                     'progress'     => $progress,
                     'trang_thai'   => $trangThai,
                     'created_at'   => $lenh->created_at,
+                    'items'        => $lenh->items,
                 ];
             });
 
@@ -184,6 +198,8 @@ class AdminDashboardController extends Controller
             'total_revenue' => $totalRevenueVnd,
         ];
 
+        $stages = OrderTracking::STAGES;
+
         return view('admin.dashboard', compact(
             'stats',
             'chartDataOrderStatus',
@@ -192,7 +208,8 @@ class AdminDashboardController extends Controller
             'chartDataProductionStage',
             'chartDataProductionCa',
             'lenhSxTracking',
-            'lenhSxStats'
+            'lenhSxStats',
+            'stages'
         ));
     }
 }

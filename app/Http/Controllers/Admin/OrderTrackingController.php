@@ -121,14 +121,26 @@ class OrderTrackingController extends Controller
         $allOrders = Order::pluck('job_no', 'id');
         $stages = OrderTracking::STAGES;
 
-        // Danh sách tracking numbers đã tạo
         $trackingNumbers = OrderTracking::whereNotNull('tracking_number')
             ->select('tracking_number')
             ->selectRaw('MIN(created_at) as created_at')
             ->selectRaw('COUNT(*) as total_items')
             ->groupBy('tracking_number')
             ->orderByDesc('created_at')
+            ->limit(30)
             ->get();
+
+        // Load details for children to show in the dropdown
+        $trackingsForOT = OrderTracking::whereIn('tracking_number', $trackingNumbers->pluck('tracking_number'))
+            ->select('tracking_number', 'tracking_number_child', 'size', 'cong_doan')
+            ->selectRaw('SUM(sl_don_hang) as total_sl')
+            ->groupBy('tracking_number', 'tracking_number_child', 'size', 'cong_doan')
+            ->get()
+            ->groupBy('tracking_number');
+
+        foreach ($trackingNumbers as $tn) {
+            $tn->children = $trackingsForOT[$tn->tracking_number] ?? collect();
+        }
 
         return view('admin.order-tracking.index', compact(
             'data',

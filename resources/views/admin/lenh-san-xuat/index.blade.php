@@ -220,6 +220,10 @@
                                 <td>{{ $lenh->pct_hao_hut }}%</td>
                                 <td>{{ $lenh->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="text-center">
+                                    <button type="button" class="btn btn-outline-secondary btn-xs me-1" 
+                                        data-bs-toggle="collapse" data-bs-target="#child-lenh-{{ $lenh->id }}">
+                                        <i class="fa-solid fa-chevron-down"></i> Lệnh con
+                                    </button>
                                     <a href="{{ route('admin.lenh-san-xuat.show', $lenh) }}"
                                         class="btn btn-outline-primary btn-xs">
                                         <i class="fa-solid fa-eye me-1"></i>Xem
@@ -230,6 +234,64 @@
                                         @csrf @method('DELETE')
                                         <button class="btn btn-danger btn-xs"><i class="fa-solid fa-trash"></i></button>
                                     </form>
+                                </td>
+                            </tr>
+                            <tr class="collapse bg-light" id="child-lenh-{{ $lenh->id }}">
+                                <td colspan="9" class="p-3">
+                                    <h6 class="fw-bold text-secondary mb-2" style="font-size:.85rem"><i class="fa-solid fa-code-branch me-1"></i>Các lệnh con (Thuộc {{ $lenh->lenh_so }})</h6>
+                                    @php
+                                        $activeItemsList = isset($lenh->items) ? $lenh->items->where('da_len_lenh', true) : collect();
+                                    @endphp
+                                    @if($activeItemsList->count())
+                                        <table class="table table-sm table-bordered bg-white mb-0">
+                                            <thead class="table-secondary" style="font-size:.8rem">
+                                                <tr>
+                                                    <th>Lệnh con</th>
+                                                    <th>Mã HH</th>
+                                                    <th class="text-end">Cần SX</th>
+                                                    <th class="text-center">Trạng thái</th>
+                                                    <th>Công đoạn hiện tại</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style="font-size:.85rem">
+                                                @foreach($activeItemsList as $child)
+                                                    <tr>
+                                                        <td class="fw-semibold text-primary">{{ $child->lenh_child }}</td>
+                                                        <td>{{ $child->ma_hh }}</td>
+                                                        <td class="text-end">{{ number_format($child->sl_can_sx, 2) }}</td>
+                                                        <td class="text-center">
+                                                            <span class="badge bg-success"><i class="fa-solid fa-check"></i> Đã lên</span>
+                                                        </td>
+                                                        <td>
+                                                            @php
+                                                                $stageInfo = $stages[$child->cong_doan] ?? ['icon' => 'fa-question', 'color' => 'secondary', 'order' => -1];
+                                                                $currentOrder = $stageInfo['order'];
+                                                            @endphp
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                @foreach ($stages as $stageName => $info)
+                                                                    @php
+                                                                        $isDone = $info['order'] < $currentOrder;
+                                                                        $isCurrent = $stageName === $child->cong_doan;
+                                                                    @endphp
+                                                                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center
+                                                                        {{ $isCurrent ? 'bg-' . $info['color'] . ' text-white' : ($isDone ? 'bg-' . $info['color'] . ' text-white opacity-50' : 'bg-light text-muted border') }}"
+                                                                        style="width:22px;height:22px;font-size:.55rem" title="{{ $stageName }}">
+                                                                        <i class="fa-solid {{ $info['icon'] }}"></i>
+                                                                    </span>
+                                                                    @if (!$loop->last)
+                                                                        <i class="fa-solid fa-chevron-right" style="font-size:.4rem;color:#ccc"></i>
+                                                                    @endif
+                                                                @endforeach
+                                                                <span class="badge bg-{{ $stageInfo['color'] }} ms-2" style="font-size:.65rem">{{ $child->cong_doan }}</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    @else
+                                        <span class="text-muted" style="font-size:.8rem">Chưa có lệnh con nào đã lên lệnh.</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

@@ -69,11 +69,31 @@ class LenhSanXuatController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        // Lấy thông tin công đoạn cho từng lệnh con
+        $allChildNos = collect();
+        foreach ($lenhList as $lenh) {
+            $allChildNos = $allChildNos->merge($lenh->items->pluck('lenh_child'));
+        }
+
+        $trackingStages = \App\Models\OrderTracking::whereIn('tracking_number_child', $allChildNos)
+            ->select('tracking_number_child', 'cong_doan')
+            ->get()
+            ->keyBy('tracking_number_child');
+
+        foreach ($lenhList as $lenh) {
+            foreach ($lenh->items as $item) {
+                $item->cong_doan = $trackingStages[$item->lenh_child]->cong_doan ?? 'Chờ sản xuất';
+            }
+        }
+
+        $stages = \App\Models\OrderTracking::STAGES;
+
         return view('admin.lenh-san-xuat.index', compact(
             'charts',
             'chartFilter',
             'summary',
-            'lenhList'
+            'lenhList',
+            'stages'
         ));
     }
 
