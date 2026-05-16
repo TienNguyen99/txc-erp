@@ -126,7 +126,6 @@
     </div>
 
     <div class="container px-3 py-3" style="max-width:600px">
-
         {{-- Alert --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show py-2 mb-3"
@@ -349,3 +348,5 @@
 </body>
 
 </html>
+
+

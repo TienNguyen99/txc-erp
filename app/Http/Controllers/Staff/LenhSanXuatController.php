@@ -241,3 +241,8 @@ class LenhSanXuatController extends Controller
             ->with('success', "Đã nhập kho {$request->so_luong} cho mã {$maHh}.");
     }
 }
+
+
+
+
+

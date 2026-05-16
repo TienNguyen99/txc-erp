@@ -130,7 +130,6 @@
     </div>
 
     <div class="container px-3 py-3" style="max-width:600px">
-
         @if ($children->isEmpty())
             <div class="empty-state">
                 <i class="fa-solid fa-clipboard-list"></i>
@@ -194,3 +193,5 @@
 </body>
 
 </html>
+
+

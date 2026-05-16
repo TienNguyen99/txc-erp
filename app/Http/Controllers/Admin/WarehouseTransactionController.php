@@ -619,11 +619,27 @@ class WarehouseTransactionController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv|max:5120',
         ]);
 
-        $import = new WarehouseTransactionImport;
-        Excel::import($import, $request->file('file'));
+        try {
+            $import = new WarehouseTransactionImport();
+            Excel::import($import, $request->file('file'));
 
-        return redirect()->route('admin.warehouse-transactions.index')
-            ->with('success', "Import thành công {$import->getCount()} giao dịch kho.");
+            $msg = "Import OK: total {$import->getProcessedRows()} rows | created {$import->getCreatedCount()} | updated {$import->getUpdatedCount()} | skipped {$import->getSkippedCount()}";
+            $dupes = $import->getDuplicateRows();
+            if (!empty($dupes)) {
+                $preview = collect($dupes)
+                    ->take(5)
+                    ->map(fn($d) => "row {$d['row']} duplicated key {$d['key']} (first seen at row {$d['first_row']})")
+                    ->implode('; ');
+                return redirect()->route('admin.warehouse-transactions.index')->with('warning', $msg . ". Duplicates: {$preview}");
+            }
+
+            return redirect()->route('admin.warehouse-transactions.index')->with('success', $msg);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = collect($e->failures())->map(fn($f) => "Row {$f->row()}: {$f->attribute()} - " . implode(', ', $f->errors()));
+            return redirect()->route('admin.warehouse-transactions.index')->with('error', 'Import validation error: ' . $failures->take(5)->implode(' | '));
+        } catch (\Exception $e) {
+            return redirect()->route('admin.warehouse-transactions.index')->with('error', 'Import error: ' . $e->getMessage());
+        }
     }
 
     public function exportPackingList(Request $request)
@@ -755,3 +771,4 @@ class WarehouseTransactionController extends Controller
         return view('admin.warehouse-transactions.render-labels', compact('selectedLabels'));
     }
 }
+
