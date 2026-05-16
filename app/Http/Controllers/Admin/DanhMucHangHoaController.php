@@ -59,7 +59,10 @@ class DanhMucHangHoaController extends Controller
 
     public function edit(DanhMucHangHoa $hangHoa)
     {
-        return view('admin.hang-hoa.form', compact('hangHoa'));
+        $prevHangHoaId = DanhMucHangHoa::where('id', '<', $hangHoa->id)->max('id');
+        $nextHangHoaId = DanhMucHangHoa::where('id', '>', $hangHoa->id)->min('id');
+
+        return view('admin.hang-hoa.form', compact('hangHoa', 'prevHangHoaId', 'nextHangHoaId'));
     }
 
     public function update(Request $request, DanhMucHangHoa $hangHoa)
@@ -92,6 +95,19 @@ class DanhMucHangHoaController extends Controller
 
         $validated['active'] = $request->has('active');
         $hangHoa->update($validated);
+
+        if ($request->input('after_save') === 'next') {
+            $nextHangHoaId = $request->integer('next_id');
+            if (!$nextHangHoaId) {
+                $nextHangHoaId = DanhMucHangHoa::where('id', '>', $hangHoa->id)->min('id');
+            }
+
+            if ($nextHangHoaId) {
+                return redirect()->route('admin.hang-hoa.edit', $nextHangHoaId)
+                    ->with('success', 'Đã lưu. Chuyển sang hàng tiếp theo.');
+            }
+        }
+
         return redirect()->route('admin.hang-hoa.index')->with('success', 'Cập nhật hàng hóa thành công.');
     }
 

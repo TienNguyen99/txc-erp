@@ -9,6 +9,20 @@
             <h4 class="page-title mt-2 mb-0">
                 <i class="fa-solid fa-box-open me-2"></i>{{ isset($hangHoa) ? 'Sửa Hàng hóa' : 'Thêm Hàng hóa' }}
             </h4>
+            @if (isset($hangHoa))
+                <div class="mt-2 d-flex gap-2">
+                    @if (!empty($prevHangHoaId))
+                        <a href="{{ route('admin.hang-hoa.edit', $prevHangHoaId) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fa-solid fa-arrow-left me-1"></i>Hàng trước
+                        </a>
+                    @endif
+                    @if (!empty($nextHangHoaId))
+                        <a href="{{ route('admin.hang-hoa.edit', $nextHangHoaId) }}" class="btn btn-outline-primary btn-sm">
+                            Hàng tiếp<i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    @endif
+                </div>
+            @endif
         </div>
         <div class="card-page">
             <form method="POST" enctype="multipart/form-data"
@@ -17,6 +31,8 @@
                 @if (isset($hangHoa))
                     @method('PUT')
                 @endif
+                <input type="hidden" name="after_save" id="afterSaveAction" value="">
+                <input type="hidden" name="next_id" value="{{ $nextHangHoaId ?? '' }}">
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Mã HH <span class="text-danger">*</span></label>
@@ -98,11 +114,21 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Hình ảnh</label>
-                        <input type="file" name="hinh_anh" class="form-control" accept="image/*">
-                        @if (isset($hangHoa) && $hangHoa->hinh_anh)
-                            <img src="{{ asset('storage/' . $hangHoa->hinh_anh) }}" class="mt-2"
-                                style="width:60px;height:60px;object-fit:cover;border-radius:10px;">
-                        @endif
+                        <div id="dropZoneImage" class="border rounded-3 p-3 text-center"
+                            style="border-style:dashed!important;cursor:pointer;background:#fafafa">
+                            <input id="hinhAnhInput" type="file" name="hinh_anh" class="d-none" accept="image/*">
+                            <div class="text-muted" style="font-size:.85rem">
+                                <i class="fa-solid fa-cloud-arrow-up me-1"></i>Kéo thả ảnh vào đây hoặc bấm để chọn
+                            </div>
+                            <div class="mt-2">
+                                <img id="hinhAnhPreview"
+                                    src="{{ isset($hangHoa) && $hangHoa->hinh_anh ? asset('storage/' . $hangHoa->hinh_anh) : '' }}"
+                                    style="width:80px;height:80px;object-fit:cover;border-radius:10px;{{ isset($hangHoa) && $hangHoa->hinh_anh ? '' : 'display:none;' }}">
+                            </div>
+                        </div>
+                        @error('hinh_anh')
+                            <div class="text-danger mt-1" style="font-size:.8rem">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check">
@@ -154,10 +180,111 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Lưu</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('afterSaveAction').value=''"><i class="fa-solid fa-save me-1"></i>Lưu</button>
+                    @if (isset($hangHoa) && !empty($nextHangHoaId))
+                        <button type="submit" class="btn btn-outline-primary ms-2" onclick="document.getElementById('afterSaveAction').value='next'">
+                            <i class="fa-solid fa-forward-step me-1"></i>Lưu & sang hàng tiếp
+                        </button>
+                    @endif
                     <a href="{{ route('admin.hang-hoa.index') }}" class="btn btn-secondary ms-2">Hủy</a>
                 </div>
             </form>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        (() => {
+            const dropZone = document.getElementById('dropZoneImage');
+            const input = document.getElementById('hinhAnhInput');
+            const preview = document.getElementById('hinhAnhPreview');
+            if (!dropZone || !input || !preview) return;
+
+            const setInputFile = (file) => {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                input.files = dt.files;
+            };
+
+            const centerCropToSquare = (file) => {
+                return new Promise((resolve) => {
+                    if (!file || !file.type.startsWith('image/')) return resolve(null);
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+                    img.onload = () => {
+                        const side = Math.min(img.width, img.height);
+                        const sx = Math.floor((img.width - side) / 2);
+                        const sy = Math.floor((img.height - side) / 2);
+                        const canvas = document.createElement('canvas');
+                        canvas.width = side;
+                        canvas.height = side;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, sx, sy, side, side, 0, 0, side, side);
+                        canvas.toBlob((blob) => {
+                            URL.revokeObjectURL(url);
+                            if (!blob) return resolve(null);
+                            resolve(new File([blob], file.name || 'pasted-image.jpg', {
+                                type: 'image/jpeg'
+                            }));
+                        }, 'image/jpeg', 0.92);
+                    };
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        resolve(null);
+                    };
+                    img.src = url;
+                });
+            };
+
+            const handleImageFile = async (file) => {
+                const cropped = await centerCropToSquare(file);
+                const finalFile = cropped || file;
+                if (!finalFile) return;
+                setInputFile(finalFile);
+                const previewUrl = URL.createObjectURL(finalFile);
+                preview.src = previewUrl;
+                preview.style.display = 'inline-block';
+            };
+
+            dropZone.addEventListener('click', () => input.click());
+            input.addEventListener('change', async (e) => {
+                await handleImageFile(e.target.files?.[0]);
+            });
+
+            ['dragenter', 'dragover'].forEach(evt => {
+                dropZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dropZone.style.background = '#eef6ff';
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(evt => {
+                dropZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dropZone.style.background = '#fafafa';
+                });
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const file = e.dataTransfer?.files?.[0];
+                if (!file) return;
+                handleImageFile(file);
+            });
+
+            document.addEventListener('paste', async (e) => {
+                const items = e.clipboardData?.items || [];
+                for (const item of items) {
+                    if (item.type && item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            await handleImageFile(file);
+                            break;
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
 @endsection
