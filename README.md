@@ -120,3 +120,11 @@ php artisan view:cache
 ## Liên hệ
 
 Dự án nội bộ — mọi thắc mắc liên hệ **Tiến Nguyễn** (dev).
+
+---
+
+## Van hanh moi (Ops Baseline)
+
+- Tai lieu van hanh: `docs/OPERATIONS.md`
+- SOP vai tro: `docs/SOP_ROLES.md`
+- Test luong loi: `php artisan test --filter=CoreFlowTest`
