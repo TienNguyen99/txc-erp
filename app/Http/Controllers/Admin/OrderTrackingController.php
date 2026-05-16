@@ -230,7 +230,8 @@ class OrderTrackingController extends Controller
         }
 
         return redirect()->route('admin.order-tracking.lot', $trackingNumber)
-            ->with('success', "Đã tạo {$count} tracking với Order Tracking Number: {$trackingNumber}");
+            ->with('success', "Đã tạo {$count} tracking với Order Tracking Number: {$trackingNumber}")
+            ->with('open_pickup_date_modal', true);
     }
 
     /**
@@ -332,6 +333,21 @@ class OrderTrackingController extends Controller
             'stages',
             'allTrackingNumbers'
         ));
+    }
+
+    public function updateLotPickupDate(Request $request, string $trackingNumber)
+    {
+        $validated = $request->validate([
+            'ngay_xe_lay_hang' => ['required', 'date'],
+        ]);
+
+        $affected = OrderTracking::where('tracking_number', $trackingNumber)->update([
+            'ngay_xe_lay_hang' => $validated['ngay_xe_lay_hang'],
+        ]);
+
+        return redirect()
+            ->route('admin.order-tracking.lot', $trackingNumber)
+            ->with('success', "Đã cập nhật ngày xe lấy hàng cho {$affected} tracking trong lô {$trackingNumber}.");
     }
 
     public function create()

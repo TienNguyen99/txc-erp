@@ -347,8 +347,53 @@
     </div>
 @endsection
 
+<div class="modal fade" id="pickupDateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.order-tracking.lot.pickup-date', $trackingNumber) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-calendar-check me-1"></i>Cập nhật ngày xe lấy hàng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 mb-3" style="font-size:.9rem">
+                        Ngày xe lấy hàng chính là ngày giao thực tế cho toàn bộ lô <strong>{{ $trackingNumber }}</strong>.
+                    </div>
+                    <label for="pickupDateInput" class="form-label">Ngày xe lấy hàng</label>
+                    <input
+                        id="pickupDateInput"
+                        type="date"
+                        name="ngay_xe_lay_hang"
+                        class="form-control"
+                        value="{{ old('ngay_xe_lay_hang', now()->toDateString()) }}"
+                        required
+                    >
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Để sau</button>
+                    <button type="submit" class="btn btn-primary">Lưu ngày giao thực tế</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section('scripts')
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shouldOpenPickupModal = @json(session('open_pickup_date_modal', false));
+            if (shouldOpenPickupModal) {
+                const modalEl = document.getElementById('pickupDateModal');
+                if (modalEl && window.bootstrap?.Modal) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }
+        });
+
         // Check All batch
         document.getElementById('checkAllBatch')?.addEventListener('change', function() {
             document.querySelectorAll('.batch-check').forEach(cb => cb.checked = this.checked);

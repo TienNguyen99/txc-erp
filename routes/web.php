@@ -76,8 +76,9 @@ Route::middleware('auth')->group(function () {
 
           // ── Order Tracking ──
           Route::middleware('permission:tracking.view')->group(function () {
-               Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])->name('order-tracking.lot');
-               Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])->name('order-tracking.create-batch')->middleware('permission:tracking.create');
+                Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])->name('order-tracking.lot');
+                Route::post('order-tracking/lot/{trackingNumber}/pickup-date', [OrderTrackingController::class, 'updateLotPickupDate'])->name('order-tracking.lot.pickup-date')->middleware('permission:tracking.edit');
+                Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])->name('order-tracking.create-batch')->middleware('permission:tracking.create');
                Route::post('order-tracking/generate', [OrderTrackingController::class, 'generate'])->name('order-tracking.generate')->middleware('permission:tracking.create');
                Route::post('order-tracking/sync-from-orders', [OrderTrackingController::class, 'syncFromOrders'])->name('order-tracking.sync-from-orders')->middleware('permission:tracking.edit');
                Route::post('order-tracking/sync-lots', [OrderTrackingController::class, 'syncLots'])->name('order-tracking.sync-lots')->middleware('permission:tracking.edit');
