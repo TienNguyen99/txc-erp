@@ -73,7 +73,7 @@ class OrderController extends Controller
             'status'        => 'required|in:pending,in_production,done,shipped',
         ]);
         Order::create($validated);
-        return redirect()->route('admin.orders.index')->with('success', 'Thêm đơn hàng thành công.');
+        return redirect()->route('admin.orders.index')->with('success', 'Them don hang thanh cong.');
     }
 
     public function edit(Order $order)
@@ -107,26 +107,37 @@ class OrderController extends Controller
             'status'        => 'required|in:pending,in_production,done,shipped',
         ]);
         $order->update($validated);
-        return redirect()->route('admin.orders.index')->with('success', 'Cập nhật đơn hàng thành công.');
+        return redirect()->route('admin.orders.index')->with('success', 'Cap nhat don hang thanh cong.');
     }
 
     public function destroy(Order $order)
     {
         $order->delete();
-        return redirect()->route('admin.orders.index')->with('success', 'Xóa đơn hàng thành công.');
+        return redirect()->route('admin.orders.index')->with('success', 'Xoa don hang thanh cong.');
     }
 
     public function import(Request $request)
     {
         $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:5120']);
         try {
-            Excel::import(new OrderImport, $request->file('file'));
-            return redirect()->route('admin.orders.index')->with('success', 'Import đơn hàng thành công.');
+            $import = new OrderImport();
+            Excel::import($import, $request->file('file'));
+
+            $msg = "Import OK: total {$import->getProcessedRows()} rows | created {$import->getCreatedCount()} | updated {$import->getUpdatedCount()} | skipped {$import->getSkippedCount()}";
+            $dupes = $import->getDuplicateRows();
+            if (!empty($dupes)) {
+                $preview = collect($dupes)
+                    ->take(5)
+                    ->map(fn($d) => "row {$d['row']} duplicated key {$d['key']} (first seen at row {$d['first_row']})")
+                    ->implode('; ');
+                return redirect()->route('admin.orders.index')->with('warning', $msg . ". Duplicates: {$preview}");
+            }
+            return redirect()->route('admin.orders.index')->with('success', $msg);
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = collect($e->failures())->map(fn($f) => "Dòng {$f->row()}: {$f->attribute()} - " . implode(', ', $f->errors()));
-            return redirect()->route('admin.orders.index')->with('error', 'Import lỗi validation: ' . $failures->take(5)->implode(' | '));
+            $failures = collect($e->failures())->map(fn($f) => "Row {$f->row()}: {$f->attribute()} - " . implode(', ', $f->errors()));
+            return redirect()->route('admin.orders.index')->with('error', 'Import validation error: ' . $failures->take(5)->implode(' | '));
         } catch (\Exception $e) {
-            return redirect()->route('admin.orders.index')->with('error', 'Import lỗi: ' . $e->getMessage());
+            return redirect()->route('admin.orders.index')->with('error', 'Import error: ' . $e->getMessage());
         }
     }
 
@@ -145,9 +156,9 @@ class OrderController extends Controller
         $request->validate(['file' => 'required|mimes:xlsx,xls|max:10240']);
         $import = new CustomerOrderImport;
         Excel::import($import, $request->file('file'));
-        $msg = "Import thành công {$import->getImportedCount()} đơn hàng";
+        $msg = "Import thanh cong {$import->getImportedCount()} don hang";
         if ($import->getSkippedCount() > 0) {
-            $msg .= " (bỏ qua {$import->getSkippedCount()} dòng không hợp lệ)";
+            $msg .= " (bo qua {$import->getSkippedCount()} dong khong hop le)";
         }
         return redirect()->route('admin.orders.index')->with('success', $msg);
     }
@@ -163,6 +174,6 @@ class OrderController extends Controller
         $count = Order::whereIn('id', $request->order_ids)
                        ->update(['pl_number' => $request->pl_number]);
 
-        return redirect()->back()->with('success', "Đã gán PL Number \"{$request->pl_number}\" cho {$count} đơn hàng.");
+        return redirect()->back()->with('success', "Da gan PL Number '{$request->pl_number}' cho {$count} don hang.");
     }
 }

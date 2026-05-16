@@ -5,18 +5,47 @@ namespace App\Imports;
 use App\Models\Order;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Row;
 
-class OrderImport implements ToModel, WithHeadingRow, WithValidation
+class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
 {
     protected array $importedMaHh = [];
+    protected int $processedRows = 0;
+    protected int $createdCount = 0;
+    protected int $updatedCount = 0;
+    protected int $skippedCount = 0;
+    protected array $seenKeys = [];
+    protected array $duplicateRows = [];
 
-    public function model(array $row)
+    public function onRow(Row $excelRow): void
     {
+        $row = $excelRow->toArray();
+        $this->processedRows++;
+
+        $jobNo = trim((string) ($row['job_no'] ?? ''));
+        if ($jobNo === '') {
+            $this->skippedCount++;
+            return;
+        }
+
         $maHh     = trim($row['ma_hh'] ?? '');
+        $color    = trim($row['color'] ?? '');
         $priceUsd = $this->toNumeric($row['price_usd'] ?? null);
+        $rowKey = mb_strtolower($jobNo . '|' . $maHh . '|' . $color);
+
+        if (isset($this->seenKeys[$rowKey])) {
+            $this->duplicateRows[] = [
+                'row' => $excelRow->getIndex(),
+                'first_row' => $this->seenKeys[$rowKey],
+                'key' => "{$jobNo}|{$maHh}|{$color}",
+            ];
+            $this->skippedCount++;
+            return;
+        }
+        $this->seenKeys[$rowKey] = $excelRow->getIndex();
 
         $khachHangId = null;
         if (!empty($row['khach_hang_id'])) {
@@ -45,10 +74,11 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
         }
 
         $order = Order::firstOrNew([
-            'job_no' => $row['job_no'],
-            'ma_hh'  => $row['ma_hh'] ?? null,
-            'color'  => $row['color'] ?? null,
+            'job_no' => $jobNo,
+            'ma_hh'  => $maHh ?: null,
+            'color'  => $color ?: null,
         ]);
+        $wasExisting = $order->exists;
 
         $order->khach_hang_id  = $khachHangId;
         $order->ten_hh         = $row['ten_hh'] ?? null;
@@ -85,8 +115,11 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
         }
 
         $order->save();
-
-        return $order;
+        if ($wasExisting) {
+            $this->updatedCount++;
+        } else {
+            $this->createdCount++;
+        }
     }
 
     /**
@@ -127,6 +160,31 @@ class OrderImport implements ToModel, WithHeadingRow, WithValidation
     public function getImportedMaHh(): array
     {
         return array_values(array_unique($this->importedMaHh));
+    }
+
+    public function getProcessedRows(): int
+    {
+        return $this->processedRows;
+    }
+
+    public function getCreatedCount(): int
+    {
+        return $this->createdCount;
+    }
+
+    public function getUpdatedCount(): int
+    {
+        return $this->updatedCount;
+    }
+
+    public function getSkippedCount(): int
+    {
+        return $this->skippedCount;
+    }
+
+    public function getDuplicateRows(): array
+    {
+        return $this->duplicateRows;
     }
 
     public function rules(): array

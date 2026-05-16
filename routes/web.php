@@ -79,6 +79,9 @@ Route::middleware('auth')->group(function () {
                Route::get('order-tracking/lot/{trackingNumber}', [OrderTrackingController::class, 'lot'])->name('order-tracking.lot');
                Route::post('order-tracking/create-batch', [OrderTrackingController::class, 'createBatch'])->name('order-tracking.create-batch')->middleware('permission:tracking.create');
                Route::post('order-tracking/generate', [OrderTrackingController::class, 'generate'])->name('order-tracking.generate')->middleware('permission:tracking.create');
+               Route::post('order-tracking/sync-from-orders', [OrderTrackingController::class, 'syncFromOrders'])->name('order-tracking.sync-from-orders')->middleware('permission:tracking.edit');
+               Route::post('order-tracking/sync-lots', [OrderTrackingController::class, 'syncLots'])->name('order-tracking.sync-lots')->middleware('permission:tracking.edit');
+               Route::post('order-tracking/sync-selected', [OrderTrackingController::class, 'syncSelected'])->name('order-tracking.sync-selected')->middleware('permission:tracking.edit');
                Route::post('order-tracking/push-production', [OrderTrackingController::class, 'pushToProduction'])->name('order-tracking.push-production')->middleware('permission:tracking.edit');
                Route::post('order-tracking/push-warehouse', [OrderTrackingController::class, 'pushToWarehouse'])->name('order-tracking.push-warehouse')->middleware('permission:tracking.edit');
                Route::post('order-tracking/bulk-delete', [OrderTrackingController::class, 'bulkDelete'])->name('order-tracking.bulk-delete')->middleware('permission:tracking.delete');

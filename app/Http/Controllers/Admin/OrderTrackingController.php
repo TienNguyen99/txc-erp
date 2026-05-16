@@ -469,6 +469,158 @@ class OrderTrackingController extends Controller
     }
 
     /**
+     * Sync OrderTracking tu Orders theo bo loc PL/Chart.
+     */
+    public function syncFromOrders(Request $request)
+    {
+        $plFilter = array_filter((array) $request->input('pl_number', []));
+        $chartFilter = array_filter((array) $request->input('chart', []));
+
+        if (empty($plFilter) && empty($chartFilter)) {
+            return redirect()->back()->with('warning', 'Vui long chon PL Number hoac Chart truoc khi sync.');
+        }
+
+        $orders = Order::query()
+            ->when(!empty($plFilter), fn($q) => $q->whereIn('pl_number', $plFilter))
+            ->when(!empty($chartFilter), fn($q) => $q->whereIn('chart', $chartFilter))
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->back()->with('warning', 'Khong tim thay order nao theo bo loc de sync.');
+        }
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($orders as $order) {
+            $tracking = OrderTracking::where('order_id', $order->id)->first();
+
+            if (!$tracking) {
+                OrderTracking::create([
+                    'order_id' => $order->id,
+                    'pl_number' => $order->pl_number,
+                    'size' => $order->ma_hh,
+                    'mau' => $order->color,
+                    'cong_doan' => 'Ch? s?n xu?t',
+                    'sl_don_hang' => $order->yrd,
+                    'sl_san_xuat' => 0,
+                ]);
+                $created++;
+                $order->updateStatusFromTracking();
+                continue;
+            }
+
+            $tracking->update([
+                'pl_number' => $order->pl_number,
+                'size' => $order->ma_hh,
+                'mau' => $order->color,
+                'sl_don_hang' => $order->yrd,
+            ]);
+            $updated++;
+            $order->updateStatusFromTracking();
+        }
+
+        $msg = "Sync xong: tao moi {$created}, cap nhat {$updated}, tong order xu ly {$orders->count()}.";
+        return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Sync tracking theo cac dong dang tick o bang duoi.
+     */
+    public function syncSelected(Request $request)
+    {
+        $request->validate([
+            'tracking_ids' => 'required|array|min:1',
+            'tracking_ids.*' => 'exists:order_tracking,id',
+        ]);
+
+        $trackings = OrderTracking::with('order')->whereIn('id', $request->tracking_ids)->get();
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($trackings as $tracking) {
+            $order = $tracking->order;
+            if (!$order) {
+                $skipped++;
+                continue;
+            }
+
+            $tracking->update([
+                'pl_number' => $order->pl_number,
+                'size' => $order->ma_hh,
+                'mau' => $order->color,
+                'sl_don_hang' => $order->yrd,
+            ]);
+            $order->updateStatusFromTracking();
+            $updated++;
+        }
+
+        return redirect()->back()->with('success', "Sync selected xong: cap nhat {$updated}, bo qua {$skipped}.");
+    }
+
+    /**
+     * Sync theo cac Order Tracking Number (lot) duoc chon.
+     * Moi lot co the gom nhieu PL, se sync toan bo order thuoc cac PL do.
+     */
+    public function syncLots(Request $request)
+    {
+        $request->validate([
+            'tracking_numbers' => 'required|array|min:1',
+            'tracking_numbers.*' => 'string',
+        ]);
+
+        $trackingNumbers = collect($request->tracking_numbers)->filter()->unique()->values();
+        if ($trackingNumbers->isEmpty()) {
+            return redirect()->back()->with('warning', 'Khong co lot nao duoc chon de sync.');
+        }
+
+        $rowsInLots = OrderTracking::whereIn('tracking_number', $trackingNumbers)->get();
+        if ($rowsInLots->isEmpty()) {
+            return redirect()->back()->with('warning', 'Khong tim thay du lieu tracking cho cac lot da chon.');
+        }
+
+        $plNumbers = $rowsInLots->pluck('pl_number')->filter()->unique()->values();
+        $orders = Order::whereIn('pl_number', $plNumbers)->get();
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($trackingNumbers as $lotNo) {
+            foreach ($orders->whereIn('pl_number', $rowsInLots->where('tracking_number', $lotNo)->pluck('pl_number')) as $order) {
+                $tracking = OrderTracking::where('tracking_number', $lotNo)
+                    ->where('order_id', $order->id)
+                    ->first();
+
+                if (!$tracking) {
+                    OrderTracking::create([
+                        'order_id' => $order->id,
+                        'tracking_number' => $lotNo,
+                        'pl_number' => $order->pl_number,
+                        'size' => $order->ma_hh,
+                        'mau' => $order->color,
+                        'cong_doan' => 'Chờ sản xuất',
+                        'sl_don_hang' => $order->yrd,
+                        'sl_san_xuat' => 0,
+                    ]);
+                    $created++;
+                } else {
+                    $tracking->update([
+                        'pl_number' => $order->pl_number,
+                        'size' => $order->ma_hh,
+                        'mau' => $order->color,
+                        'sl_don_hang' => $order->yrd,
+                    ]);
+                    $updated++;
+                }
+
+                $order->updateStatusFromTracking();
+            }
+        }
+
+        $msg = "Sync lots xong: lot {$trackingNumbers->count()} | tao moi {$created} | cap nhat {$updated} | PL lien quan {$plNumbers->count()}.";
+        return redirect()->back()->with('success', $msg);
+    }
+    /**
      * Chuyển tracking sang Production Report — gộp theo mã HH.
      */
     public function pushToProduction(Request $request)
@@ -752,3 +904,4 @@ class OrderTrackingController extends Controller
         return redirect()->back()->with('success', "Đã xóa toàn bộ Lô {$trackingNumber} ({$count} item) và hoàn trả trạng thái cho các đơn hàng liên quan.");
     }
 }
+

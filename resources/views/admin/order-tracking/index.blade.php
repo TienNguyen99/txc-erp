@@ -62,7 +62,18 @@
                                 <span class="badge bg-secondary ms-1">Chart: {{ $c }}</span>
                             @endforeach
                         </div>
-                        <form method="POST" action="{{ route('admin.order-tracking.create-batch') }}" class="d-inline">
+                        <form method="POST" action="{{ route('admin.order-tracking.sync-from-orders') }}" class="d-inline me-1">
+    @csrf
+    @foreach ((array) request('pl_number', []) as $pl)
+        <input type="hidden" name="pl_number[]" value="{{ $pl }}">
+    @endforeach
+    @foreach ((array) request('chart', []) as $c)
+        <input type="hidden" name="chart[]" value="{{ $c }}">
+    @endforeach
+    <button type="submit" class="btn btn-outline-primary btn-sm" onclick="return confirm('Sync OrderTracking theo bộ lọc hiện tại?')">
+        <i class="fa-solid fa-rotate me-1"></i>Sync Tracking
+    </button>
+</form><form method="POST" action="{{ route('admin.order-tracking.create-batch') }}" class="d-inline">
                             @csrf
                             @foreach ((array) request('pl_number', []) as $pl)
                                 <input type="hidden" name="pl_numbers[]" value="{{ $pl }}">
@@ -89,21 +100,31 @@
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
                     <div class="collapse show" id="collapseOTList">
+                        <div class="card-body p-2 border-bottom">
+                            <form id="lotSyncForm" method="POST" action="{{ route('admin.order-tracking.sync-lots') }}" class="d-flex justify-content-end">
+                                @csrf
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnSyncLots">
+                                    <i class="fa-solid fa-rotate me-1"></i>Sync Selected Lots
+                                </button>
+                            </form>
+                        </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle mb-0">
+                                <table class="table table-sm table-hover align-middle mb-0 no-sort-table">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>#</th>
-                                            <th>Order Tracking Number</th>
-                                            <th class="text-center">Số tracking</th>
-                                            <th>Ngày tạo</th>
-                                            <th class="text-center">Hành động</th>
+                                            <th class="no-sort"><input type="checkbox" id="checkAllLots"></th>
+                                            <th class="no-sort">#</th>
+                                            <th class="no-sort">Order Tracking Number</th>
+                                            <th class="text-center no-sort">Số tracking</th>
+                                            <th class="no-sort">Ngày tạo</th>
+                                            <th class="text-center no-sort">Hành động</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($trackingNumbers as $tn)
                                             <tr>
+                                                <td><input type="checkbox" class="lot-check" name="tracking_numbers[]" value="{{ $tn->tracking_number }}" form="lotSyncForm"></td>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>
                                                     <a href="{{ route('admin.order-tracking.lot', $tn->tracking_number) }}"
@@ -139,7 +160,7 @@
                                                 </td>
                                             </tr>
                                             <tr class="collapse bg-light" id="child-{{ $loop->iteration }}">
-                                                <td colspan="5" class="p-3">
+                                                <td colspan="6" class="p-3">
                                                     <h6 class="fw-bold text-secondary mb-2" style="font-size:.85rem"><i class="fa-solid fa-code-branch me-1"></i>Các lệnh con (Tracking Child)</h6>
                                                     @if($tn->children->count())
                                                         <table class="table table-sm table-bordered bg-white mb-0">
@@ -631,6 +652,9 @@
 
             @if ($data->count())
                 <div class="d-flex gap-2 mt-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnSyncSelected">
+                        <i class="fa-solid fa-rotate me-1"></i>Sync Selected
+                    </button>
                     <button type="button" class="btn btn-info btn-sm text-white" id="btnPushProduction">
                         <i class="fa-solid fa-industry me-1"></i>Chuyển sang Sản xuất (gộp theo Mã HH)
                     </button>
@@ -647,6 +671,22 @@
     <form id="deleteForm" method="POST" style="display:none">@csrf @method('DELETE')</form>
 
     <script>
+        document.getElementById('checkAllLots')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        document.getElementById('checkAllLots')?.addEventListener('change', function() {
+            const form = document.getElementById('lotSyncForm');
+            if (!form) return;
+            document.querySelectorAll('input[name="tracking_numbers[]"][form="lotSyncForm"]').forEach(cb => cb.checked = this.checked);
+        });
+        document.getElementById('btnSyncLots')?.addEventListener('click', function() {
+            const form = document.getElementById('lotSyncForm');
+            if (!form) return;
+            const checked = document.querySelectorAll('input[name="tracking_numbers[]"][form="lotSyncForm"]:checked');
+            if (checked.length === 0) return alert('Chọn ít nhất 1 lô để sync.');
+            if (!confirm(`Sync ${checked.length} lô đã chọn theo các PL trong lô?`)) return;
+            form.submit();
+        });
         document.getElementById('checkAllShip')?.addEventListener('change', function() {
             document.querySelectorAll('.ship-group-check').forEach(cb => cb.checked = this.checked);
             document.querySelectorAll('.ship-check').forEach(cb => cb.checked = this.checked);
@@ -675,6 +715,14 @@
             if (checked.length === 0) return alert('Chọn ít nhất 1 tracking.');
             if (!confirm(`Chuyển ${checked.length} mục sang sản xuất (gộp theo Mã HH)?`)) return;
             form.action = '{{ route('admin.order-tracking.push-production') }}';
+            form.submit();
+        });
+        document.getElementById('btnSyncSelected')?.addEventListener('click', function() {
+            const form = document.getElementById('trackingActionForm');
+            const checked = form.querySelectorAll('.tracking-check:checked');
+            if (checked.length === 0) return alert('Chọn ít nhất 1 tracking để sync.');
+            if (!confirm(`Sync ${checked.length} tracking đã chọn theo dữ liệu Orders mới nhất?`)) return;
+            form.action = '{{ route('admin.order-tracking.sync-selected') }}';
             form.submit();
         });
         document.getElementById('btnBulkDelete')?.addEventListener('click', function() {
@@ -711,3 +759,9 @@
         }
     </script>
 @endsection
+
+
+
+
+
+
