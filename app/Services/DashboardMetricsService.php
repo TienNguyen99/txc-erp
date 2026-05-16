@@ -1,0 +1,624 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\LenhSanXuat;
+use App\Models\LenhSanXuatItem;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\Order;
+use App\Models\OrderTracking;
+use App\Models\ProductionReport;
+use App\Models\Setting;
+use App\Models\WarehouseTransaction;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+
+class DashboardMetricsService
+{
+    // Entry point duy nhất cho dashboard: gom đủ dữ liệu view cần.
+    public function build(): array
+    {
+        $stats = $this->buildStats();
+        $charts = $this->buildCharts();
+        [$lenhSxTracking, $lenhSxStats] = $this->buildLenhSanXuatTracking();
+
+        return [
+            'stats' => $stats,
+            'chartDataOrderStatus' => $charts['order_status'],
+            'chartDataProductionTime' => $charts['production_time'],
+            'chartDataTrackingStatus' => $charts['tracking_status'],
+            'chartDataProductionStage' => $charts['production_stage'],
+            'chartDataProductionCa' => $charts['production_ca'],
+            'lenhSxTracking' => $lenhSxTracking,
+            'lenhSxStats' => $lenhSxStats,
+            'stages' => OrderTracking::STAGES,
+            'opsDashboard' => $this->buildOperationsDashboard(),
+        ];
+    }
+
+    private function buildOperationsDashboard(): array
+    {
+        $otd = $this->buildOtdDeliveryBlock();
+        $wip = $this->buildWipBlock();
+        $quality = $this->buildProductivityQualityBlock();
+        $inventory = $this->buildInventoryMrpBlock();
+        $procurement = $this->buildProcurementBlock();
+        $finance = $this->buildFinanceBlock();
+
+        return compact('otd', 'wip', 'quality', 'inventory', 'procurement', 'finance');
+    }
+
+    private function buildOtdDeliveryBlock(): array
+    {
+        $today = now()->startOfDay();
+        $from = now()->addDays(3)->startOfDay();
+        $to = now()->addDays(7)->endOfDay();
+
+        $otdByMonth = OrderTracking::with('order.khachHang')
+            ->whereIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereNotNull('ngay_xe_lay_hang')
+            ->whereHas('order', fn($q) => $q->whereNotNull('sig_need_date'))
+            ->whereDate('updated_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->get()
+            ->groupBy(fn($t) => Carbon::parse($t->ngay_xe_lay_hang)->format('Y-m'))
+            ->map(function (Collection $rows) {
+                $total = $rows->count();
+                $onTime = $rows->filter(function ($t) {
+                    $actual = Carbon::parse($t->ngay_xe_lay_hang)->startOfDay();
+                    $due = optional($t->order)->sig_need_date ? Carbon::parse($t->order->sig_need_date)->startOfDay() : null;
+                    return $due && $actual->lte($due);
+                })->count();
+                return [
+                    'total' => $total,
+                    'on_time' => $onTime,
+                    'rate' => $this->percentage($onTime, $total, 1),
+                ];
+            });
+
+        $otdByCustomer = OrderTracking::with('order.khachHang')
+            ->whereIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereNotNull('ngay_xe_lay_hang')
+            ->whereHas('order', fn($q) => $q->whereNotNull('sig_need_date'))
+            ->whereDate('updated_at', '>=', now()->subMonths(3)->startOfDay())
+            ->get()
+            ->groupBy(fn($t) => $t->order?->khachHang?->ten_kh ?? 'Khách hàng chưa gán')
+            ->map(function (Collection $rows, string $customer) {
+                $total = $rows->count();
+                $onTime = $rows->filter(function ($t) {
+                    $actual = Carbon::parse($t->ngay_xe_lay_hang)->startOfDay();
+                    $due = optional($t->order)->sig_need_date ? Carbon::parse($t->order->sig_need_date)->startOfDay() : null;
+                    return $due && $actual->lte($due);
+                })->count();
+                return [
+                    'customer' => $customer,
+                    'total' => $total,
+                    'on_time' => $onTime,
+                    'rate' => $this->percentage($onTime, $total, 1),
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(8)
+            ->values();
+
+        $atRiskLots = OrderTracking::with('order.khachHang')
+            ->whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereHas('order', fn($q) => $q->whereNotNull('sig_need_date')->whereBetween('sig_need_date', [$from, $to]))
+            ->orderBy(Order::select('sig_need_date')->whereColumn('orders.id', 'order_tracking.order_id')->limit(1))
+            ->limit(20)
+            ->get()
+            ->map(function ($t) use ($today) {
+                $due = optional($t->order)->sig_need_date ? Carbon::parse($t->order->sig_need_date)->startOfDay() : $today;
+                return [
+                    'tracking_number' => $t->tracking_number ?? '-',
+                    'tracking_number_child' => $t->tracking_number_child ?? '-',
+                    'customer' => $t->order?->khachHang?->ten_kh ?? 'N/A',
+                    'stage' => $t->cong_doan ?? 'Chờ sản xuất',
+                    'due_date' => $due->format('d/m/Y'),
+                    'days_left' => (int) $today->diffInDays($due, false),
+                ];
+            });
+
+        return [
+            'monthly' => $otdByMonth,
+            'by_customer' => $otdByCustomer,
+            'at_risk_lots' => $atRiskLots,
+        ];
+    }
+
+    private function buildWipBlock(): array
+    {
+        $wipStages = OrderTracking::whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->selectRaw('COALESCE(cong_doan, "Chờ sản xuất") as stage, count(*) as total')
+            ->groupBy('stage')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn($r) => ['stage' => $r->stage, 'total' => (int) $r->total]);
+
+        $aging = OrderTracking::whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->get()
+            ->groupBy(fn($t) => $t->cong_doan ?: 'Chờ sản xuất')
+            ->map(function (Collection $rows, string $stage) {
+                $ages = $rows->map(fn($t) => (float) Carbon::parse($t->created_at)->diffInDays(now()));
+                $avg = $ages->count() ? round($ages->avg(), 1) : 0;
+                $over7 = $ages->filter(fn($d) => $d > 7)->count();
+                return [
+                    'stage' => $stage,
+                    'avg_days' => $avg,
+                    'over_7_days' => $over7,
+                    'count' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('avg_days')
+            ->values();
+
+        return [
+            'stages' => $wipStages,
+            'aging' => $aging,
+        ];
+    }
+
+    private function buildProductivityQualityBlock(): array
+    {
+        $fromDate = now()->subDays(30)->startOfDay();
+
+        $outputByCa = ProductionReport::whereDate('ngay_sx', '>=', $fromDate)
+            ->whereNotNull('ca')
+            ->selectRaw('ca, sum(sl_dat) as output, sum(sl_hu) as defect')
+            ->groupBy('ca')
+            ->orderBy('ca')
+            ->get()
+            ->map(fn($r) => [
+                'ca' => $r->ca,
+                'output' => (float) $r->output,
+                'defect_rate' => $this->percentage((float) $r->defect, ((float) $r->output + (float) $r->defect), 2),
+            ]);
+
+        $outputByEmployee = ProductionReport::whereDate('ngay_sx', '>=', $fromDate)
+            ->whereNotNull('ma_nv')
+            ->where('ma_nv', '!=', '')
+            ->selectRaw('ma_nv, sum(sl_dat) as output, sum(sl_hu) as defect')
+            ->groupBy('ma_nv')
+            ->orderByDesc('output')
+            ->limit(10)
+            ->get()
+            ->map(fn($r) => [
+                'ma_nv' => $r->ma_nv,
+                'output' => (float) $r->output,
+                'defect_rate' => $this->percentage((float) $r->defect, ((float) $r->output + (float) $r->defect), 2),
+            ]);
+
+        $totals = ProductionReport::whereDate('ngay_sx', '>=', $fromDate)
+            ->selectRaw('sum(sl_dat) as output, sum(sl_hu) as defect')
+            ->first();
+
+        return [
+            'output_by_ca' => $outputByCa,
+            'output_by_employee' => $outputByEmployee,
+            'defect_rate_30d' => $this->percentage((float) ($totals->defect ?? 0), (float) (($totals->output ?? 0) + ($totals->defect ?? 0)), 2),
+        ];
+    }
+
+    private function buildInventoryMrpBlock(): array
+    {
+        $stockNhap = WarehouseTransaction::nhapKho()
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+        $stockXuat = WarehouseTransaction::xuatKho()
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        $recentUsage = WarehouseTransaction::xuatKho()
+            ->whereDate('ngay', '>=', now()->subDays(30)->startOfDay())
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        $catalog = \App\Models\DanhMucHangHoa::select('ma_hh', 'ten_hh', 'ton_toi_thieu')
+            ->whereNotNull('ma_hh')
+            ->get();
+
+        $stockRows = $catalog->map(function ($h) use ($stockNhap, $stockXuat, $recentUsage) {
+            $onHand = (float) (($stockNhap[$h->ma_hh] ?? 0) - ($stockXuat[$h->ma_hh] ?? 0));
+            $min = (float) ($h->ton_toi_thieu ?? 0);
+            $dailyUsage = ((float) ($recentUsage[$h->ma_hh] ?? 0)) / 30;
+            $coverageDays = $dailyUsage > 0 ? round($onHand / $dailyUsage, 1) : null;
+
+            return [
+                'ma_hh' => $h->ma_hh,
+                'ten_hh' => $h->ten_hh,
+                'on_hand' => $onHand,
+                'min_stock' => $min,
+                'coverage_days' => $coverageDays,
+                'is_negative' => $onHand < 0,
+                'is_below_min' => $onHand >= 0 && $onHand < $min,
+            ];
+        });
+
+        $negativeStocks = $stockRows->where('is_negative', true)->values();
+        $belowMinStocks = $stockRows->where('is_below_min', true)->sortBy(fn($r) => $r['on_hand'] - $r['min_stock'])->values();
+
+        $requiredForPlan = LenhSanXuatItem::where('da_len_lenh', true)
+            ->selectRaw('ma_hh, sum(sl_can_sx) as required')
+            ->groupBy('ma_hh')
+            ->pluck('required', 'ma_hh');
+
+        $topShortages = $requiredForPlan->map(function ($required, $maHh) use ($stockRows) {
+            $stock = $stockRows->firstWhere('ma_hh', $maHh);
+            $onHand = (float) ($stock['on_hand'] ?? 0);
+            $shortage = (float) $required - $onHand;
+            return [
+                'ma_hh' => $maHh,
+                'required' => (float) $required,
+                'on_hand' => $onHand,
+                'shortage' => $shortage,
+            ];
+        })
+            ->filter(fn($r) => $r['shortage'] > 0)
+            ->sortByDesc('shortage')
+            ->take(15)
+            ->values();
+
+        return [
+            'negative_stocks' => $negativeStocks,
+            'below_min_stocks' => $belowMinStocks,
+            'top_shortages' => $topShortages,
+        ];
+    }
+
+    private function buildProcurementBlock(): array
+    {
+        $today = now()->startOfDay();
+
+        $openPoCount = PurchaseOrder::whereNotIn('trang_thai', ['received', 'cancelled'])->count();
+        $latePoCount = PurchaseOrder::whereNotIn('trang_thai', ['received', 'cancelled'])
+            ->whereDate('ngay_giao_du_kien', '<', $today)
+            ->count();
+
+        $avgLeadTime = PurchaseOrder::whereNotNull('ngay_nhan_thuc_te')
+            ->selectRaw('AVG(DATEDIFF(ngay_nhan_thuc_te, ngay_dat)) as avg_days')
+            ->value('avg_days');
+
+        $supplierOtd = PurchaseOrder::with('nhaCungCap')
+            ->where('trang_thai', 'received')
+            ->whereNotNull('ngay_nhan_thuc_te')
+            ->whereNotNull('ngay_giao_du_kien')
+            ->get()
+            ->groupBy(fn($po) => $po->nhaCungCap?->ten_ncc ?? 'NCC chưa gán')
+            ->map(function (Collection $rows, string $supplier) {
+                $total = $rows->count();
+                $onTime = $rows->filter(fn($po) => Carbon::parse($po->ngay_nhan_thuc_te)->startOfDay()->lte(Carbon::parse($po->ngay_giao_du_kien)->startOfDay()))->count();
+                return [
+                    'supplier' => $supplier,
+                    'total' => $total,
+                    'on_time' => $onTime,
+                    'rate' => $this->percentage($onTime, $total, 1),
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(8)
+            ->values();
+
+        $priceTrend = PurchaseOrderItem::query()
+            ->join('purchase_orders', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
+            ->whereDate('purchase_orders.ngay_dat', '>=', now()->subMonths(6)->startOfMonth())
+            ->selectRaw('DATE_FORMAT(purchase_orders.ngay_dat, "%Y-%m") as ym, AVG(purchase_order_items.don_gia) as avg_price')
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get()
+            ->map(fn($r) => ['month' => $r->ym, 'avg_price' => round((float) $r->avg_price, 4)]);
+
+        return [
+            'open_po_count' => $openPoCount,
+            'late_po_count' => $latePoCount,
+            'avg_lead_time_days' => $avgLeadTime ? round((float) $avgLeadTime, 1) : null,
+            'supplier_otd' => $supplierOtd,
+            'price_trend' => $priceTrend,
+        ];
+    }
+
+    private function buildFinanceBlock(): array
+    {
+        $orders = Order::with('khachHang')->get();
+        $materialCostMap = \App\Models\DanhMucHangHoa::pluck('gia_nvl', 'ma_hh');
+
+        $orderMargins = $orders->map(function ($o) use ($materialCostMap) {
+            $qty = (float) ($o->yrd ?? 0);
+            $price = (float) ($o->price_usd ?? $o->price_usd_auto ?? 0);
+            $revenue = $qty * $price;
+            $unitCost = (float) ($materialCostMap[$o->ma_hh] ?? 0);
+            $cost = $qty * $unitCost;
+            $margin = $revenue - $cost;
+            $marginRate = $revenue > 0 ? round(($margin / $revenue) * 100, 2) : null;
+
+            return [
+                'job_no' => $o->job_no,
+                'customer' => $o->khachHang?->ten_kh ?? 'Khách hàng chưa gán',
+                'revenue' => $revenue,
+                'cost' => $cost,
+                'margin' => $margin,
+                'margin_rate' => $marginRate,
+            ];
+        });
+
+        $topOrders = $orderMargins
+            ->sortByDesc('margin')
+            ->take(10)
+            ->values();
+
+        $byCustomer = $orderMargins
+            ->groupBy('customer')
+            ->map(function (Collection $rows, string $customer) {
+                $revenue = $rows->sum('revenue');
+                $cost = $rows->sum('cost');
+                $margin = $revenue - $cost;
+                return [
+                    'customer' => $customer,
+                    'revenue' => $revenue,
+                    'cost' => $cost,
+                    'margin' => $margin,
+                    'margin_rate' => $revenue > 0 ? round(($margin / $revenue) * 100, 2) : null,
+                ];
+            })
+            ->sortByDesc('revenue')
+            ->take(10)
+            ->values();
+
+        return [
+            'top_orders' => $topOrders,
+            'by_customer' => $byCustomer,
+        ];
+    }
+
+    // Các số KPI chính hiển thị ở card đầu trang.
+    private function buildStats(): array
+    {
+        $totalOrders = Order::count();
+        $pendingOrders = Order::whereNotIn('status', ['shipped', 'done'])->count();
+        $pctPendingOrders = $this->percentage($pendingOrders, $totalOrders, 1);
+
+        $totalTrackings = OrderTracking::count();
+        $pendingTrackings = OrderTracking::whereNotIn('cong_doan', array_merge(OrderTracking::warehouseDoneStages(), OrderTracking::deliveredStages()))->count();
+        $pctPendingTrackings = $this->percentage($pendingTrackings, $totalTrackings, 1);
+
+        $totalQtyRequired = (float) (Order::sum('yrd') ?? 0);
+        $totalQtyProduced = (float) (WarehouseTransaction::nhapKho()->sum('so_luong') ?? 0);
+        $unproducedQty = max(0, $totalQtyRequired - $totalQtyProduced);
+        $pctUnproduced = $this->percentage($unproducedQty, $totalQtyRequired, 1);
+
+        $totalSlDat = (float) (ProductionReport::sum('sl_dat') ?? 0);
+        $totalSlHu = (float) (ProductionReport::sum('sl_hu') ?? 0);
+        $lossRate = $this->percentage($totalSlHu, $totalSlDat + $totalSlHu, 2);
+
+        $exchangeRate = (float) (Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400);
+        $totalRevenueUsd = (float) (Order::selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0);
+        $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
+
+        return [
+            'pending_orders' => $pendingOrders,
+            'total_orders' => $totalOrders,
+            'pct_pending_orders' => $pctPendingOrders,
+            'pending_trackings' => $pendingTrackings,
+            'total_trackings' => $totalTrackings,
+            'pct_pending_trackings' => $pctPendingTrackings,
+            'unproduced_qty' => $unproducedQty,
+            'total_qty_required' => $totalQtyRequired,
+            'pct_unproduced' => $pctUnproduced,
+            'loss_rate' => $lossRate,
+            'total_revenue' => $totalRevenueVnd,
+        ];
+    }
+
+    // Gom tất cả dataset chart để controller/view chỉ cần dùng lại.
+    private function buildCharts(): array
+    {
+        return [
+            'order_status' => $this->buildOrderStatusChart(),
+            'production_time' => $this->buildProductionTimeChart(),
+            'tracking_status' => $this->buildTrackingStatusChart(),
+            'production_stage' => $this->buildProductionStageChart(),
+            'production_ca' => $this->buildProductionCaChart(),
+        ];
+    }
+
+    // Doughnut trạng thái đơn: map mã trạng thái nội bộ sang label hiển thị.
+    private function buildOrderStatusChart(): array
+    {
+        $orderStatuses = Order::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        $statusLabels = [
+            'pending' => 'Chờ xử lý',
+            'in_production' => 'Đang SX',
+            'done' => 'Hoàn thành',
+            'shipped' => 'Đã giao',
+        ];
+
+        $orderedStatuses = [];
+        foreach ($statusLabels as $key => $label) {
+            $orderedStatuses[$label] = $orderStatuses[$key] ?? 0;
+        }
+
+        return [
+            'labels' => array_keys($orderedStatuses),
+            'data' => array_values($orderedStatuses),
+        ];
+    }
+
+    // Line chart 7 ngày: tạo trục thời gian cố định, ngày thiếu dữ liệu sẽ về 0.
+    private function buildProductionTimeChart(): array
+    {
+        $last7Days = collect();
+        for ($i = 6; $i >= 0; $i--) {
+            $last7Days->push(now()->subDays($i)->format('Y-m-d'));
+        }
+
+        $productionDataByDate = ProductionReport::where('ngay_sx', '>=', now()->subDays(6)->format('Y-m-d'))
+            ->selectRaw('DATE(ngay_sx) as date, sum(sl_dat) as total')
+            ->groupBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        return [
+            'labels' => $last7Days->map(fn(string $d) => Carbon::parse($d)->format('d/m'))->toArray(),
+            'data' => $last7Days->map(fn(string $d) => $productionDataByDate[$d] ?? 0)->toArray(),
+        ];
+    }
+
+    // Doughnut theo công đoạn hiện tại của tracking.
+    private function buildTrackingStatusChart(): array
+    {
+        $trackingStatuses = OrderTracking::selectRaw('cong_doan, count(*) as total_count')
+            ->groupBy('cong_doan')
+            ->pluck('total_count', 'cong_doan')
+            ->toArray();
+
+        return [
+            'labels' => array_keys($trackingStatuses),
+            'data' => array_values($trackingStatuses),
+        ];
+    }
+
+    // Bar chart sản lượng đạt theo công đoạn sản xuất.
+    private function buildProductionStageChart(): array
+    {
+        $productionByStage = ProductionReport::selectRaw('cong_doan, sum(sl_dat) as total')
+            ->groupBy('cong_doan')
+            ->pluck('total', 'cong_doan')
+            ->toArray();
+
+        return [
+            'labels' => array_keys($productionByStage),
+            'data' => array_values($productionByStage),
+        ];
+    }
+
+    // Bar chart theo ca làm việc.
+    private function buildProductionCaChart(): array
+    {
+        $productionByCa = ProductionReport::selectRaw('ca, sum(sl_dat) as total')
+            ->whereNotNull('ca')
+            ->where('ca', '!=', '')
+            ->groupBy('ca')
+            ->pluck('total', 'ca')
+            ->toArray();
+
+        return [
+            'labels' => array_map(static fn(string $ca) => 'Ca ' . $ca, array_keys($productionByCa)),
+            'data' => array_values($productionByCa),
+        ];
+    }
+
+    // Khối theo dõi Lệnh SX:
+    // 1) nạp dữ liệu theo lô
+    // 2) gom tổng hợp trước (stock, sản lượng) để tránh query lặp
+    // 3) tính progress/trạng thái từng lệnh
+    private function buildLenhSanXuatTracking(): array
+    {
+        $latestLenh = LenhSanXuat::with('items')->latest()->limit(20)->get();
+
+        $allChildNos = $latestLenh->flatMap(fn($lenh) => $lenh->items->pluck('lenh_child'))->filter()->values();
+        $trackingStages = OrderTracking::whereIn('tracking_number_child', $allChildNos)
+            ->select('tracking_number_child', 'cong_doan')
+            ->get()
+            ->keyBy('tracking_number_child');
+
+        $allMaHh = $latestLenh
+            ->flatMap(fn($lenh) => $lenh->items->where('da_len_lenh', true)->pluck('ma_hh'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $stockNhapByMaHh = WarehouseTransaction::nhapKho()
+            ->whereIn('ma_hh', $allMaHh)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        $stockXuatByMaHh = WarehouseTransaction::xuatKho()
+            ->whereIn('ma_hh', $allMaHh)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        $productionByLenhChild = ProductionReport::whereIn('lenh_sx', $allChildNos)
+            ->selectRaw('lenh_sx, sum(sl_dat) as total')
+            ->groupBy('lenh_sx')
+            ->pluck('total', 'lenh_sx');
+
+        // Map từng lệnh sang object dashboard để Blade render trực tiếp.
+        $lenhSxTracking = $latestLenh->map(function ($lenh) use ($trackingStages, $stockNhapByMaHh, $stockXuatByMaHh, $productionByLenhChild) {
+            $activeItems = $lenh->items->where('da_len_lenh', true);
+            $totalItems = $lenh->items->count();
+            $activeCount = $activeItems->count();
+            $tongYrd = (float) $activeItems->sum('tong_yrd');
+            $tongCanSx = (float) $activeItems->sum('sl_can_sx');
+
+            foreach ($lenh->items as $item) {
+                $item->cong_doan = $trackingStages[$item->lenh_child]->cong_doan ?? 'Chờ sản xuất';
+            }
+
+            $tongDaSx = 0.0;
+            $tongTonKho = 0.0;
+            foreach ($activeItems as $item) {
+                $tongDaSx += (float) ($productionByLenhChild[$item->lenh_child] ?? 0);
+                $nhap = (float) ($stockNhapByMaHh[$item->ma_hh] ?? 0);
+                $xuat = (float) ($stockXuatByMaHh[$item->ma_hh] ?? 0);
+                $tongTonKho += ($nhap - $xuat);
+            }
+
+            // Quy tắc trạng thái lệnh: chưa lên lệnh -> mới; đủ kho -> done; có SX -> producing; còn lại waiting.
+            $progress = $tongYrd > 0 ? min(100, round((($tongTonKho + $tongDaSx) / $tongYrd) * 100)) : 0;
+            if ($activeCount === 0) {
+                $trangThai = 'new';
+            } elseif ($tongTonKho >= $tongYrd && $tongYrd > 0) {
+                $trangThai = 'done';
+            } elseif ($tongDaSx > 0) {
+                $trangThai = 'producing';
+            } else {
+                $trangThai = 'waiting';
+            }
+
+            return (object) [
+                'id' => $lenh->id,
+                'lenh_so' => $lenh->lenh_so,
+                'chart' => $lenh->chart,
+                'nhom_hh' => $lenh->nhom_hh,
+                'total_items' => $totalItems,
+                'active_items' => $activeCount,
+                'tong_yrd' => $tongYrd,
+                'tong_can_sx' => $tongCanSx,
+                'tong_da_sx' => $tongDaSx,
+                'tong_ton_kho' => $tongTonKho,
+                'progress' => $progress,
+                'trang_thai' => $trangThai,
+                'created_at' => $lenh->created_at,
+                'items' => $lenh->items,
+            ];
+        });
+
+        $lenhSxStats = (object) [
+            'total' => $lenhSxTracking->count(),
+            'new' => $lenhSxTracking->where('trang_thai', 'new')->count(),
+            'waiting' => $lenhSxTracking->where('trang_thai', 'waiting')->count(),
+            'producing' => $lenhSxTracking->where('trang_thai', 'producing')->count(),
+            'done' => $lenhSxTracking->where('trang_thai', 'done')->count(),
+        ];
+
+        return [$lenhSxTracking, $lenhSxStats];
+    }
+
+    // Helper chống chia 0, thống nhất cách tính % toàn dashboard.
+    private function percentage(float|int $numerator, float|int $denominator, int $precision = 1): float
+    {
+        if ($denominator <= 0) {
+            return 0.0;
+        }
+
+        return round(($numerator / $denominator) * 100, $precision);
+    }
+}

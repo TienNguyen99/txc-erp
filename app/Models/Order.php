@@ -66,9 +66,7 @@ class Order extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
-    /**
-     * Tự động cập nhật status dựa trên trạng thái tracking.
-     */
+    // Dong bo order.status tu cong_doan cua order_tracking.
     public function updateStatusFromTracking(): void
     {
         $trackings = $this->tracking()->get();
@@ -80,8 +78,8 @@ class Order extends Model
             return;
         }
 
-        $allShipped = $trackings->every(fn($t) => $t->cong_doan === 'Đã giao');
-        $allDone = $trackings->every(fn($t) => in_array($t->cong_doan, ['Đã nhập kho', 'Đã giao']));
+        $allShipped = $trackings->every(fn($t) => $t->isDelivered());
+        $allDone = $trackings->every(fn($t) => $t->isWarehouseDone());
 
         if ($allShipped) {
             $this->update(['status' => 'shipped']);

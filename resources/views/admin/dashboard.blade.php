@@ -272,6 +272,242 @@
             </span>
         </div>
 
+        {{-- Operations Dashboard (vận hành thật) --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:12px">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-industry me-2" style="color:#f7941d"></i>Operations Dashboard
+                </h6>
+                <span class="badge" style="background:#f1f5f9;color:#475569">OTD • WIP • MRP • PO • Finance</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa">
+                            <div class="text-muted small">Lot nguy cơ trễ (3-7 ngày)</div>
+                            <div class="fs-4 fw-bold">{{ $opsDashboard['otd']['at_risk_lots']->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#eff6ff;border:1px solid #bfdbfe">
+                            <div class="text-muted small">WIP công đoạn đang mở</div>
+                            <div class="fs-4 fw-bold">{{ $opsDashboard['wip']['stages']->sum('total') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#ecfdf5;border:1px solid #a7f3d0">
+                            <div class="text-muted small">PO mở / PO trễ</div>
+                            <div class="fs-4 fw-bold">{{ $opsDashboard['procurement']['open_po_count'] }} / {{ $opsDashboard['procurement']['late_po_count'] }}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ddd6fe">
+                            <div class="text-muted small">Tỷ lệ lỗi 30 ngày</div>
+                            <div class="fs-4 fw-bold">{{ $opsDashboard['quality']['defect_rate_30d'] }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">OTD theo khách hàng (3 tháng)</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Khách hàng</th>
+                                                <th class="text-end">On-time</th>
+                                                <th class="text-end">Tổng</th>
+                                                <th class="text-end">OTD%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['otd']['by_customer'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td class="text-end">{{ $r['on_time'] }}</td>
+                                                    <td class="text-end">{{ $r['total'] }}</td>
+                                                    <td class="text-end fw-bold">{{ $r['rate'] }}%</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Chưa có dữ liệu giao hàng.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Lot nguy cơ trễ (3-7 ngày)</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Lot con</th>
+                                                <th>Khách hàng</th>
+                                                <th>Công đoạn</th>
+                                                <th class="text-end">Hạn</th>
+                                                <th class="text-end">Còn</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['otd']['at_risk_lots'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['tracking_number_child'] }}</td>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td>{{ $r['stage'] }}</td>
+                                                    <td class="text-end">{{ $r['due_date'] }}</td>
+                                                    <td class="text-end fw-bold">{{ $r['days_left'] }} ngày</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="5" class="text-muted">Không có lot rủi ro trong cửa sổ 3-7 ngày.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">WIP aging theo công đoạn</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Công đoạn</th>
+                                                <th class="text-end">WIP</th>
+                                                <th class="text-end">Tuổi TB (ngày)</th>
+                                                <th class="text-end">&gt; 7 ngày</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['wip']['aging'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['stage'] }}</td>
+                                                    <td class="text-end">{{ $r['count'] }}</td>
+                                                    <td class="text-end">{{ $r['avg_days'] }}</td>
+                                                    <td class="text-end fw-bold">{{ $r['over_7_days'] }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Chưa có dữ liệu WIP.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Kho & MRP cảnh báo (thiếu cho kế hoạch)</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã HH</th>
+                                                <th class="text-end">Cần SX</th>
+                                                <th class="text-end">Tồn hiện tại</th>
+                                                <th class="text-end">Thiếu hụt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['inventory']['top_shortages'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['ma_hh'] }}</td>
+                                                    <td class="text-end">{{ number_format($r['required'], 2) }}</td>
+                                                    <td class="text-end">{{ number_format($r['on_hand'], 2) }}</td>
+                                                    <td class="text-end fw-bold text-danger">{{ number_format($r['shortage'], 2) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Không có thiếu hụt cho kế hoạch hiện tại.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">NCC - OTD giao NVL</h6>
+                                <div class="text-muted small mb-2">Lead time TB: {{ $opsDashboard['procurement']['avg_lead_time_days'] ?? 'N/A' }} ngày</div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>NCC</th>
+                                                <th class="text-end">On-time</th>
+                                                <th class="text-end">Tổng</th>
+                                                <th class="text-end">OTD%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['procurement']['supplier_otd'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['supplier'] }}</td>
+                                                    <td class="text-end">{{ $r['on_time'] }}</td>
+                                                    <td class="text-end">{{ $r['total'] }}</td>
+                                                    <td class="text-end fw-bold">{{ $r['rate'] }}%</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Chưa có dữ liệu PO đã nhận.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Biên lợi nhuận gộp theo khách hàng</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Khách hàng</th>
+                                                <th class="text-end">Doanh thu</th>
+                                                <th class="text-end">Giá vốn</th>
+                                                <th class="text-end">Margin%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['finance']['by_customer'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td class="text-end">{{ number_format($r['revenue'], 2) }}</td>
+                                                    <td class="text-end">{{ number_format($r['cost'], 2) }}</td>
+                                                    <td class="text-end fw-bold {{ ($r['margin_rate'] ?? 0) < 0 ? 'text-danger' : 'text-success' }}">
+                                                        {{ $r['margin_rate'] ?? 'N/A' }}{{ $r['margin_rate'] !== null ? '%' : '' }}
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Chưa có dữ liệu tài chính để tính.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Stat Cards MISA AMIS Style --}}
         <div class="row g-3 mb-4">
             {{-- Đơn chưa hoàn thành --}}

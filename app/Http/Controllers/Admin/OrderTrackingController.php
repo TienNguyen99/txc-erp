@@ -11,10 +11,15 @@ use App\Models\ProductionReport;
 use App\Models\Setting;
 use App\Models\WarehouseTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 class OrderTrackingController extends Controller
 {
+    private function deliveredStages(): array
+    {
+        return OrderTracking::deliveredStages();
+    }
     public function index(Request $request)
     {
         // Lấy danh sách PL Number và Chart để filter
@@ -346,8 +351,11 @@ class OrderTrackingController extends Controller
             'cong_doan' => 'nullable|string',
             'sl_don_hang' => 'nullable|numeric',
             'sl_san_xuat' => 'nullable|numeric',
-            'ngay_xe_lay_hang' => 'nullable|date',
+            'ngay_xe_lay_hang' => ['nullable', 'date', Rule::requiredIf(fn() => in_array($request->input('cong_doan'), $this->deliveredStages(), true))],
         ]);
+        if (in_array(($validated['cong_doan'] ?? null), $this->deliveredStages(), true) && empty($validated['ngay_xe_lay_hang'])) {
+            $validated['ngay_xe_lay_hang'] = now()->toDateString();
+        }
         $tracking = OrderTracking::create($validated);
         $tracking->order->updateStatusFromTracking();
         return redirect()->route('admin.order-tracking.index')->with('success', 'Thêm tracking thành công.');
@@ -370,8 +378,11 @@ class OrderTrackingController extends Controller
             'cong_doan' => 'nullable|string',
             'sl_don_hang' => 'nullable|numeric',
             'sl_san_xuat' => 'nullable|numeric',
-            'ngay_xe_lay_hang' => 'nullable|date',
+            'ngay_xe_lay_hang' => ['nullable', 'date', Rule::requiredIf(fn() => in_array($request->input('cong_doan'), $this->deliveredStages(), true))],
         ]);
+        if (in_array(($validated['cong_doan'] ?? null), $this->deliveredStages(), true) && empty($validated['ngay_xe_lay_hang'])) {
+            $validated['ngay_xe_lay_hang'] = now()->toDateString();
+        }
         $orderTracking->update($validated);
         $orderTracking->order->updateStatusFromTracking();
         return redirect()->route('admin.order-tracking.index')->with('success', 'Cập nhật tracking thành công.');
@@ -627,7 +638,10 @@ class OrderTrackingController extends Controller
             $order->update(['status' => 'shipped']);
 
             // Cập nhật tracking (nếu có) → shipped
-            $order->tracking()->update(['cong_doan' => 'shipped']);
+            $order->tracking()->update([
+                'cong_doan' => 'XUATKHO',
+                'ngay_xe_lay_hang' => now()->toDateString(),
+            ]);
 
             $shipped++;
         }
