@@ -31,6 +31,9 @@
                         </option>
                     @endforeach
                 </select>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#pickupDateModal">
+                    <i class="fa-solid fa-calendar-check me-1"></i>Ngày xe lấy
+                </button>
             </div>
         </div>
 
@@ -345,7 +348,6 @@
     </div>
     </div>
     </div>
-@endsection
 
 <div class="modal fade" id="pickupDateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -368,7 +370,7 @@
                         type="date"
                         name="ngay_xe_lay_hang"
                         class="form-control"
-                        value="{{ old('ngay_xe_lay_hang', now()->toDateString()) }}"
+                        value="{{ old('ngay_xe_lay_hang', optional(optional($trackings->firstWhere('ngay_xe_lay_hang'))->ngay_xe_lay_hang)->toDateString() ?? now()->toDateString()) }}"
                         required
                     >
                 </div>
@@ -380,6 +382,8 @@
         </div>
     </div>
 </div>
+
+@endsection
 
 @section('scripts')
     <script>

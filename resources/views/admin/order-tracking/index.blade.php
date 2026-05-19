@@ -73,11 +73,16 @@
     <button type="submit" class="btn btn-outline-primary btn-sm" onclick="return confirm('Sync OrderTracking theo bộ lọc hiện tại?')">
         <i class="fa-solid fa-rotate me-1"></i>Sync Tracking
     </button>
-</form><form method="POST" action="{{ route('admin.order-tracking.create-batch') }}" class="d-inline">
+</form><form method="POST" action="{{ route('admin.order-tracking.create-batch') }}" class="d-inline-flex align-items-end gap-2">
                             @csrf
                             @foreach ((array) request('pl_number', []) as $pl)
                                 <input type="hidden" name="pl_numbers[]" value="{{ $pl }}">
                             @endforeach
+                            <div>
+                                <label class="form-label mb-0" style="font-size:.75rem">Ngày xe lấy hàng</label>
+                                <input type="date" name="ngay_xe_lay_hang" class="form-control form-control-sm"
+                                    value="{{ old('ngay_xe_lay_hang', now()->toDateString()) }}" required>
+                            </div>
                             <button type="submit" class="btn btn-primary btn-sm"
                                 onclick="return confirm('Tạo Order Tracking Number mới cho các PL đã chọn?')">
                                 <i class="fa-solid fa-layer-group me-1"></i>Tạo Order Tracking Number
@@ -117,6 +122,7 @@
                                             <th class="no-sort">#</th>
                                             <th class="no-sort">Order Tracking Number</th>
                                             <th class="text-center no-sort">Số tracking</th>
+                                            <th class="no-sort">Ngày xe lấy hàng</th>
                                             <th class="no-sort">Ngày tạo</th>
                                             <th class="text-center no-sort">Hành động</th>
                                         </tr>
@@ -134,6 +140,9 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge bg-info">{{ $tn->total_items }} items</span>
+                                                </td>
+                                                <td>
+                                                    {{ $tn->ngay_xe_lay_hang ? \Carbon\Carbon::parse($tn->ngay_xe_lay_hang)->format('d/m/Y') : '—' }}
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($tn->created_at)->format('d/m/Y H:i') }}</td>
                                                 <td class="text-center">
@@ -160,7 +169,7 @@
                                                 </td>
                                             </tr>
                                             <tr class="collapse bg-light" id="child-{{ $loop->iteration }}">
-                                                <td colspan="6" class="p-3">
+                                                <td colspan="7" class="p-3">
                                                     <h6 class="fw-bold text-secondary mb-2" style="font-size:.85rem"><i class="fa-solid fa-code-branch me-1"></i>Các lệnh con (Tracking Child)</h6>
                                                     @if($tn->children->count())
                                                         <table class="table table-sm table-bordered bg-white mb-0">

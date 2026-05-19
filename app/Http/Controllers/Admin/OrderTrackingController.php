@@ -129,6 +129,7 @@ class OrderTrackingController extends Controller
         $trackingNumbers = OrderTracking::whereNotNull('tracking_number')
             ->select('tracking_number')
             ->selectRaw('MIN(created_at) as created_at')
+            ->selectRaw('MIN(ngay_xe_lay_hang) as ngay_xe_lay_hang')
             ->selectRaw('COUNT(*) as total_items')
             ->groupBy('tracking_number')
             ->orderByDesc('created_at')
@@ -176,9 +177,11 @@ class OrderTrackingController extends Controller
         $request->validate([
             'pl_numbers' => 'required|array|min:1',
             'pl_numbers.*' => 'required|string',
+            'ngay_xe_lay_hang' => 'required|date',
         ]);
 
         $plNumbers = $request->pl_numbers;
+        $pickupDate = $request->input('ngay_xe_lay_hang');
         $trackingNumber = OrderTracking::generateTrackingNumber();
 
         // Lấy tất cả orders thuộc các PL này
@@ -202,6 +205,7 @@ class OrderTrackingController extends Controller
                 'size' => $order->ma_hh,
                 'mau' => $order->color,
                 'cong_doan' => 'Chờ sản xuất',
+                'ngay_xe_lay_hang' => $pickupDate,
                 'sl_don_hang' => $order->yrd,
                 'sl_san_xuat' => 0,
             ]);
@@ -213,7 +217,10 @@ class OrderTrackingController extends Controller
         // Nếu có tracking cũ chưa có tracking_number cho các PL này, gán luôn
         OrderTracking::whereNull('tracking_number')
             ->whereIn('pl_number', $plNumbers)
-            ->update(['tracking_number' => $trackingNumber]);
+            ->update([
+                'tracking_number' => $trackingNumber,
+                'ngay_xe_lay_hang' => $pickupDate,
+            ]);
 
         if ($count === 0) {
             // Tất cả order đã có tracking → tìm lot cũ để redirect
@@ -230,8 +237,7 @@ class OrderTrackingController extends Controller
         }
 
         return redirect()->route('admin.order-tracking.lot', $trackingNumber)
-            ->with('success', "Đã tạo {$count} tracking với Order Tracking Number: {$trackingNumber}")
-            ->with('open_pickup_date_modal', true);
+            ->with('success', "Đã tạo {$count} tracking với Order Tracking Number: {$trackingNumber}");
     }
 
     /**
