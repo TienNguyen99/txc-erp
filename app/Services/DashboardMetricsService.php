@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\LenhSanXuat;
 use App\Models\LenhSanXuatItem;
+use App\Models\DanhMucHangHoa;
+use App\Models\DinhMucNvl;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Order;
@@ -39,6 +41,7 @@ class DashboardMetricsService
 
     private function buildOperationsDashboard(): array
     {
+        $action = $this->buildActionDashboardBlock();
         $otd = $this->buildOtdDeliveryBlock();
         $wip = $this->buildWipBlock();
         $quality = $this->buildProductivityQualityBlock();
@@ -46,13 +49,190 @@ class DashboardMetricsService
         $procurement = $this->buildProcurementBlock();
         $finance = $this->buildFinanceBlock();
 
-        return compact('otd', 'wip', 'quality', 'inventory', 'procurement', 'finance');
+        return compact('action', 'otd', 'wip', 'quality', 'inventory', 'procurement', 'finance');
+    }
+
+    private function buildActionDashboardBlock(): array
+    {
+        $readyToShipLots = $this->buildReadyToShipLots();
+        $bomMaterialShortages = $this->buildBomMaterialShortages();
+        $missingCostData = $this->buildMissingCostData();
+
+        return [
+            'ready_to_ship_lots' => $readyToShipLots,
+            'bom_material_shortages' => $bomMaterialShortages,
+            'missing_cost_data' => $missingCostData,
+            'alerts' => [
+                'ready_to_ship' => $readyToShipLots->count(),
+                'material_shortages' => $bomMaterialShortages->count(),
+                'missing_cost_data' => $missingCostData->count(),
+            ],
+        ];
+    }
+
+    private function buildReadyToShipLots(): Collection
+    {
+        $openTrackings = OrderTracking::with('order.khachHang')
+            ->whereNotNull('tracking_number')
+            ->whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped'))
+            ->get();
+
+        $maHhList = $openTrackings->pluck('order.ma_hh')->filter()->unique()->values();
+        $stockNhap = WarehouseTransaction::nhapKho()
+            ->whereIn('ma_hh', $maHhList)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+        $stockXuat = WarehouseTransaction::xuatKho()
+            ->whereIn('ma_hh', $maHhList)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        return $openTrackings
+            ->groupBy('tracking_number')
+            ->map(function (Collection $rows, string $lotNo) use ($stockNhap, $stockXuat) {
+                $demandByItem = $rows->groupBy(fn($t) => $t->order?->ma_hh ?: $t->size)
+                    ->map(fn(Collection $items) => $items->sum(fn($t) => (float) ($t->sl_don_hang ?? $t->order?->yrd ?? 0)));
+
+                if ($demandByItem->isEmpty()) {
+                    return null;
+                }
+
+                $shortage = $demandByItem->map(function ($required, $maHh) use ($stockNhap, $stockXuat) {
+                    $onHand = (float) (($stockNhap[$maHh] ?? 0) - ($stockXuat[$maHh] ?? 0));
+                    return max(0, (float) $required - $onHand);
+                })->sum();
+
+                if ($shortage > 0) {
+                    return null;
+                }
+
+                $first = $rows->sortBy(fn($t) => optional($t->order)->sig_need_date?->format('Y-m-d') ?? '9999-12-31')->first();
+
+                return [
+                    'tracking_number' => $lotNo,
+                    'customer' => $rows->pluck('order.khachHang.ten_kh')->filter()->unique()->take(2)->implode(', ') ?: 'N/A',
+                    'due_date' => optional($first->order)->sig_need_date?->format('d/m/Y') ?: '-',
+                    'total_items' => $rows->count(),
+                    'total_qty' => $demandByItem->sum(),
+                ];
+            })
+            ->filter()
+            ->sortBy('due_date')
+            ->take(10)
+            ->values();
+    }
+
+    private function buildBomMaterialShortages(): Collection
+    {
+        $activeItems = LenhSanXuatItem::where('da_len_lenh', true)->get();
+        if ($activeItems->isEmpty()) {
+            return collect();
+        }
+
+        $products = DanhMucHangHoa::whereIn('ma_hh', $activeItems->pluck('ma_hh')->filter()->unique())
+            ->get()
+            ->keyBy('ma_hh');
+        $bomByProduct = DinhMucNvl::with('nguyenLieu')
+            ->whereIn('san_pham_id', $products->pluck('id'))
+            ->get()
+            ->groupBy('san_pham_id');
+
+        $requiredByMaterial = collect();
+        foreach ($activeItems as $item) {
+            $product = $products[$item->ma_hh] ?? null;
+            if (!$product) {
+                continue;
+            }
+
+            foreach (($bomByProduct[$product->id] ?? collect()) as $bom) {
+                $material = $bom->nguyenLieu;
+                if (!$material?->ma_hh) {
+                    continue;
+                }
+
+                $required = (float) $item->sl_can_sx * (float) $bom->so_luong * (1 + ((float) $bom->ti_le_hao_hut / 100));
+                $current = $requiredByMaterial[$material->ma_hh] ?? [
+                    'ma_hh' => $material->ma_hh,
+                    'ten_hh' => $material->ten_hh,
+                    'required' => 0,
+                ];
+                $current['required'] += $required;
+                $requiredByMaterial[$material->ma_hh] = $current;
+            }
+        }
+
+        $materialCodes = $requiredByMaterial->keys();
+        $stockNhap = WarehouseTransaction::nhapKho()
+            ->whereIn('ma_hh', $materialCodes)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+        $stockXuat = WarehouseTransaction::xuatKho()
+            ->whereIn('ma_hh', $materialCodes)
+            ->selectRaw('ma_hh, sum(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
+        return $requiredByMaterial
+            ->map(function ($row, $maHh) use ($stockNhap, $stockXuat) {
+                $onHand = (float) (($stockNhap[$maHh] ?? 0) - ($stockXuat[$maHh] ?? 0));
+                $row['on_hand'] = $onHand;
+                $row['shortage'] = max(0, (float) $row['required'] - $onHand);
+                return $row;
+            })
+            ->filter(fn($row) => $row['shortage'] > 0)
+            ->sortByDesc('shortage')
+            ->take(10)
+            ->values();
+    }
+
+    private function buildMissingCostData(): Collection
+    {
+        $activeMaHh = Order::where('status', '!=', 'shipped')
+            ->whereNotNull('ma_hh')
+            ->pluck('ma_hh')
+            ->merge(OrderTracking::whereNotIn('cong_doan', OrderTracking::deliveredStages())->pluck('size'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $products = DanhMucHangHoa::whereIn('ma_hh', $activeMaHh)->get();
+        $bomCounts = DinhMucNvl::whereIn('san_pham_id', $products->pluck('id'))
+            ->selectRaw('san_pham_id, count(*) as total')
+            ->groupBy('san_pham_id')
+            ->pluck('total', 'san_pham_id');
+
+        return $products
+            ->map(function ($product) use ($bomCounts) {
+                $issues = [];
+                if (($bomCounts[$product->id] ?? 0) <= 0) {
+                    $issues[] = 'Thiếu BOM';
+                }
+                if ((float) ($product->gia_nvl ?? 0) <= 0 && (float) ($product->don_gia ?? 0) <= 0) {
+                    $issues[] = 'Thiếu giá';
+                }
+
+                if (empty($issues)) {
+                    return null;
+                }
+
+                return [
+                    'ma_hh' => $product->ma_hh,
+                    'ten_hh' => $product->ten_hh,
+                    'issues' => implode(', ', $issues),
+                ];
+            })
+            ->filter()
+            ->take(10)
+            ->values();
     }
 
     private function buildOtdDeliveryBlock(): array
     {
         $today = now()->startOfDay();
-        $from = now()->addDays(3)->startOfDay();
         $to = now()->addDays(7)->endOfDay();
 
         $otdByMonth = OrderTracking::with('order.khachHang')
@@ -103,26 +283,61 @@ class DashboardMetricsService
 
         $atRiskLots = OrderTracking::with('order.khachHang')
             ->whereNotIn('cong_doan', OrderTracking::deliveredStages())
-            ->whereHas('order', fn($q) => $q->whereNotNull('sig_need_date')->whereBetween('sig_need_date', [$from, $to]))
+            ->whereHas('order', fn($q) => $q->whereNotNull('sig_need_date')->whereDate('sig_need_date', '<=', $to))
             ->orderBy(Order::select('sig_need_date')->whereColumn('orders.id', 'order_tracking.order_id')->limit(1))
-            ->limit(20)
             ->get()
-            ->map(function ($t) use ($today) {
-                $due = optional($t->order)->sig_need_date ? Carbon::parse($t->order->sig_need_date)->startOfDay() : $today;
+            ->groupBy(fn($t) => $t->tracking_number ?: 'NO-LOT-' . $t->id)
+            ->map(function (Collection $rows) use ($today) {
+                $first = $rows
+                    ->sortBy(fn($t) => optional($t->order)->sig_need_date?->format('Y-m-d') ?? '9999-12-31')
+                    ->first();
+                $due = optional($first->order)->sig_need_date ? Carbon::parse($first->order->sig_need_date)->startOfDay() : $today;
+
                 return [
-                    'tracking_number' => $t->tracking_number ?? '-',
-                    'tracking_number_child' => $t->tracking_number_child ?? '-',
-                    'customer' => $t->order?->khachHang?->ten_kh ?? 'N/A',
-                    'stage' => $t->cong_doan ?? 'Chờ sản xuất',
+                    'tracking_number' => $first->tracking_number ?? '-',
+                    'customer' => $rows->pluck('order.khachHang.ten_kh')->filter()->unique()->take(3)->implode(', ') ?: 'N/A',
+                    'stage' => $rows->pluck('cong_doan')->filter()->unique()->take(3)->implode(', ') ?: 'Chờ sản xuất',
                     'due_date' => $due->format('d/m/Y'),
                     'days_left' => (int) $today->diffInDays($due, false),
+                    'total_items' => $rows->count(),
                 ];
-            });
+            })
+            ->sortBy('days_left')
+            ->take(20)
+            ->values();
+
+        $pickupDueLots = OrderTracking::with('order.khachHang')
+            ->whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereNotNull('ngay_xe_lay_hang')
+            ->whereDate('ngay_xe_lay_hang', '<=', $to)
+            ->get()
+            ->groupBy(fn($t) => $t->tracking_number ?: 'NO-LOT-' . $t->id)
+            ->map(function (Collection $rows) use ($today) {
+                $first = $rows
+                    ->sortBy(fn($t) => optional($t->ngay_xe_lay_hang)?->format('Y-m-d') ?? '9999-12-31')
+                    ->first();
+                $pickupDate = $first->ngay_xe_lay_hang
+                    ? Carbon::parse($first->ngay_xe_lay_hang)->startOfDay()
+                    : $today;
+
+                return [
+                    'tracking_number' => $first->tracking_number ?? '-',
+                    'customer' => $rows->pluck('order.khachHang.ten_kh')->filter()->unique()->take(3)->implode(', ') ?: 'N/A',
+                    'stage' => $rows->pluck('cong_doan')->filter()->unique()->take(3)->implode(', ') ?: 'Chờ sản xuất',
+                    'pickup_date' => $pickupDate->format('d/m/Y'),
+                    'days_left' => (int) $today->diffInDays($pickupDate, false),
+                    'total_items' => $rows->count(),
+                ];
+            })
+            ->sortBy('days_left')
+            ->take(20)
+            ->values();
 
         return [
             'monthly' => $otdByMonth,
             'by_customer' => $otdByCustomer,
             'at_risk_lots' => $atRiskLots,
+            'pickup_due_lots' => $pickupDueLots,
         ];
     }
 

@@ -272,6 +272,8 @@
             </span>
         </div>
 
+        <div id="production-tracking-top"></div>
+
         {{-- Operations Dashboard (vận hành thật) --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius:12px">
             <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
@@ -284,7 +286,7 @@
                 <div class="row g-3 mb-3">
                     <div class="col-xl-3 col-md-6">
                         <div class="p-3 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa">
-                            <div class="text-muted small">Lot nguy cơ trễ (3-7 ngày)</div>
+                            <div class="text-muted small">Lot đến hạn / trễ (≤ 7 ngày)</div>
                             <div class="fs-4 fw-bold">{{ $opsDashboard['otd']['at_risk_lots']->count() }}</div>
                         </div>
                     </div>
@@ -304,6 +306,118 @@
                         <div class="p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ddd6fe">
                             <div class="text-muted small">Tỷ lệ lỗi 30 ngày</div>
                             <div class="fs-4 fw-bold">{{ $opsDashboard['quality']['defect_rate_30d'] }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-xl-4">
+                        <div class="card border-0 h-100" style="background:#fff7ed;border:1px solid #fed7aa !important">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Đủ hàng chờ xuất</h6>
+                                    <span class="badge bg-success">{{ $opsDashboard['action']['alerts']['ready_to_ship'] }}</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Lot</th>
+                                                <th>Khách</th>
+                                                <th class="text-end">Hạn</th>
+                                                <th class="text-end">SL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['action']['ready_to_ship_lots'] as $r)
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                            {{ $r['tracking_number'] }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td class="text-end">{{ $r['due_date'] }}</td>
+                                                    <td class="text-end">{{ number_format($r['total_qty'], 0) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Chưa có lot đủ hàng chờ xuất.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card border-0 h-100" style="background:#fef2f2;border:1px solid #fecaca !important">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Thiếu NVL theo BOM</h6>
+                                    <span class="badge bg-danger">{{ $opsDashboard['action']['alerts']['material_shortages'] }}</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>NVL</th>
+                                                <th class="text-end">Cần</th>
+                                                <th class="text-end">Tồn</th>
+                                                <th class="text-end">Thiếu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['action']['bom_material_shortages'] as $r)
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-semibold">{{ $r['ma_hh'] }}</div>
+                                                        <div class="text-muted" style="font-size:.7rem">{{ $r['ten_hh'] }}</div>
+                                                    </td>
+                                                    <td class="text-end">{{ number_format($r['required'], 0) }}</td>
+                                                    <td class="text-end">{{ number_format($r['on_hand'], 0) }}</td>
+                                                    <td class="text-end fw-bold text-danger">{{ number_format($r['shortage'], 0) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Không thiếu NVL theo BOM hiện tại.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card border-0 h-100" style="background:#f8fafc;border:1px solid #e2e8f0 !important">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Thiếu dữ liệu giá vốn</h6>
+                                    <span class="badge bg-warning text-dark">{{ $opsDashboard['action']['alerts']['missing_cost_data'] }}</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã HH</th>
+                                                <th>Tên hàng</th>
+                                                <th>Thiếu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['action']['missing_cost_data'] as $r)
+                                                <tr>
+                                                    <td class="fw-semibold">{{ $r['ma_hh'] }}</td>
+                                                    <td>{{ $r['ten_hh'] }}</td>
+                                                    <td><span class="badge bg-warning text-dark">{{ $r['issues'] }}</span></td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="3" class="text-muted">Dữ liệu BOM/giá đã đủ cho mã đang mở.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -343,14 +457,15 @@
                     <div class="col-xl-6">
                         <div class="card border-0 h-100" style="background:#f8fafc">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-2">Lot nguy cơ trễ (3-7 ngày)</h6>
+                                <h6 class="fw-bold mb-2">Lot đến hạn / trễ (≤ 7 ngày)</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Lot con</th>
+                                                <th>Lot</th>
                                                 <th>Khách hàng</th>
                                                 <th>Công đoạn</th>
+                                                <th class="text-end">Items</th>
                                                 <th class="text-end">Hạn</th>
                                                 <th class="text-end">Còn</th>
                                             </tr>
@@ -358,14 +473,61 @@
                                         <tbody>
                                             @forelse($opsDashboard['otd']['at_risk_lots'] as $r)
                                                 <tr>
-                                                    <td>{{ $r['tracking_number_child'] }}</td>
+                                                    <td>
+                                                        <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                            {{ $r['tracking_number'] }}
+                                                        </a>
+                                                    </td>
                                                     <td>{{ $r['customer'] }}</td>
                                                     <td>{{ $r['stage'] }}</td>
+                                                    <td class="text-end">{{ $r['total_items'] }}</td>
                                                     <td class="text-end">{{ $r['due_date'] }}</td>
                                                     <td class="text-end fw-bold">{{ $r['days_left'] }} ngày</td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="5" class="text-muted">Không có lot rủi ro trong cửa sổ 3-7 ngày.</td></tr>
+                                                <tr><td colspan="6" class="text-muted">Không có lot đến hạn hoặc trễ trong cửa sổ 7 ngày.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#fff7ed;border:1px solid #fed7aa !important">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Lot gần ngày xe lấy nhưng chưa xuất kho</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Lot</th>
+                                                <th>Khách hàng</th>
+                                                <th>Công đoạn</th>
+                                                <th class="text-end">Items</th>
+                                                <th class="text-end">Ngày xe lấy</th>
+                                                <th class="text-end">Còn</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($opsDashboard['otd']['pickup_due_lots'] as $r)
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                            {{ $r['tracking_number'] }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td>{{ $r['stage'] }}</td>
+                                                    <td class="text-end">{{ $r['total_items'] }}</td>
+                                                    <td class="text-end">{{ $r['pickup_date'] }}</td>
+                                                    <td class="text-end fw-bold {{ $r['days_left'] < 0 ? 'text-danger' : ($r['days_left'] === 0 ? 'text-warning' : '') }}">
+                                                        {{ $r['days_left'] }} ngày
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="6" class="text-muted">Không có lot gần ngày xe lấy chưa xuất kho trong 7 ngày.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -695,7 +857,7 @@
         {{-- ═══════════════════════════════════════════ --}}
         {{-- THEO DÕI LỆNH SẢN XUẤT                    --}}
         {{-- ═══════════════════════════════════════════ --}}
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px">
+        <div id="production-tracking-card" class="card border-0 shadow-sm mb-4" style="border-radius: 12px">
             <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
                 <div>
                     <h6 class="fw-bold text-dark mb-1">
@@ -934,6 +1096,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const productionTrackingTop = document.getElementById('production-tracking-top');
+            const productionTrackingCard = document.getElementById('production-tracking-card');
+            if (productionTrackingTop && productionTrackingCard) {
+                productionTrackingTop.replaceWith(productionTrackingCard);
+            }
 
             // ── Shared config ──────────────────────────────────────────
             const ORANGE      = '#f7941d';
