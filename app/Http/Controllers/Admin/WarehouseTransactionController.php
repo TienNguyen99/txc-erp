@@ -13,6 +13,7 @@ use App\Exports\WarehouseTransactionExport;
 use App\Exports\WarehouseTransactionTemplateExport;
 use App\Exports\PackingListExport;
 use App\Imports\WarehouseTransactionImport;
+use App\Services\WarehouseDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,7 +23,8 @@ class WarehouseTransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $data = WarehouseTransaction::when($request->search, fn($q, $s) => $q->where('lenh_sx', 'like', "%$s%")->orWhere('ma_nv', 'like', "%$s%"))
+        $data = WarehouseTransaction::with('warehouseDocument')
+            ->when($request->search, fn($q, $s) => $q->where('lenh_sx', 'like', "%$s%")->orWhere('ma_nv', 'like', "%$s%"))
             ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
             ->latest()->paginate(15)->withQueryString();
 
@@ -246,7 +248,7 @@ class WarehouseTransactionController extends Controller
         return view('admin.warehouse-transactions.form', compact('hangHoas'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, WarehouseDocumentService $documentService)
     {
         $validated = $request->validate([
             'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
@@ -260,8 +262,17 @@ class WarehouseTransactionController extends Controller
             'lenh_sx' => 'nullable|string',
             'note' => 'nullable|string',
         ]);
-        WarehouseTransaction::create($validated);
-        return redirect()->route('admin.warehouse-transactions.index')->with('success', 'Thêm giao dịch kho thành công.');
+        $document = $documentService->create(
+            $validated['cong_doan'],
+            $validated['ngay'],
+            [$validated],
+            $request->user(),
+            $validated['note'] ?? null
+        );
+
+        return redirect()
+            ->route('admin.warehouse-documents.show', $document)
+            ->with('success', "Đã tạo phiếu kho {$document->document_no}.");
     }
 
     public function edit(WarehouseTransaction $warehouseTransaction)
@@ -272,6 +283,10 @@ class WarehouseTransactionController extends Controller
 
     public function update(Request $request, WarehouseTransaction $warehouseTransaction)
     {
+        if ($warehouseTransaction->warehouse_document_id) {
+            return redirect()->back()->with('error', 'Giao dịch đã thuộc phiếu kho, không thể sửa trực tiếp.');
+        }
+
         $validated = $request->validate([
             'cong_doan' => 'required|in:NHAPKHO,XUATKHO',
             'ma_hh' => 'nullable|string',
@@ -290,6 +305,10 @@ class WarehouseTransactionController extends Controller
 
     public function destroy(WarehouseTransaction $warehouseTransaction)
     {
+        if ($warehouseTransaction->warehouse_document_id) {
+            return redirect()->back()->with('error', 'Giao dịch đã thuộc phiếu kho, không thể xóa trực tiếp.');
+        }
+
         $warehouseTransaction->delete();
         return redirect()->route('admin.warehouse-transactions.index')->with('success', 'Xóa giao dịch kho thành công.');
     }

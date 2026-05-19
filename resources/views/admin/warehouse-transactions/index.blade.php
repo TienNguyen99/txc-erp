@@ -487,6 +487,9 @@
         <div class="card-page">
             <h5 class="fw-bold mb-3" style="color:#1e3a5f"><i class="fa-solid fa-exchange-alt me-2"></i>Giao dịch</h5>
             @include('admin.partials.alert')
+            @if ($errors->any())
+                <div class="alert alert-danger">{{ $errors->first() }}</div>
+            @endif
             <form method="GET" class="row g-2 mb-3">
                 <input type="hidden" name="thang" value="{{ $thang }}">
                 <input type="hidden" name="nam" value="{{ $nam }}">
@@ -507,10 +510,19 @@
                     <button class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-search me-1"></i>Tìm</button>
                 </div>
             </form>
+            <form id="bulkWarehouseDocumentForm" method="POST" action="{{ route('admin.warehouse-documents.from-transactions') }}">
+                @csrf
+            </form>
+            <div class="d-flex gap-2 mb-3">
+                <button type="submit" form="bulkWarehouseDocumentForm" class="btn btn-primary btn-sm" id="btnBulkWarehouseDocument">
+                    <i class="fa-solid fa-file-invoice me-1"></i>Tạo phiếu từ dòng chọn
+                </button>
+            </div>
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle">
                     <thead class="table-dark">
                         <tr>
+                            <th class="no-sort"><input type="checkbox" id="checkAllTransactions"></th>
                             <th>#</th>
                             <th>Ngày</th>
                             <th>Loại</th>
@@ -527,6 +539,11 @@
                     <tbody>
                         @forelse($data as $item)
                             <tr>
+                                <td>
+                                    @if (! $item->warehouse_document_id)
+                                        <input type="checkbox" form="bulkWarehouseDocumentForm" name="transaction_ids[]" value="{{ $item->id }}" class="transaction-check" data-type="{{ $item->cong_doan }}">
+                                    @endif
+                                </td>
                                 <td>{{ $item->id }}</td>
                                 <td>{{ $item->ngay->format('d/m/Y') }}</td>
                                 <td>
@@ -541,6 +558,21 @@
                                 <td>{{ $item->lenh_sx }}</td>
                                 <td>{{ Str::limit($item->note, 30) }}</td>
                                 <td class="text-center">
+                                    @if ($item->warehouseDocument)
+                                        <a href="{{ route('admin.warehouse-documents.print', $item->warehouseDocument) }}"
+                                            target="_blank" class="btn btn-primary btn-xs" title="In phiếu">
+                                            <i class="fa-solid fa-print"></i>
+                                        </a>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.warehouse-documents.from-transactions') }}"
+                                            class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="transaction_ids[]" value="{{ $item->id }}">
+                                            <button class="btn btn-info btn-xs" title="Tạo phiếu kho">
+                                                <i class="fa-solid fa-file-invoice"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="{{ route('admin.warehouse-transactions.edit', $item) }}"
                                         class="btn btn-warning btn-xs"><i class="fa-solid fa-pen"></i></a>
                                     <form method="POST"
@@ -553,7 +585,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-muted text-center">Không có dữ liệu</td>
+                                <td colspan="12" class="text-muted text-center">Không có dữ liệu</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -573,6 +605,25 @@
             if (checked.length === 0) {
                 e.preventDefault();
                 alert('Chọn ít nhất 1 mã hàng để xuất kho.');
+            }
+        });
+
+        document.getElementById('checkAllTransactions')?.addEventListener('change', function() {
+            document.querySelectorAll('.transaction-check').forEach(cb => cb.checked = this.checked);
+        });
+
+        document.getElementById('bulkWarehouseDocumentForm')?.addEventListener('submit', function(e) {
+            const checked = this.querySelectorAll('.transaction-check:checked');
+            if (checked.length === 0) {
+                e.preventDefault();
+                alert('Chọn ít nhất 1 giao dịch kho chưa có phiếu.');
+                return;
+            }
+
+            const types = new Set(Array.from(checked).map(cb => cb.dataset.type));
+            if (types.size > 1) {
+                e.preventDefault();
+                alert('Chỉ tạo phiếu từ các dòng cùng loại NHAPKHO hoặc XUATKHO.');
             }
         });
     </script>

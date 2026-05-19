@@ -5,7 +5,9 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTrackingController;
 use App\Http\Controllers\Admin\ProductionReportController;
+use App\Http\Controllers\Admin\ProductionReceiptController;
 use App\Http\Controllers\Admin\WarehouseTransactionController;
+use App\Http\Controllers\Admin\WarehouseDocumentController;
 use App\Http\Controllers\Admin\CostingController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
@@ -113,15 +115,23 @@ Route::middleware('auth')->group(function () {
           // ── Production Reports ──
           Route::middleware('permission:production.view')->group(function () {
                Route::get('production-reports/export', [ProductionReportController::class, 'export'])->name('production-reports.export')->middleware('permission:production.export');
+               Route::post('production-reports/approve-selected', [ProductionReportController::class, 'approveSelected'])->name('production-reports.approve-selected')->middleware('permission:production.edit');
                Route::post('production-reports/{productionReport}/approve', [ProductionReportController::class, 'approve'])->name('production-reports.approve')->middleware('permission:production.edit');
                Route::post('production-reports/push-warehouse', [ProductionReportController::class, 'pushToWarehouse'])->name('production-reports.push-warehouse')->middleware('permission:production.edit');
-               Route::resource('production-reports', ProductionReportController::class)->parameters(['production-reports' => 'productionReport']);
+               Route::get('production-receipts/{productionReceipt}', [ProductionReceiptController::class, 'show'])->name('production-receipts.show');
+               Route::get('production-receipts/{productionReceipt}/print', [ProductionReceiptController::class, 'print'])->name('production-receipts.print');
+               Route::resource('production-reports', ProductionReportController::class)
+                    ->parameters(['production-reports' => 'productionReport'])
+                    ->except(['show']);
           });
 
           // ── Warehouse Transactions ──
           Route::middleware('permission:warehouse.view')->group(function () {
                Route::get('costing', [CostingController::class, 'index'])->name('costing.index');
                Route::post('costing/overheads', [CostingController::class, 'storeOverhead'])->name('costing.overheads.store')->middleware('permission:warehouse.edit');
+               Route::post('warehouse-documents/from-transactions', [WarehouseDocumentController::class, 'storeFromTransactions'])->name('warehouse-documents.from-transactions')->middleware('permission:warehouse.edit');
+               Route::get('warehouse-documents/{warehouseDocument}', [WarehouseDocumentController::class, 'show'])->name('warehouse-documents.show');
+               Route::get('warehouse-documents/{warehouseDocument}/print', [WarehouseDocumentController::class, 'print'])->name('warehouse-documents.print');
                Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');
                Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
@@ -134,7 +144,9 @@ Route::middleware('auth')->group(function () {
                Route::post('warehouse-transactions/render-labels', [WarehouseTransactionController::class, 'renderLabels'])->name('warehouse-transactions.render-labels')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/lenh-xuat-vat-tu/{lenhSanXuat}', [WarehouseTransactionController::class, 'lenhXuatVatTu'])->name('warehouse-transactions.lenh-xuat-vat-tu');
                Route::post('warehouse-transactions/lenh-xuat-vat-tu', [WarehouseTransactionController::class, 'storeLenhXuatVatTu'])->name('warehouse-transactions.store-lenh-xuat-vat-tu');
-               Route::resource('warehouse-transactions', WarehouseTransactionController::class)->parameters(['warehouse-transactions' => 'warehouseTransaction']);
+               Route::resource('warehouse-transactions', WarehouseTransactionController::class)
+                    ->parameters(['warehouse-transactions' => 'warehouseTransaction'])
+                    ->except(['show']);
           });
 
           // ── Danh mục Hàng hóa & Khách hàng ──

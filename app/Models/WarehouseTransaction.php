@@ -19,6 +19,8 @@ class WarehouseTransaction extends Model
     }
 
     protected $fillable = [
+        'production_receipt_id',
+        'warehouse_document_id',
         'cong_doan', 'ma_hh', 'hang_hoa_id', 'ngay', 'size', 'mau',
         'so_luong', 'price_usd', 'exchange_rate', 'ma_nv', 'lenh_sx', 'note'
     ];
@@ -56,5 +58,15 @@ class WarehouseTransaction extends Model
     public function hangHoa()
     {
         return $this->belongsTo(DanhMucHangHoa::class, 'hang_hoa_id');
+    }
+
+    public function productionReceipt()
+    {
+        return $this->belongsTo(ProductionReceipt::class, 'production_receipt_id');
+    }
+
+    public function warehouseDocument()
+    {
+        return $this->belongsTo(WarehouseDocument::class, 'warehouse_document_id');
     }
 }
