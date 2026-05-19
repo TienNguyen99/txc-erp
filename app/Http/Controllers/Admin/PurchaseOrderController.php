@@ -7,6 +7,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\NhaCungCap;
 use App\Models\DanhMucHangHoa;
+use App\Models\Setting;
 use App\Models\WarehouseTransaction;
 use Illuminate\Http\Request;
 
@@ -81,22 +82,23 @@ class PurchaseOrderController extends Controller
     public function updateStatus(Request $request, PurchaseOrder $purchaseOrder)
     {
         $request->validate(['trang_thai' => 'required|in:draft,sent,confirmed,received,cancelled']);
+        $oldStatus = $purchaseOrder->trang_thai;
         $purchaseOrder->update(['trang_thai' => $request->trang_thai]);
 
-        // Khi nhận hàng: cập nhật tồn kho (nhập kho NVL)
-        if ($request->trang_thai === 'received') {
+        // Khi nhận hàng: cập nhật tồn kho NVL và đơn giá để tính giá vốn.
+        if ($request->trang_thai === 'received' && $oldStatus !== 'received') {
+            $exchangeRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
             $purchaseOrder->update(['ngay_nhan_thuc_te' => now()]);
             foreach ($purchaseOrder->items as $item) {
                 WarehouseTransaction::create([
-                    'loai'       => 'nhap',
-                    'ma_hh'      => $item->ma_hh,
-                    'lenh_sx'    => $purchaseOrder->so_po,
-                    'mau'        => null,
-                    'so_luong'   => $item->so_luong,
-                    'don_vi'     => $item->don_vi ?? 'Yard',
-                    'ngay_gd'    => now()->toDateString(),
-                    'ghi_chu'    => "Nhập NVL theo PO: {$purchaseOrder->so_po}",
-                    'created_by' => auth()->id(),
+                    'cong_doan' => 'NHAPKHO',
+                    'ma_hh' => $item->ma_hh,
+                    'ngay' => now()->toDateString(),
+                    'so_luong' => $item->so_luong,
+                    'price_usd' => $item->don_gia ?? 0,
+                    'exchange_rate' => $exchangeRate,
+                    'lenh_sx' => $purchaseOrder->so_po,
+                    'note' => "Nhập NVL theo PO: {$purchaseOrder->so_po}",
                 ]);
                 $item->update(['da_nhan' => $item->so_luong]);
             }

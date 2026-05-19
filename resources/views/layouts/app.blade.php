@@ -663,6 +663,10 @@
                     class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active' : '' }}">
                     <i class="fa-solid fa-boxes-stacked"></i> Tồn kho
                 </a>
+                <a href="{{ route('admin.costing.index') }}"
+                    class="nav-item-sb {{ request()->routeIs('admin.costing.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-calculator"></i> Giá vốn
+                </a>
             </div>
         @endcan
 

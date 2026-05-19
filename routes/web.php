@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTrackingController;
 use App\Http\Controllers\Admin\ProductionReportController;
 use App\Http\Controllers\Admin\WarehouseTransactionController;
+use App\Http\Controllers\Admin\CostingController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
@@ -116,6 +117,8 @@ Route::middleware('auth')->group(function () {
 
           // ── Warehouse Transactions ──
           Route::middleware('permission:warehouse.view')->group(function () {
+               Route::get('costing', [CostingController::class, 'index'])->name('costing.index');
+               Route::post('costing/overheads', [CostingController::class, 'storeOverhead'])->name('costing.overheads.store')->middleware('permission:warehouse.edit');
                Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');
                Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
