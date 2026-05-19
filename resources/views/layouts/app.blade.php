@@ -610,6 +610,10 @@
                 class="nav-item-sb {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="fa-solid fa-gauge-high"></i> Dashboard
             </a>
+            <a href="{{ route('admin.ai-assistant.index') }}"
+                class="nav-item-sb {{ request()->routeIs('admin.ai-assistant.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Assistant
+            </a>
             @can('orders.view')
                 <a href="{{ route('admin.orders.index') }}"
                     class="nav-item-sb {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">

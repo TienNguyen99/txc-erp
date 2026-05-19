@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'ai_assistant' => [
+        'api_key' => env('AI_ASSISTANT_API_KEY'),
+        'base_url' => env('AI_ASSISTANT_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => env('AI_ASSISTANT_MODEL', 'gpt-4o-mini'),
+        'timeout' => env('AI_ASSISTANT_TIMEOUT', 30),
+    ],
+
 ];

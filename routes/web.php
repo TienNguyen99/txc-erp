@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\NhaCungCapController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\AttachmentController;
+use App\Http\Controllers\Admin\AiAssistantController;
 use App\Http\Controllers\Staff\WarehouseEntryController;
 use App\Http\Controllers\Staff\LenhSanXuatController;
 use App\Http\Controllers\ProfileController;
@@ -45,6 +46,8 @@ Route::middleware('auth')->group(function () {
      // ═══ Admin Panel (admin + manager) ═══
      Route::prefix('admin')->name('admin.')->middleware('role:admin|manager')->group(function () {
           Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+          Route::get('ai-assistant', [AiAssistantController::class, 'index'])->name('ai-assistant.index');
+          Route::post('ai-assistant/ask', [AiAssistantController::class, 'ask'])->name('ai-assistant.ask');
 
           // ── Users: chỉ admin mới quản lý được ──
           Route::middleware('role:admin')->group(function () {
