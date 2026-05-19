@@ -9,6 +9,25 @@ use Illuminate\Http\Request;
 
 class WarehouseDocumentController extends Controller
 {
+    public function index(Request $request)
+    {
+        $documents = WarehouseDocument::with('createdBy')
+            ->withCount('items')
+            ->when($request->type, fn ($query, $type) => $query->where('type', $type))
+            ->when($request->date, fn ($query, $date) => $query->whereDate('document_date', $date))
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('document_no', 'like', "%{$search}%")
+                        ->orWhere('note', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.warehouse-documents.index', compact('documents'));
+    }
+
     public function storeFromTransactions(Request $request, WarehouseDocumentService $documentService)
     {
         $validated = $request->validate([

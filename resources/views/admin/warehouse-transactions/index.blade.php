@@ -58,6 +58,9 @@
                 <a href="{{ route('admin.warehouse-transactions.ton-kho') }}" class="btn btn-info btn-sm text-white">
                     <i class="fa-solid fa-boxes-stacked me-1"></i>Tổng Quan Tồn Kho
                 </a>
+                <a href="{{ route('admin.warehouse-documents.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-file-invoice me-1"></i>Phiếu kho
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-plus me-1"></i>Thêm Giao dịch
                 </a>

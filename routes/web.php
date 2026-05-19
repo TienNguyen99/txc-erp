@@ -129,6 +129,7 @@ Route::middleware('auth')->group(function () {
           Route::middleware('permission:warehouse.view')->group(function () {
                Route::get('costing', [CostingController::class, 'index'])->name('costing.index');
                Route::post('costing/overheads', [CostingController::class, 'storeOverhead'])->name('costing.overheads.store')->middleware('permission:warehouse.edit');
+               Route::get('warehouse-documents', [WarehouseDocumentController::class, 'index'])->name('warehouse-documents.index');
                Route::post('warehouse-documents/from-transactions', [WarehouseDocumentController::class, 'storeFromTransactions'])->name('warehouse-documents.from-transactions')->middleware('permission:warehouse.edit');
                Route::get('warehouse-documents/{warehouseDocument}', [WarehouseDocumentController::class, 'show'])->name('warehouse-documents.show');
                Route::get('warehouse-documents/{warehouseDocument}/print', [WarehouseDocumentController::class, 'print'])->name('warehouse-documents.print');

@@ -663,6 +663,10 @@
                     class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-warehouse"></i> Giao dịch Kho
                 </a>
+                <a href="{{ route('admin.warehouse-documents.index') }}"
+                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-documents.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-invoice"></i> Phiếu kho
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.ton-kho') }}"
                     class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active' : '' }}">
                     <i class="fa-solid fa-boxes-stacked"></i> Tồn kho
