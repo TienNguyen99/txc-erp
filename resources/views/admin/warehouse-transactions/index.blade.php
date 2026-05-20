@@ -58,6 +58,9 @@
                 <a href="{{ route('admin.warehouse-transactions.ton-kho') }}" class="btn btn-info btn-sm text-white">
                     <i class="fa-solid fa-boxes-stacked me-1"></i>Tổng Quan Tồn Kho
                 </a>
+                <a href="{{ route('admin.warehouse-transactions.dashboard') }}" class="btn btn-outline-success btn-sm">
+                    <i class="fa-solid fa-chart-column me-1"></i>Dashboard Kho
+                </a>
                 <a href="{{ route('admin.warehouse-documents.index') }}" class="btn btn-outline-primary btn-sm">
                     <i class="fa-solid fa-file-invoice me-1"></i>Phiếu kho
                 </a>
@@ -371,7 +374,7 @@
 
 
         {{-- ═══ BẢNG TỒN KHO ═══ --}}
-        <div class="card-page mb-4">
+        <div class="card-page mb-4 d-none">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 fw-bold" style="color:#1e3a5f">
                     <i class="fa-solid fa-chart-bar me-2"></i>Tồn Kho — Tháng {{ $thang }}/{{ $nam }}
@@ -393,6 +396,10 @@
                     <input type="number" name="nam" class="form-control form-control-sm"
                         value="{{ $nam }}" style="width:80px">
                     <button class="btn btn-primary btn-sm">Xem</button>
+                    <a href="{{ route('admin.warehouse-transactions.export-dashboard', ['thang' => $thang, 'nam' => $nam]) }}"
+                        class="btn btn-outline-success btn-sm">
+                        <i class="fa-solid fa-file-excel me-1"></i>Export
+                    </a>
                 </form>
             </div>
 

@@ -133,7 +133,9 @@ Route::middleware('auth')->group(function () {
                Route::post('warehouse-documents/from-transactions', [WarehouseDocumentController::class, 'storeFromTransactions'])->name('warehouse-documents.from-transactions')->middleware('permission:warehouse.edit');
                Route::get('warehouse-documents/{warehouseDocument}', [WarehouseDocumentController::class, 'show'])->name('warehouse-documents.show');
                Route::get('warehouse-documents/{warehouseDocument}/print', [WarehouseDocumentController::class, 'print'])->name('warehouse-documents.print');
+               Route::get('warehouse-dashboard', [WarehouseTransactionController::class, 'dashboard'])->name('warehouse-transactions.dashboard');
                Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
+               Route::get('warehouse-transactions/export-dashboard', [WarehouseTransactionController::class, 'exportInventoryDashboard'])->name('warehouse-transactions.export-dashboard')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');
                Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
                Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])->name('warehouse-transactions.xuat-hang-loat')->middleware('permission:warehouse.edit');

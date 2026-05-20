@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\ProductionReport;
 use App\Models\WarehouseTransaction;
 use App\Exports\WarehouseTransactionExport;
+use App\Exports\WarehouseInventoryDashboardExport;
 use App\Exports\WarehouseTransactionTemplateExport;
 use App\Exports\PackingListExport;
 use App\Imports\WarehouseTransactionImport;
@@ -239,6 +240,109 @@ class WarehouseTransactionController extends Controller
             'soanStats',
             'availableTrackings',
             'selectedTracking'
+        ));
+    }
+
+    public function dashboard(Request $request)
+    {
+        $thang = (int) ($request->thang ?? now()->month);
+        $nam = (int) ($request->nam ?? now()->year);
+
+        $startOfMonth = Carbon::create($nam, $thang, 1)->startOfMonth();
+        $makeKey = fn($r) => ($r->ma_hh ?? '') . '|' . ($r->size ?? '') . '|' . ($r->mau ?? '');
+
+        $tonDau = WarehouseTransaction::select(
+            'ma_hh',
+            'size',
+            'mau',
+            DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE -so_luong END) as ton_dau")
+        )
+            ->where('ngay', '<', $startOfMonth)
+            ->groupBy('ma_hh', 'size', 'mau')
+            ->get()->keyBy($makeKey);
+
+        $transactions = WarehouseTransaction::select('ma_hh', 'size', 'mau', 'cong_doan', 'ngay', DB::raw('SUM(so_luong) as so_luong'))
+            ->whereMonth('ngay', $thang)
+            ->whereYear('ngay', $nam)
+            ->groupBy('ma_hh', 'size', 'mau', 'cong_doan', 'ngay')
+            ->get();
+
+        $nhapDates = $transactions->where('cong_doan', 'NHAPKHO')->pluck('ngay')->map->format('Y-m-d')->unique()->sort()->values();
+        $xuatDates = $transactions->where('cong_doan', 'XUATKHO')->pluck('ngay')->map->format('Y-m-d')->unique()->sort()->values();
+
+        $nhapByDay = [];
+        $xuatByDay = [];
+        foreach ($transactions as $t) {
+            $key = $makeKey($t);
+            $day = $t->ngay->format('Y-m-d');
+            if ($t->cong_doan === 'NHAPKHO') {
+                $nhapByDay[$key][$day] = ($nhapByDay[$key][$day] ?? 0) + $t->so_luong;
+            } else {
+                $xuatByDay[$key][$day] = ($xuatByDay[$key][$day] ?? 0) + $t->so_luong;
+            }
+        }
+
+        $canDi = Order::where('status', '!=', 'shipped')
+            ->select('ma_hh', DB::raw('SUM(yrd) as tong_yrd'))
+            ->whereNotNull('ma_hh')
+            ->groupBy('ma_hh')
+            ->pluck('tong_yrd', 'ma_hh');
+
+        $allKeys = collect($tonDau->keys())
+            ->merge(collect(array_keys($nhapByDay)))
+            ->merge(collect(array_keys($xuatByDay)))
+            ->unique()->sort();
+
+        $tonKho = $allKeys->map(function ($key) use ($tonDau, $nhapByDay, $xuatByDay, $nhapDates, $xuatDates, $canDi) {
+            [$maHh, $size, $mau] = explode('|', $key, 3);
+            $tonDauVal = $tonDau[$key]->ton_dau ?? 0;
+
+            $nhapRows = [];
+            $tongNhap = 0;
+            foreach ($nhapDates as $d) {
+                $val = $nhapByDay[$key][$d] ?? 0;
+                $nhapRows[$d] = $val;
+                $tongNhap += $val;
+            }
+
+            $xuatRows = [];
+            $tongXuat = 0;
+            foreach ($xuatDates as $d) {
+                $val = $xuatByDay[$key][$d] ?? 0;
+                $xuatRows[$d] = $val;
+                $tongXuat += $val;
+            }
+
+            $tonCuoi = $tonDauVal + $tongNhap - $tongXuat;
+
+            return [
+                'ma_hh' => $maHh,
+                'size' => $size,
+                'mau' => $mau,
+                'ton_dau' => $tonDauVal,
+                'nhap_days' => $nhapRows,
+                'tong_nhap' => $tongNhap,
+                'xuat_days' => $xuatRows,
+                'tong_xuat' => $tongXuat,
+                'ton_cuoi' => $tonCuoi,
+                'can_di' => $canDi[$maHh] ?? 0,
+            ];
+        })->sortBy(['ma_hh', 'mau'])->values();
+
+        $stats = (object) [
+            'tong_ma' => $tonKho->count(),
+            'tong_ton' => $tonKho->sum('ton_cuoi'),
+            'tong_nhap' => $tonKho->sum('tong_nhap'),
+            'tong_xuat' => $tonKho->sum('tong_xuat'),
+        ];
+
+        return view('admin.warehouse-dashboard.index', compact(
+            'tonKho',
+            'thang',
+            'nam',
+            'nhapDates',
+            'xuatDates',
+            'stats'
         ));
     }
 
@@ -625,6 +729,17 @@ class WarehouseTransactionController extends Controller
     public function export()
     {
         return Excel::download(new WarehouseTransactionExport, 'kho_nhap_xuat_' . now()->format('Ymd') . '.xlsx');
+    }
+
+    public function exportInventoryDashboard(Request $request)
+    {
+        $month = (int) $request->input('thang', now()->month);
+        $year = (int) $request->input('nam', now()->year);
+
+        return Excel::download(
+            new WarehouseInventoryDashboardExport($month, $year),
+            'dashboard_ton_kho_' . str_pad((string) $month, 2, '0', STR_PAD_LEFT) . '_' . $year . '.xlsx'
+        );
     }
 
     public function template()

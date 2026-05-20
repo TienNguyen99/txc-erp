@@ -659,8 +659,12 @@
         @can('warehouse.view')
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Kho</div>
+                <a href="{{ route('admin.warehouse-transactions.dashboard') }}"
+                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
+                    <i class="fa-solid fa-chart-column"></i> Dashboard Kho
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') ? 'active' : '' }}">
+                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') && ! request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
                     <i class="fa-solid fa-warehouse"></i> Giao dịch Kho
                 </a>
                 <a href="{{ route('admin.warehouse-documents.index') }}"
