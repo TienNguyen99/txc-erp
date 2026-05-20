@@ -29,9 +29,16 @@
         }
 
         .staff-nav .brand {
-            font-weight: 700;
-            color: var(--primary-dark);
-            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 180px;
+        }
+
+        .staff-brand-logo {
+            width: 168px;
+            max-height: 52px;
+            object-fit: contain;
         }
 
         .staff-card {
@@ -59,7 +66,9 @@
 <body>
     <nav class="navbar staff-nav mb-3">
         <div class="container">
-            <span class="brand"><i class="fa-solid fa-warehouse me-2"></i>TEXENCO Kho</span>
+            <span class="brand">
+                <img src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco" class="staff-brand-logo">
+            </span>
             <div class="d-flex align-items-center gap-3">
                 <span class="text-muted" style="font-size:.85rem">
                     <i class="fa-solid fa-user me-1"></i>{{ Auth::user()->name ?? 'NV' }}

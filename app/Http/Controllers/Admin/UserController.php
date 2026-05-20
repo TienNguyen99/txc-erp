@@ -12,7 +12,8 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $data = User::when($request->search, fn($q, $s) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
+        $data = User::with('roles')
+                    ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
                     ->latest()->paginate(15)->withQueryString();
         return view('admin.users.index', compact('data'));
     }

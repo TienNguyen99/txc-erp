@@ -39,6 +39,8 @@
                                 <td class="text-center">
                                     @if($item->hasRole('admin'))
                                         <span class="badge" style="background:var(--primary);font-size:.78rem">Admin</span>
+                                    @elseif($item->hasRole('manager'))
+                                        <span class="badge" style="background:#f59e0b;color:#111827;font-size:.78rem">Manager</span>
                                     @elseif($item->hasRole('staff'))
                                         <span class="badge bg-secondary" style="font-size:.78rem">Staff</span>
                                     @else

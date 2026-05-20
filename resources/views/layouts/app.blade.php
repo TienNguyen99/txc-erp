@@ -73,8 +73,9 @@
         .sidebar-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 18px 20px 16px;
+            justify-content: center;
+            padding: 15px 18px 14px;
+            min-height: 74px;
             font-size: 1rem;
             font-weight: 700;
             color: var(--primary);
@@ -84,16 +85,12 @@
             flex-shrink: 0;
         }
 
-        .sidebar-brand .brand-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f7941d, #e07b08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: .85rem;
+        .sidebar-brand-logo {
+            width: 168px;
+            max-height: 54px;
+            object-fit: contain;
+            object-position: center;
+            display: block;
         }
 
         .sidebar-section {
@@ -599,8 +596,7 @@
     <aside id="sidebar">
         {{-- Brand --}}
         <a href="{{ route('admin.dashboard') }}" class="sidebar-brand">
-            <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
-            <span>TEXENCO</span>
+            <img src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco" class="sidebar-brand-logo">
         </a>
 
         {{-- MAIN --}}

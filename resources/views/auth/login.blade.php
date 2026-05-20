@@ -11,7 +11,9 @@
     <style>
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #0f1923 0%, #1a2d42 50%, #0f1923 100%);
+            background:
+                radial-gradient(circle at 50% 0%, rgba(245, 166, 35, .14), transparent 32%),
+                linear-gradient(135deg, #15171a 0%, #24201b 48%, #101113 100%);
             font-family: 'Inter', sans-serif;
         }
 
@@ -31,9 +33,9 @@
 
         /* ---- Portal cards ---- */
         .portal-card {
-            background: rgba(255, 255, 255, .05);
+            background: rgba(255, 248, 236, .055);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, .1);
+            border: 1px solid rgba(245, 166, 35, .16);
             border-radius: 20px;
             padding: 2.5rem 2rem;
             cursor: pointer;
@@ -48,7 +50,7 @@
 
         .portal-card:hover {
             transform: translateY(-6px);
-            border-color: rgba(255, 255, 255, .25);
+            border-color: rgba(245, 166, 35, .45);
         }
 
         .portal-card.admin-portal:hover,
@@ -59,8 +61,8 @@
 
         .portal-card.staff-portal:hover,
         .portal-card.staff-portal.active {
-            border-color: #10b981;
-            box-shadow: 0 8px 32px rgba(16, 185, 129, .2);
+            border-color: #d97706;
+            box-shadow: 0 8px 32px rgba(217, 119, 6, .2);
         }
 
         .portal-icon {
@@ -79,27 +81,38 @@
         }
 
         .portal-icon.staff-icon {
-            background: linear-gradient(135deg, #10b981, #059669);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, .3);
+            background: linear-gradient(135deg, #fbb740, #d97706);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, .3);
+        }
+
+        .brand-logo {
+            max-width: 190px;
+            height: auto;
+            display: inline-block;
+            filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .28));
+        }
+
+        .login-brand-logo {
+            max-width: 170px;
         }
 
         /* ---- Auth form ---- */
         .auth-card {
-            background: rgba(255, 255, 255, .05);
+            background: rgba(255, 248, 236, .055);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, .1);
+            border: 1px solid rgba(245, 166, 35, .16);
         }
 
         .form-control.auth-input {
-            background: rgba(255, 255, 255, .07);
-            border: 1px solid rgba(255, 255, 255, .15);
+            background: rgba(255, 248, 236, .07);
+            border: 1px solid rgba(245, 166, 35, .18);
             color: #fff;
             border-radius: 12px;
             padding: .65rem 1rem .65rem 2.5rem;
         }
 
         .form-control.auth-input:focus {
-            background: rgba(255, 255, 255, .1);
+            background: rgba(255, 248, 236, .1);
             color: #fff;
         }
 
@@ -109,8 +122,8 @@
         }
 
         .form-control.auth-input.staff-focus:focus {
-            border-color: #10b981;
-            box-shadow: 0 0 0 .2rem rgba(16, 185, 129, .2);
+            border-color: #d97706;
+            box-shadow: 0 0 0 .2rem rgba(217, 119, 6, .2);
         }
 
         .form-control.auth-input::placeholder {
@@ -133,7 +146,7 @@
         }
 
         .btn-staff {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #fbb740, #d97706);
             border: none;
             border-radius: 12px;
             font-weight: 600;
@@ -142,9 +155,9 @@
         }
 
         .btn-staff:hover {
-            background: linear-gradient(135deg, #34d399, #10b981);
+            background: linear-gradient(135deg, #ffc766, #f5a623);
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, .35);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, .35);
         }
 
         .form-check-input.admin-check:checked {
@@ -153,8 +166,8 @@
         }
 
         .form-check-input.staff-check:checked {
-            background-color: #10b981;
-            border-color: #10b981;
+            background-color: #d97706;
+            border-color: #d97706;
         }
 
         .link-amber {
@@ -167,23 +180,23 @@
         }
 
         .link-green {
-            color: #10b981;
+            color: #fbb740;
             text-decoration: none;
         }
 
         .link-green:hover {
-            color: #34d399;
+            color: #ffc766;
         }
 
         .btn-back {
-            background: rgba(255, 255, 255, .06);
-            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 248, 236, .06);
+            border: 1px solid rgba(245, 166, 35, .16);
             color: rgba(255, 255, 255, .5);
             border-radius: 10px;
         }
 
         .btn-back:hover {
-            background: rgba(255, 255, 255, .1);
+            background: rgba(255, 248, 236, .1);
             color: #fff;
         }
 
@@ -224,10 +237,7 @@
         {{-- ====== STEP 1: Chọn cổng ====== --}}
         <div id="portal-select">
             <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
-                    style="width:56px;height:56px;background:linear-gradient(135deg,#f5a623,#e08e0b);box-shadow:0 4px 15px rgba(245,166,35,.3);">
-                    <i class="fa-solid fa-gear text-white fs-5"></i>
-                </div>
+                <img src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco" class="brand-logo mb-3">
                 <h4 class="fw-bold text-white mb-1">TXC <span style="color:#f5a623;">ERP</span></h4>
                 <p class="text-white-50 small mb-0">Chọn cổng đăng nhập</p>
             </div>
@@ -265,10 +275,10 @@
 
                 {{-- Logo --}}
                 <div class="text-center mb-4">
-                    <div id="login-icon" class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
-                        style="width:60px;height:60px;">
-                        <i id="login-icon-i" class="text-white fs-4"></i>
-                    </div>
+                    <img src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco"
+                        class="brand-logo login-brand-logo mb-3">
+                    <div id="login-icon" style="display:none;"></div>
+                    <i id="login-icon-i" style="display:none;"></i>
                     <h5 id="login-title" class="fw-bold text-white mb-1"></h5>
                     <p id="login-subtitle" class="text-white-50 small mb-0"></p>
                 </div>
@@ -370,8 +380,8 @@
                 check.classList.remove('staff-check');
                 check.classList.add('admin-check');
             } else {
-                icon.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-                icon.style.boxShadow = '0 4px 15px rgba(16,185,129,.3)';
+                icon.style.background = 'linear-gradient(135deg,#fbb740,#d97706)';
+                icon.style.boxShadow = '0 4px 15px rgba(217,119,6,.3)';
                 iconI.className = 'fa-solid fa-warehouse text-white fs-4';
                 title.innerHTML = 'Nhân viên kho';
                 subtitle.innerHTML = 'Đăng nhập để nhập kho';
