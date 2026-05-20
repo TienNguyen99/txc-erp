@@ -10,7 +10,7 @@
         .copy { min-height: 138mm; page-break-inside: avoid; padding-bottom: 8mm; }
         .copy + .copy { border-top: 1px solid #ddd; padding-top: 8mm; }
         .header { display: grid; grid-template-columns: 180px 1fr 180px; align-items: start; }
-        .logo { font-family: Arial, sans-serif; color: #f7941d; font-size: 34px; font-weight: 800; line-height: 1; text-shadow: 1px 1px #8a4a00; }
+        .logo { width: 165px; height: auto; display: block; }
         h1 { margin: 0; text-align: center; font-size: 30px; }
         .stage { text-align: center; font-size: 23px; font-weight: 700; font-style: italic; margin: 22px 0 8px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -40,7 +40,7 @@
     @for ($copy = 1; $copy <= 2; $copy++)
         <section class="copy">
             <div class="header">
-                <div class="logo">Texenco</div>
+                <img class="logo" src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco">
                 <h1>PHIẾU NHẬP KHO</h1>
                 <div></div>
             </div>
