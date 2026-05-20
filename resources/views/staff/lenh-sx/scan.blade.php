@@ -110,7 +110,7 @@
 <body>
     {{-- Header --}}
     <div class="scan-header text-center">
-        <a href="{{ route('lenh-sx.index', $trackingNumber) }}" class="back-link">
+        <a href="{{ route('lenh-sx.index', $trackingNumber, absolute: false) }}" class="back-link">
             <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
         </a>
         <div style="font-size:.75rem;opacity:.8">LỆNH SẢN XUẤT</div>
@@ -207,7 +207,7 @@
             {{-- TAB: BÁO CÁO SX --}}
             <div class="tab-pane fade show active" id="tabSX" role="tabpanel">
                 <div class="scan-card">
-                    <form method="POST" action="{{ route('lenh-sx.report', [$trackingNumber, $stt]) }}">
+                    <form method="POST" action="{{ route('lenh-sx.report', [$trackingNumber, $stt], absolute: false) }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Công đoạn</label>
@@ -283,7 +283,7 @@
             {{-- TAB: NHẬP KHO --}}
             <div class="tab-pane fade" id="tabNhapKho" role="tabpanel">
                 <div class="scan-card">
-                    <form method="POST" action="{{ route('lenh-sx.nhap-kho', [$trackingNumber, $stt]) }}">
+                    <form method="POST" action="{{ route('lenh-sx.nhap-kho', [$trackingNumber, $stt], absolute: false) }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Mã hàng</label>

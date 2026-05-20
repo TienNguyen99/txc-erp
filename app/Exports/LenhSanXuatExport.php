@@ -82,9 +82,8 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
 
                 // QR CODE
                 $sheet->mergeCells('H1:H2');
-                $appUrl = env('APP_URL', 'http://192.168.1.25:8888');
-                $qrLink = $appUrl . '/lenh-sx/' . $this->trackingNumber;
-                $sheet->setCellValue('H1', '=_xlfn.IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=' . $qrLink . '")');
+                $qrLink = route('lenh-sx.index', $this->trackingNumber);
+                $sheet->setCellValue('H1', '=_xlfn.IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=' . rawurlencode($qrLink) . '")');
                 $sheet->getStyle('H1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // LỆNH SỐ

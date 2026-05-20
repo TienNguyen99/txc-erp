@@ -6,6 +6,7 @@ use App\Support\OpsAlert;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        $appUrl = (string) config('app.url');
+
+        if ($appUrl !== '' && ! str_contains($appUrl, 'localhost')) {
+            URL::forceRootUrl($appUrl);
+
+            if (str_starts_with($appUrl, 'https://')) {
+                URL::forceScheme('https');
+            }
+        }
 
         Queue::failing(function (JobFailed $event) {
             OpsAlert::send(

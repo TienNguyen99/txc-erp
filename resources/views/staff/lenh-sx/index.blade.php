@@ -142,7 +142,7 @@
             </div>
 
             @foreach ($children as $child)
-                <a href="{{ route('lenh-sx.scan', [$trackingNumber, $child->stt]) }}" class="child-card">
+                <a href="{{ route('lenh-sx.scan', [$trackingNumber, $child->stt], absolute: false) }}" class="child-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <div class="lenh-code">

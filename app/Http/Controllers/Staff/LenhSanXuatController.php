@@ -178,7 +178,7 @@ class LenhSanXuatController extends Controller
             'sl_hu' => $request->sl_hu ?? 0,
         ]);
 
-        return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt])
+        return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt], absolute: false)
             ->with('success', "Đã ghi báo cáo SX: SL đạt {$request->sl_dat}" .
                 ($request->sl_hu > 0 ? ", SL hư {$request->sl_hu}" : ''));
     }
@@ -237,7 +237,7 @@ class LenhSanXuatController extends Controller
             }
         }
 
-        return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt])
+        return redirect()->route('lenh-sx.scan', [$trackingNumber, $stt], absolute: false)
             ->with('success', "Đã nhập kho {$request->so_luong} cho mã {$maHh}.");
     }
 }

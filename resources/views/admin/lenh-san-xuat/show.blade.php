@@ -208,8 +208,8 @@
                 <div class="card-body py-2">
                     <i class="fa-solid fa-qrcode text-info me-1"></i>
                     <strong>QR Scan:</strong>
-                    <a href="{{ url('/lenh-sx/' . $lenh->lenh_so) }}" target="_blank" class="text-decoration-none">
-                        {{ url('/lenh-sx/' . $lenh->lenh_so) }}
+                    <a href="{{ route('lenh-sx.index', $lenh->lenh_so) }}" target="_blank" class="text-decoration-none">
+                        {{ route('lenh-sx.index', $lenh->lenh_so) }}
                     </a>
                     <small class="text-muted ms-2">— Công nhân quét QR mã này để báo cáo SX</small>
                 </div>

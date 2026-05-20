@@ -43,10 +43,10 @@ class AuthenticatedSessionController extends Controller
 
         // Staff portal: chỉ staff (hoặc admin cũng được vào)
         if ($portal === 'staff') {
-            return redirect()->intended(route('staff.warehouse.index'));
+            return redirect()->intended(route('staff.warehouse.index', absolute: false));
         }
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended(route('admin.dashboard', absolute: false));
     }
 
     /**
