@@ -2,6 +2,7 @@
 
 ## 1) Admin
 - Dau ngay: mo dashboard, kiem tra thong bao loi va ton kho am.
+- Chay/kiem tra `ops:check-low-stock` neu scheduler chua chay.
 - Don hang: tao/sua order, tao tracking lot, xac nhan trang thai.
 - Cuoi ngay: doi soat so lieu order-tracking-kho, chot cac loi tre.
 
@@ -17,6 +18,7 @@
 
 ## 4) Kho
 - Nhap kho theo lenh/QR ngay trong ca.
+- Khi dung cong Nhan vien, chi nhap so luong thuc te; he thong se tao phieu kho in duoc.
 - Xuat kho theo yeu cau va ghi ro `lenh_sx`.
 - Kiem tra ton kho am cuoi ca, tao bien ban dieu chinh neu can.
 

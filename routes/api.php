@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\OrderApiController;
 use App\Http\Controllers\Api\OrderSyncController;
+use App\Http\Controllers\API\WarehouseDashboardSyncController;
 
 Route::middleware('auth')->group(function () {
     Route::apiResource('orders', OrderApiController::class);
@@ -18,3 +19,5 @@ Route::prefix('orders')->group(function () {
     Route::post('sync', [OrderSyncController::class, 'sync']);
     Route::get('sync/status', [OrderSyncController::class, 'status']);
 });
+
+Route::get('warehouse-dashboard/sync', [WarehouseDashboardSyncController::class, 'show']);

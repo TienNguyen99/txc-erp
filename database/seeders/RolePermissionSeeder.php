@@ -25,9 +25,9 @@ class RolePermissionSeeder extends Seeder
     public static array $modules = [
         'users'      => ['label' => 'Quản lý Users',       'actions' => ['view', 'create', 'edit', 'delete']],
         'orders'     => ['label' => 'Đơn hàng',            'actions' => ['view', 'create', 'edit', 'delete', 'import', 'export']],
-        'tracking'   => ['label' => 'Order Tracking',      'actions' => ['view', 'create', 'edit', 'delete']],
+        'tracking'   => ['label' => 'Order Tracking',      'actions' => ['view', 'create', 'edit', 'delete', 'export']],
         'warehouse'  => ['label' => 'Kho hàng',            'actions' => ['view', 'create', 'edit', 'delete', 'export']],
-        'production' => ['label' => 'Báo cáo Sản xuất',   'actions' => ['view', 'create', 'edit', 'delete']],
+        'production' => ['label' => 'Báo cáo Sản xuất',   'actions' => ['view', 'create', 'edit', 'delete', 'export']],
         'lenh_sx'    => ['label' => 'Lệnh Sản xuất',       'actions' => ['view', 'create', 'edit', 'delete', 'export']],
         'catalog'    => ['label' => 'Danh mục (HH/KH)',    'actions' => ['view', 'create', 'edit', 'delete', 'import', 'export']],
     ];

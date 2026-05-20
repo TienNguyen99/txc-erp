@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\DanhMucHangHoa;
 use App\Models\Order;
 use App\Models\WarehouseTransaction;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -15,12 +16,14 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithStyles, WithEvents
 {
     protected string $trackingNumber;
     protected float $pctHaoHut;
+    protected array $temporaryQrFiles = [];
 
     public function __construct(string $trackingNumber, float $pctHaoHut = 10)
     {
@@ -83,7 +86,7 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                 // QR CODE
                 $sheet->mergeCells('H1:H2');
                 $qrLink = route('lenh-sx.index', $this->trackingNumber);
-                $sheet->setCellValue('H1', '=_xlfn.IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=' . rawurlencode($qrLink) . '")');
+                $this->addQrCodeToSheet($sheet, $qrLink);
                 $sheet->getStyle('H1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // LỆNH SỐ
@@ -137,6 +140,7 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                     $sheet->setCellValue('G' . $row, $tonKho);
                     $sheet->setCellValue('H' . $row, round($item->sl_can_sx, 2));
                     $sheet->setCellValue('I' . $row, $item->dvt ?? 'YRD');
+                    $this->addProductImageToSheet($sheet, $hangHoa, $row);
 
                     $sheet->getStyle('A'.$row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFF00');
                     $sheet->getStyle('E'.$row)->getFont()->setBold(true)->setColor(new Color('FF0000FF'));
@@ -371,5 +375,77 @@ class LenhSanXuatExport implements FromArray, WithTitle, WithColumnWidths, WithS
                 $sheet->getPageSetup()->setFitToWidth(1);
             },
         ];
+    }
+
+    protected function addQrCodeToSheet(Worksheet $sheet, string $qrLink): void
+    {
+        $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' . rawurlencode($qrLink);
+        $context = stream_context_create([
+            'http' => ['timeout' => 5],
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
+        ]);
+        $qrPng = @file_get_contents($qrApiUrl, false, $context);
+
+        if ($qrPng === false || $qrPng === '') {
+            $sheet->setCellValue('H1', $qrLink);
+            $sheet->getStyle('H1')->getAlignment()->setWrapText(true);
+            return;
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'txc_qr_');
+        if ($tempPath === false) {
+            $sheet->setCellValue('H1', $qrLink);
+            $sheet->getStyle('H1')->getAlignment()->setWrapText(true);
+            return;
+        }
+
+        $pngPath = $tempPath . '.png';
+        rename($tempPath, $pngPath);
+        file_put_contents($pngPath, $qrPng);
+        $this->temporaryQrFiles[] = $pngPath;
+
+        register_shutdown_function(function () use ($pngPath) {
+            if (is_file($pngPath)) {
+                @unlink($pngPath);
+            }
+        });
+
+        $sheet->getRowDimension(1)->setRowHeight(38);
+        $sheet->getRowDimension(2)->setRowHeight(38);
+
+        $drawing = new Drawing();
+        $drawing->setName('QR Lenh San Xuat');
+        $drawing->setDescription($qrLink);
+        $drawing->setPath($pngPath);
+        $drawing->setHeight(72);
+        $drawing->setCoordinates('H1');
+        $drawing->setOffsetX(14);
+        $drawing->setOffsetY(2);
+        $drawing->setWorksheet($sheet);
+    }
+
+    protected function addProductImageToSheet(Worksheet $sheet, ?DanhMucHangHoa $hangHoa, int $row): void
+    {
+        if (!$hangHoa?->hinh_anh) {
+            return;
+        }
+
+        $imagePath = Storage::disk('public')->path($hangHoa->hinh_anh);
+        if (!is_file($imagePath)) {
+            $sheet->setCellValue("J{$row}", $hangHoa->hinh_anh);
+            return;
+        }
+
+        $sheet->getRowDimension($row)->setRowHeight(54);
+
+        $drawing = new Drawing();
+        $drawing->setName('Hinh anh ' . $hangHoa->ma_hh);
+        $drawing->setDescription($hangHoa->ten_hh ?? $hangHoa->ma_hh);
+        $drawing->setPath($imagePath);
+        $drawing->setHeight(60);
+        $drawing->setCoordinates("J{$row}");
+        $drawing->setOffsetX(14);
+        $drawing->setOffsetY(4);
+        $drawing->setWorksheet($sheet);
     }
 }

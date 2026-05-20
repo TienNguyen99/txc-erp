@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use App\Support\OpsAlert;
+use App\Models\ErpNotification;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -16,11 +17,19 @@ Schedule::command('activitylog:clean')->daily();
 Schedule::command('ops:backup-db')->dailyAt('01:00');
 Schedule::command('ops:restore-drill')->weeklyOn(0, '02:00');
 Schedule::command('ops:heartbeat')->hourly();
+Schedule::command('ops:check-low-stock')->dailyAt('08:00');
 
 Artisan::command('ops:heartbeat', function () {
     $this->info('ERP heartbeat OK at ' . now()->toDateTimeString());
     OpsAlert::send('Heartbeat', 'ERP scheduled heartbeat is running.');
 })->purpose('Send hourly heartbeat for monitoring');
+
+Artisan::command('ops:check-low-stock', function () {
+    $created = ErpNotification::checkLowStock();
+
+    $this->info("Low stock check completed. Created {$created} notification(s).");
+    return self::SUCCESS;
+})->purpose('Create notifications for items below minimum stock');
 
 Artisan::command('ops:backup-db', function () {
     $driver = config('database.default');

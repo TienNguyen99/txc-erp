@@ -170,12 +170,108 @@ function testConnection() {
   SpreadsheetApp.getUi().alert("Server: " + json.server + "\nOrders: " + json.orders + "\nTime: " + json.time);
 }
 
+function importWarehouseDashboard() {
+  const ui = SpreadsheetApp.getUi();
+  const month = ui.prompt("Nhap thang", String(new Date().getMonth() + 1), ui.ButtonSet.OK_CANCEL);
+  if (month.getSelectedButton() !== ui.Button.OK) return;
+
+  const year = ui.prompt("Nhap nam", String(new Date().getFullYear()), ui.ButtonSet.OK_CANCEL);
+  if (year.getSelectedButton() !== ui.Button.OK) return;
+
+  const url = "{{ url('/api/warehouse-dashboard/sync') }}"
+    + "?thang=" + encodeURIComponent(month.getResponseText())
+    + "&nam=" + encodeURIComponent(year.getResponseText());
+
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: "Bearer " + API_TOKEN },
+    muteHttpExceptions: true,
+  });
+
+  const json = JSON.parse(res.getContentText());
+  if (!json.ok) {
+    ui.alert(json.error || res.getContentText());
+    return;
+  }
+
+  const sheetName = "Dashboard Kho T" + json.month + "-" + json.year;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
+    || SpreadsheetApp.getActiveSpreadsheet().insertSheet(sheetName);
+  sheet.clearContents();
+
+  const values = [
+    [json.title],
+    ["Generated at", json.generated_at],
+    [],
+    json.headers,
+    ...json.rows,
+  ];
+
+  sheet.getRange(1, 1, values.length, json.headers.length).setValues(values);
+  sheet.getRange(1, 1).setFontWeight("bold");
+  sheet.getRange(4, 1, 1, json.headers.length).setFontWeight("bold").setBackground("#d9ead3");
+  sheet.setFrozenRows(4);
+  sheet.autoResizeColumns(1, json.headers.length);
+  ui.alert("Da lay " + json.rows.length + " dong Dashboard Kho.");
+}
+
 // Thêm menu vào Sheet
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("🔄 ERP Sync")
     .addItem("✅ Test kết nối", "testConnection")
     .addItem("📤 Đồng bộ lên ERP", "syncToERP")
+    .addItem("Lay Dashboard Kho", "importWarehouseDashboard")
     .addToUi();
+}</pre>
+        </details>
+        <details class="mt-3">
+            <summary class="fw-semibold" style="font-size:.82rem;cursor:pointer;color:var(--primary)">
+                <i class="fa-solid fa-table me-1"></i>Code Apps Script lay Dashboard Kho sang Google Sheet
+            </summary>
+            <pre style="background:#1e293b;color:#e2e8f0;border-radius:10px;padding:1rem;font-size:.72rem;overflow-x:auto;margin-top:.75rem">const WAREHOUSE_API_TOKEN = "{{ $apiToken }}";
+const ERP_WAREHOUSE_DASHBOARD_URL = "{{ url('/api/warehouse-dashboard/sync') }}";
+
+function importWarehouseDashboard() {
+  const ui = SpreadsheetApp.getUi();
+  const month = ui.prompt("Nhap thang", String(new Date().getMonth() + 1), ui.ButtonSet.OK_CANCEL);
+  if (month.getSelectedButton() !== ui.Button.OK) return;
+
+  const year = ui.prompt("Nhap nam", String(new Date().getFullYear()), ui.ButtonSet.OK_CANCEL);
+  if (year.getSelectedButton() !== ui.Button.OK) return;
+
+  const url = ERP_WAREHOUSE_DASHBOARD_URL
+    + "?thang=" + encodeURIComponent(month.getResponseText())
+    + "&nam=" + encodeURIComponent(year.getResponseText());
+
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: "Bearer " + WAREHOUSE_API_TOKEN },
+    muteHttpExceptions: true,
+  });
+
+  const json = JSON.parse(res.getContentText());
+  if (!json.ok) {
+    ui.alert(json.error || res.getContentText());
+    return;
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = "Dashboard Kho T" + json.month + "-" + json.year;
+  const sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+  sheet.clearContents();
+
+  const values = [
+    [json.title],
+    ["Generated at", json.generated_at],
+    [],
+    json.headers,
+    ...json.rows,
+  ];
+
+  sheet.getRange(1, 1, values.length, json.headers.length).setValues(values);
+  sheet.getRange(1, 1).setFontWeight("bold");
+  sheet.getRange(4, 1, 1, json.headers.length).setFontWeight("bold").setBackground("#d9ead3");
+  sheet.setFrozenRows(4);
+  sheet.autoResizeColumns(1, json.headers.length);
+  ui.alert("Da lay " + json.rows.length + " dong Dashboard Kho.");
 }</pre>
         </details>
         @endif

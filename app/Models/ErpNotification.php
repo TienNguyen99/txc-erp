@@ -33,9 +33,21 @@ class ErpNotification extends Model
     {
         $count = 0;
         $items = DanhMucHangHoa::whereRaw('ton_toi_thieu > 0')->get();
+
+        $maHhList = $items->pluck('ma_hh')->filter()->values();
+        $stockIn = WarehouseTransaction::nhapKho()
+            ->whereIn('ma_hh', $maHhList)
+            ->selectRaw('ma_hh, SUM(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+        $stockOut = WarehouseTransaction::xuatKho()
+            ->whereIn('ma_hh', $maHhList)
+            ->selectRaw('ma_hh, SUM(so_luong) as total')
+            ->groupBy('ma_hh')
+            ->pluck('total', 'ma_hh');
+
         foreach ($items as $hh) {
-            $tonKho = WarehouseTransaction::where('ma_hh', $hh->ma_hh)->nhapKho()->sum('so_luong')
-                    - WarehouseTransaction::where('ma_hh', $hh->ma_hh)->xuatKho()->sum('so_luong');
+            $tonKho = (float) (($stockIn[$hh->ma_hh] ?? 0) - ($stockOut[$hh->ma_hh] ?? 0));
             if ($tonKho < $hh->ton_toi_thieu) {
                 // Tránh tạo duplicate cùng ngày
                 $exists = static::where('title', 'like', "%{$hh->ma_hh}%")

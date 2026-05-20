@@ -2,9 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\WarehouseTransaction;
+use App\Services\WarehouseInventoryDashboardService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -25,7 +24,15 @@ class WarehouseInventoryDashboardExport implements FromArray, ShouldAutoSize, Wi
         private readonly int $month,
         private readonly int $year,
     ) {
-        $this->buildRows();
+        $dashboard = app(WarehouseInventoryDashboardService::class)->build($this->month, $this->year);
+        $this->rows = $dashboard['rows']->map(function (array $row) {
+            $row['ton_dau'] = $row['ton_dau'] ?: null;
+            $row['tong_nhap'] = $row['tong_nhap'] ?: null;
+            $row['tong_xuat'] = $row['tong_xuat'] ?: null;
+            return $row;
+        })->all();
+        $this->nhapDates = $dashboard['nhapDates']->all();
+        $this->xuatDates = $dashboard['xuatDates']->all();
     }
 
     public function title(): string
@@ -133,83 +140,4 @@ class WarehouseInventoryDashboardExport implements FromArray, ShouldAutoSize, Wi
         ];
     }
 
-    private function buildRows(): void
-    {
-        $startOfMonth = Carbon::create($this->year, $this->month, 1)->startOfMonth();
-        $makeKey = fn ($row) => ($row->ma_hh ?? '') . '|' . ($row->size ?? '') . '|' . ($row->mau ?? '');
-
-        $tonDau = WarehouseTransaction::select(
-            'ma_hh',
-            'size',
-            'mau',
-            DB::raw("SUM(CASE WHEN cong_doan='NHAPKHO' THEN so_luong ELSE -so_luong END) as ton_dau")
-        )
-            ->where('ngay', '<', $startOfMonth)
-            ->groupBy('ma_hh', 'size', 'mau')
-            ->get()
-            ->keyBy($makeKey);
-
-        $transactions = WarehouseTransaction::select('ma_hh', 'size', 'mau', 'cong_doan', 'ngay', DB::raw('SUM(so_luong) as so_luong'))
-            ->whereMonth('ngay', $this->month)
-            ->whereYear('ngay', $this->year)
-            ->groupBy('ma_hh', 'size', 'mau', 'cong_doan', 'ngay')
-            ->get();
-
-        $this->nhapDates = $transactions->where('cong_doan', 'NHAPKHO')->pluck('ngay')->map->format('Y-m-d')->unique()->sort()->values()->all();
-        $this->xuatDates = $transactions->where('cong_doan', 'XUATKHO')->pluck('ngay')->map->format('Y-m-d')->unique()->sort()->values()->all();
-
-        $nhapByDay = [];
-        $xuatByDay = [];
-
-        foreach ($transactions as $transaction) {
-            $key = $makeKey($transaction);
-            $day = $transaction->ngay->format('Y-m-d');
-
-            if ($transaction->cong_doan === 'NHAPKHO') {
-                $nhapByDay[$key][$day] = ($nhapByDay[$key][$day] ?? 0) + (float) $transaction->so_luong;
-            } else {
-                $xuatByDay[$key][$day] = ($xuatByDay[$key][$day] ?? 0) + (float) $transaction->so_luong;
-            }
-        }
-
-        $allKeys = collect($tonDau->keys())
-            ->merge(array_keys($nhapByDay))
-            ->merge(array_keys($xuatByDay))
-            ->unique()
-            ->sort()
-            ->values();
-
-        $this->rows = $allKeys->map(function ($key) use ($tonDau, $nhapByDay, $xuatByDay) {
-            [$maHh, $size, $mau] = explode('|', $key, 3);
-            $tonDauVal = (float) ($tonDau[$key]->ton_dau ?? 0);
-
-            $nhapRows = [];
-            $tongNhap = 0;
-            foreach ($this->nhapDates as $date) {
-                $value = $nhapByDay[$key][$date] ?? 0;
-                $nhapRows[$date] = $value ?: null;
-                $tongNhap += $value;
-            }
-
-            $xuatRows = [];
-            $tongXuat = 0;
-            foreach ($this->xuatDates as $date) {
-                $value = $xuatByDay[$key][$date] ?? 0;
-                $xuatRows[$date] = $value ?: null;
-                $tongXuat += $value;
-            }
-
-            return [
-                'ma_hh' => $maHh,
-                'size' => $size,
-                'mau' => $mau,
-                'ton_dau' => $tonDauVal ?: null,
-                'nhap_days' => $nhapRows,
-                'tong_nhap' => $tongNhap ?: null,
-                'xuat_days' => $xuatRows,
-                'tong_xuat' => $tongXuat ?: null,
-                'ton_cuoi' => $tonDauVal + $tongNhap - $tongXuat,
-            ];
-        })->sortBy(['ma_hh', 'mau', 'size'])->values()->all();
-    }
 }

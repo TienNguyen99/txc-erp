@@ -1,130 +1,95 @@
 # TXC ERP
 
-Phần mềm quản lý nội bộ dành cho công ty TXC. Xây dựng bằng Laravel 12.
+He thong ERP noi bo cho xuong may/nhan mac quy mo nho. Xay dung bang Laravel 12, Blade, Tailwind/Vite va MySQL.
 
----
+## Module Chinh
 
-## Tính năng
+- Don hang, tracking lot, lenh san xuat
+- Bao cao san xuat theo QR/lenh con
+- Nhap/xuat kho, phieu kho in duoc
+- Danh muc hang hoa, khach hang, nha cung cap
+- BOM/dinh muc NVL, PO mua hang, gia von
+- Phan quyen theo vai tro, activity log, thong bao
+- Baseline van hanh: backup, restore drill, heartbeat, canh bao ton kho thap
 
-- Quản lý hàng hóa / danh mục sản phẩm
-- Quản lý nhập xuất kho
-- Quản lý công nợ
-- Báo cáo & xuất Excel
-- Phân quyền theo vai trò (Role-based)
-- Lịch sử thao tác (Activity Log)
-
-> Cập nhật danh sách này theo đúng module bạn đã làm thực tế.
-
----
-
-## Tech Stack
-
-| Layer | Công nghệ |
-|---|---|
-| Backend | Laravel 12, PHP 8.2 |
-| Frontend | Blade, Tailwind CSS, Vite |
-| Database | MySQL |
-| Auth & Phân quyền | Laravel Breeze, Spatie Permission |
-| Audit Log | Spatie Activity Log |
-| Export | Maatwebsite Excel |
-
----
-
-## Yêu cầu môi trường
+## Yeu Cau
 
 - PHP >= 8.2
 - Composer
 - Node.js >= 18
 - MySQL >= 8.0
 
----
-
-## Cài đặt
+## Cai Dat Local
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/TienNguyen99/txc-erp.git
-cd txc-erp
-
-# 2. Cài dependencies
 composer install
 npm install
-
-# 3. Tạo file môi trường
 cp .env.example .env
 php artisan key:generate
-
-# 4. Cấu hình database trong .env
-# DB_DATABASE=txc_erp
-# DB_USERNAME=root
-# DB_PASSWORD=...
-
-# 5. Migrate & seed
 php artisan migrate --seed
-
-# 6. Build frontend
 npm run build
-
-# 7. Chạy local
 php artisan serve
 ```
 
-Hoặc dùng lệnh tắt đã cấu hình sẵn:
+Voi XAMPP, cau hinh `.env` thuong dung:
+
+```env
+APP_URL=http://127.0.0.1:8888
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=texenco_erp
+DB_USERNAME=root
+DB_PASSWORD=
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+```
+
+## Tai Khoan Mac Dinh Sau Khi Seed
+
+Tat ca tai khoan co mat khau mac dinh la `password`.
+
+| Vai tro | Email | Cong dang nhap |
+|---|---|---|
+| Admin | admin@txc.vn | Quan tri |
+| Manager | manager@txc.vn | Quan tri |
+| Staff/Kho | staff@txc.vn | Nhan vien |
+
+Doi mat khau ngay sau khi dua len production.
+
+## Lenh Kiem Tra
 
 ```bash
-composer run setup   # cài đặt toàn bộ
-composer run dev     # chạy dev server (Laravel + Vite + Queue + Log)
+php artisan test
+npm run build
+php artisan route:list
+php artisan ops:check-low-stock
+php artisan ops:backup-db
 ```
 
----
+## Van Hanh
 
-## Tài khoản mặc định (sau khi seed)
+- Tai lieu van hanh: `docs/OPERATIONS.md`
+- SOP vai tro: `docs/SOP_ROLES.md`
+- Scheduler production: chay `php artisan schedule:run` moi phut bang cron hoac Windows Task Scheduler.
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@txc.vn | password |
-
-> Đổi mật khẩu ngay sau khi deploy lên production.
-
----
-
-## Cấu trúc thư mục chính
-
-```
-app/
-├── Http/Controllers/   # Xử lý request
-├── Models/             # Eloquent models
-└── ...
-
-resources/views/        # Blade templates
-database/migrations/    # Lịch sử cấu trúc DB
-routes/web.php          # Định nghĩa routes
-```
-
----
-
-## Deploy production
+## Deploy Production
 
 ```bash
 composer install --no-dev --optimize-autoloader
+npm ci
 npm run build
+php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
 
-Đảm bảo file `.env` trên server có `APP_ENV=production` và `APP_DEBUG=false`.
+Dam bao production co:
 
----
-
-## Liên hệ
-
-Dự án nội bộ — mọi thắc mắc liên hệ **Tiến Nguyễn** (dev).
-
----
-
-## Van hanh moi (Ops Baseline)
-
-- Tai lieu van hanh: `docs/OPERATIONS.md`
-- SOP vai tro: `docs/SOP_ROLES.md`
-- Test luong loi: `php artisan test --filter=CoreFlowTest`
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- Backup DB tu dong
+- Queue worker hoac scheduler dang chay
+- Tai khoan admin da doi mat khau
