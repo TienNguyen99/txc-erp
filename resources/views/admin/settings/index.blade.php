@@ -204,7 +204,11 @@ function importWarehouseDashboard() {
     [],
     json.headers,
     ...json.rows,
-  ];
+  ].map(row => {
+    const normalized = Array.isArray(row) ? row : [row];
+    while (normalized.length < json.headers.length) normalized.push("");
+    return normalized.slice(0, json.headers.length);
+  });
 
   sheet.getRange(1, 1, values.length, json.headers.length).setValues(values);
   sheet.getRange(1, 1).setFontWeight("bold");
@@ -264,7 +268,11 @@ function importWarehouseDashboard() {
     [],
     json.headers,
     ...json.rows,
-  ];
+  ].map(row => {
+    const normalized = Array.isArray(row) ? row : [row];
+    while (normalized.length < json.headers.length) normalized.push("");
+    return normalized.slice(0, json.headers.length);
+  });
 
   sheet.getRange(1, 1, values.length, json.headers.length).setValues(values);
   sheet.getRange(1, 1).setFontWeight("bold");
