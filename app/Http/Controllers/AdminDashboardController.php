@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DashboardExecutiveReportExport;
 use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminDashboardController extends Controller
 {
@@ -19,5 +21,20 @@ class AdminDashboardController extends Controller
             'khach_hang_id',
             'nhom_hang',
         ])));
+    }
+
+    public function export(Request $request)
+    {
+        $filters = $request->only([
+            'date_from',
+            'date_to',
+            'khach_hang_id',
+            'nhom_hang',
+        ]);
+
+        return Excel::download(
+            new DashboardExecutiveReportExport($filters),
+            'bao-cao-dieu-hanh-' . now()->format('Ymd-His') . '.xlsx'
+        );
     }
 }

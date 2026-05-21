@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
      // ═══ Admin Panel (admin + manager) ═══
      Route::prefix('admin')->name('admin.')->middleware('role:admin|manager')->group(function () {
           Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+          Route::get('dashboard/export', [AdminDashboardController::class, 'export'])->name('dashboard.export');
           Route::get('ai-assistant', [AiAssistantController::class, 'index'])->name('ai-assistant.index');
           Route::post('ai-assistant/ask', [AiAssistantController::class, 'ask'])->name('ai-assistant.ask');
 

@@ -135,6 +135,21 @@ class DashboardMetricsService
                 'days_left' => $order->sig_need_date ? now()->startOfDay()->diffInDays($order->sig_need_date->startOfDay(), false) : null,
             ]);
 
+        $latePurchaseOrders = PurchaseOrder::with('nhaCungCap')
+            ->whereNotIn('trang_thai', ['received', 'cancelled'])
+            ->whereDate('ngay_giao_du_kien', '<', now()->startOfDay())
+            ->orderBy('ngay_giao_du_kien')
+            ->limit(10)
+            ->get()
+            ->map(fn($po) => [
+                'so_po' => $po->so_po,
+                'supplier' => $po->nhaCungCap?->ten_ncc ?? 'N/A',
+                'ngay_dat' => $po->ngay_dat?->format('d/m/Y') ?? '-',
+                'ngay_giao_du_kien' => $po->ngay_giao_du_kien?->format('d/m/Y') ?? '-',
+                'trang_thai' => $po->trang_thai,
+                'days_late' => $po->ngay_giao_du_kien ? $po->ngay_giao_du_kien->startOfDay()->diffInDays(now()->startOfDay()) : null,
+            ]);
+
         $nearDueProduction = $opsDashboard['otd']['at_risk_lots']
             ->take(10)
             ->map(fn($row) => [
@@ -164,6 +179,7 @@ class DashboardMetricsService
             'material_shortages' => $opsDashboard['action']['bom_material_shortages'],
             'stuck_stages' => $stuckStages,
             'late_po_count' => $opsDashboard['procurement']['late_po_count'],
+            'late_purchase_orders' => $latePurchaseOrders,
             'missing_cost_data' => $opsDashboard['action']['missing_cost_data'],
         ];
     }
