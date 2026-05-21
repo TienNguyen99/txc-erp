@@ -415,8 +415,96 @@
             </form>
         </div>
 
-        {{-- Executive focus: doanh thu khách hàng + lot cần xử lý --}}
+        {{-- Analytics cockpit --}}
+        @php
+            $financeSummary = $opsDashboard['finance']['summary'];
+            $trend = $financeSummary['trend'] ?? [];
+            $trendClass = fn($value) => $value === null ? 'text-muted' : ($value >= 0 ? 'text-success' : 'text-danger');
+            $trendIcon = fn($value) => $value === null ? 'fa-minus' : ($value >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
+            $trendText = fn($value) => $value === null ? 'N/A' : (($value > 0 ? '+' : '') . $value . '%');
+            $topProduct = $opsDashboard['finance']['by_product']->first();
+        @endphp
+        <div class="row g-3 mb-3">
+            <div class="col-xl-3 col-md-6">
+                <div class="card focus-card revenue h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-semibold">Giá trị đơn hàng</div>
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <div class="fs-4 fw-bold">{{ number_format($financeSummary['order_revenue'], 0) }}</div>
+                            <div class="{{ $trendClass($trend['order_revenue_pct'] ?? null) }} fw-bold small">
+                                <i class="fa-solid {{ $trendIcon($trend['order_revenue_pct'] ?? null) }} me-1"></i>{{ $trendText($trend['order_revenue_pct'] ?? null) }}
+                            </div>
+                        </div>
+                        <div class="text-muted mt-1" style="font-size:.72rem">So với kỳ trước cùng độ dài</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card focus-card revenue h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-semibold">Đã HĐ / đã giao</div>
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <div class="fs-4 fw-bold text-success">{{ number_format($financeSummary['invoiced_revenue'], 0) }}</div>
+                            <div class="{{ $trendClass($trend['invoiced_revenue_pct'] ?? null) }} fw-bold small">
+                                <i class="fa-solid {{ $trendIcon($trend['invoiced_revenue_pct'] ?? null) }} me-1"></i>{{ $trendText($trend['invoiced_revenue_pct'] ?? null) }}
+                            </div>
+                        </div>
+                        <div class="text-muted mt-1" style="font-size:.72rem">Tỷ lệ {{ $financeSummary['invoice_rate'] ?? 0 }}%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card focus-card risk h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-semibold">Lot rủi ro giao hàng</div>
+                        <div class="fs-4 fw-bold mt-2">{{ $reportDashboard['lot_risk_summary']['total'] }}</div>
+                        <div class="d-flex gap-2 mt-1 small">
+                            <span class="risk-late">Trễ {{ $reportDashboard['lot_risk_summary']['late'] }}</span>
+                            <span class="risk-due">Hôm nay {{ $reportDashboard['lot_risk_summary']['due_today'] }}</span>
+                            <span class="text-muted">7 ngày {{ $reportDashboard['lot_risk_summary']['next_7_days'] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card focus-card product h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-semibold">Mặt hàng dẫn đầu</div>
+                        <div class="fw-bold mt-2" style="font-size:1.05rem">{{ $topProduct['ma_hh'] ?? 'N/A' }}</div>
+                        <div class="text-primary fw-bold">{{ number_format($topProduct['revenue'] ?? 0, 0) }}</div>
+                        <div class="text-muted" style="font-size:.72rem">{{ $topProduct ? \Illuminate\Support\Str::limit($topProduct['ten_hh'], 38) : 'Không có dữ liệu' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3 mb-4">
+            <div class="col-xl-8">
+                <div class="card focus-card revenue h-100">
+                    <div class="card-body">
+                        <div class="focus-title">Xu hướng doanh thu</div>
+                        <div class="text-muted small mb-3">Giá trị đơn hàng so với đã HĐ/đã giao theo ngày</div>
+                        <div style="position:relative;height:260px;width:100%">
+                            <canvas id="financeRevenueTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="card focus-card product h-100">
+                    <div class="card-body">
+                        <div class="focus-title">Top mặt hàng theo doanh thu</div>
+                        <div class="text-muted small mb-3">Tự đổi theo khách hàng/nhóm hàng đang lọc</div>
+                        <div style="position:relative;height:260px;width:100%">
+                            <canvas id="productRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Executive focus: doanh thu khách hàng + lot cần xử lý --}}
+        <div class="row g-3 mb-4 d-none">
             <div class="col-xl-4">
                 <div class="card focus-card revenue h-100">
                     <div class="card-body">
@@ -1722,6 +1810,82 @@
                 }
             };
             Chart.register(doughnutCenterPlugin);
+
+            const financeCharts = @json($opsDashboard['finance']['charts']);
+            const financeTrendEl = document.getElementById('financeRevenueTrendChart');
+            if (financeTrendEl) {
+                const financeTrendCtx = financeTrendEl.getContext('2d');
+                const financeGrad = financeTrendCtx.createLinearGradient(0, 0, 0, 260);
+                financeGrad.addColorStop(0, 'rgba(16,185,129,.22)');
+                financeGrad.addColorStop(1, 'rgba(16,185,129,0)');
+                new Chart(financeTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: financeCharts.revenue_trend.labels,
+                        datasets: [
+                            {
+                                label: 'Giá trị đơn',
+                                data: financeCharts.revenue_trend.order_revenue,
+                                borderColor: '#f7941d',
+                                backgroundColor: 'rgba(247,148,29,.08)',
+                                borderWidth: 2.5,
+                                tension: .35,
+                                pointRadius: 2,
+                                pointHoverRadius: 5,
+                            },
+                            {
+                                label: 'Đã HĐ/giao',
+                                data: financeCharts.revenue_trend.invoiced_revenue,
+                                borderColor: '#10b981',
+                                backgroundColor: financeGrad,
+                                borderWidth: 2.5,
+                                fill: true,
+                                tension: .35,
+                                pointRadius: 2,
+                                pointHoverRadius: 5,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
+                            tooltip: sharedTooltip,
+                        },
+                        scales: sharedScales,
+                    },
+                });
+            }
+
+            const productRevenueEl = document.getElementById('productRevenueChart');
+            if (productRevenueEl) {
+                const productCtx = productRevenueEl.getContext('2d');
+                new Chart(productCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: financeCharts.product_revenue.labels,
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: financeCharts.product_revenue.data,
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'],
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: .62,
+                        }],
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                        scales: {
+                            x: sharedScales.y,
+                            y: { ...sharedScales.x, ticks: { color: '#475569', font: { size: 10 } } },
+                        },
+                    },
+                });
+            }
 
             // ── Chart 0: Trạng thái Đơn hàng (Doughnut) ────────────────
             const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');

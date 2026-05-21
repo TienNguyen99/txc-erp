@@ -172,6 +172,7 @@ class DashboardMetricsService
                 'days_left' => $row['days_left'],
                 'total_items' => $row['total_items'],
             ]);
+        $lotRiskRows = $opsDashboard['otd']['at_risk_lots'];
 
         $stuckStages = $opsDashboard['wip']['aging']
             ->filter(fn($row) => (int) $row['over_7_days'] > 0)
@@ -180,6 +181,12 @@ class DashboardMetricsService
 
         return [
             'near_due_production' => $nearDueProduction,
+            'lot_risk_summary' => [
+                'late' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] < 0)->count(),
+                'due_today' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] === 0)->count(),
+                'next_7_days' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] > 0 && (int) $row['days_left'] <= 7)->count(),
+                'total' => $lotRiskRows->count(),
+            ],
             'order_status_counts' => [
                 'pending' => (int) ($orderStatusCounts['pending'] ?? 0),
                 'in_production' => (int) ($orderStatusCounts['in_production'] ?? 0),
@@ -767,6 +774,7 @@ class DashboardMetricsService
                 'ma_hh' => $o->ma_hh ?: 'N/A',
                 'ten_hh' => $o->ten_hh ?: ($o->ma_hh ?: 'N/A'),
                 'qty' => $qty,
+                'created_date' => $o->created_at?->format('Y-m-d'),
                 'revenue' => $revenue,
                 'invoiced_revenue' => $invoicedRevenue,
                 'cost' => $cost,
@@ -828,19 +836,106 @@ class DashboardMetricsService
             ->take(10)
             ->values();
 
+        $previousRows = $this->buildFinanceRowsFor($this->previousPeriodFilters($filters));
+        $orderRevenue = (float) $orderMargins->sum('revenue');
+        $invoicedRevenue = (float) $orderMargins->sum('invoiced_revenue');
+        $previousOrderRevenue = (float) $previousRows->sum('revenue');
+        $previousInvoicedRevenue = (float) $previousRows->sum('invoiced_revenue');
+        $dateFrom = Carbon::parse($filters['date_from']);
+        $dateTo = Carbon::parse($filters['date_to']);
+        $trendDates = collect();
+        for ($date = $dateFrom->copy(); $date->lte($dateTo); $date->addDay()) {
+            $trendDates->push($date->format('Y-m-d'));
+        }
+        $rowsByDate = $orderMargins->groupBy('created_date');
+
         return [
             'top_orders' => $topOrders,
             'by_customer' => $byCustomer,
             'by_product' => $byProduct,
+            'charts' => [
+                'revenue_trend' => [
+                    'labels' => $trendDates->map(fn($date) => Carbon::parse($date)->format('d/m'))->all(),
+                    'order_revenue' => $trendDates->map(fn($date) => round((float) ($rowsByDate[$date] ?? collect())->sum('revenue'), 2))->all(),
+                    'invoiced_revenue' => $trendDates->map(fn($date) => round((float) ($rowsByDate[$date] ?? collect())->sum('invoiced_revenue'), 2))->all(),
+                ],
+                'product_revenue' => [
+                    'labels' => $byProduct->take(6)->pluck('ma_hh')->all(),
+                    'data' => $byProduct->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
+                ],
+            ],
             'summary' => [
-                'order_revenue' => $orderMargins->sum('revenue'),
-                'invoiced_revenue' => $orderMargins->sum('invoiced_revenue'),
-                'uninvoiced_revenue' => max(0, $orderMargins->sum('revenue') - $orderMargins->sum('invoiced_revenue')),
-                'invoice_rate' => $orderMargins->sum('revenue') > 0
-                    ? round(($orderMargins->sum('invoiced_revenue') / $orderMargins->sum('revenue')) * 100, 1)
+                'order_revenue' => $orderRevenue,
+                'invoiced_revenue' => $invoicedRevenue,
+                'uninvoiced_revenue' => max(0, $orderRevenue - $invoicedRevenue),
+                'invoice_rate' => $orderRevenue > 0
+                    ? round(($invoicedRevenue / $orderRevenue) * 100, 1)
                     : null,
+                'trend' => [
+                    'order_revenue_pct' => $this->trendPercentage($orderRevenue, $previousOrderRevenue),
+                    'invoiced_revenue_pct' => $this->trendPercentage($invoicedRevenue, $previousInvoicedRevenue),
+                    'previous_order_revenue' => $previousOrderRevenue,
+                    'previous_invoiced_revenue' => $previousInvoicedRevenue,
+                ],
             ],
         ];
+    }
+
+    private function previousPeriodFilters(array $filters): array
+    {
+        $from = Carbon::parse($filters['date_from']);
+        $to = Carbon::parse($filters['date_to']);
+        $days = $from->diffInDays($to) + 1;
+        $previousTo = $from->copy()->subDay();
+        $previousFrom = $previousTo->copy()->subDays($days - 1);
+
+        return array_merge($filters, [
+            'date_from' => $previousFrom->toDateString(),
+            'date_to' => $previousTo->toDateString(),
+        ]);
+    }
+
+    private function trendPercentage(float $current, float $previous): ?float
+    {
+        if ($previous <= 0) {
+            return $current > 0 ? 100.0 : null;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    private function buildFinanceRowsFor(array $filters): Collection
+    {
+        $materialCostMap = \App\Models\DanhMucHangHoa::pluck('gia_nvl', 'ma_hh');
+
+        return $this->orderQuery($filters)
+            ->with(['khachHang', 'tracking'])
+            ->get()
+            ->map(function ($o) use ($materialCostMap) {
+                $qty = (float) ($o->yrd ?? 0);
+                $price = (float) ($o->price_usd ?? $o->price_usd_auto ?? 0);
+                $revenue = $qty * $price;
+                $trackingInvoiceRevenue = $o->tracking
+                    ->whereNotNull('invoice_issued_at')
+                    ->sum(fn($tracking) => (float) ($tracking->sl_don_hang ?? 0) * $price);
+                $invoicedRevenue = $trackingInvoiceRevenue > 0
+                    ? $trackingInvoiceRevenue
+                    : ($o->status === 'shipped' ? $revenue : 0);
+                $cost = $qty * (float) ($materialCostMap[$o->ma_hh] ?? 0);
+
+                return [
+                    'customer_id' => $o->khach_hang_id,
+                    'customer' => $o->khachHang?->ten_kh ?? 'Khách hàng chưa gán',
+                    'ma_hh' => $o->ma_hh ?: 'N/A',
+                    'ten_hh' => $o->ten_hh ?: ($o->ma_hh ?: 'N/A'),
+                    'qty' => $qty,
+                    'created_date' => $o->created_at?->format('Y-m-d'),
+                    'revenue' => $revenue,
+                    'invoiced_revenue' => $invoicedRevenue,
+                    'cost' => $cost,
+                    'margin' => $revenue - $cost,
+                ];
+            });
     }
 
     // Các số KPI chính hiển thị ở card đầu trang.
