@@ -583,6 +583,247 @@
                 transform: translateX(calc(-1 * var(--sidebar-w)));
             }
         }
+
+        /* Garment ERP layout refresh */
+        :root {
+            --primary: #f27a1a;
+            --primary-light: #ffb35c;
+            --primary-dark: #c65d0c;
+            --primary-rgb: 242, 122, 26;
+            --accent: #0f766e;
+            --accent-soft: #e6fffb;
+            --surface: #ffffff;
+            --surface-2: #f8fafc;
+            --bg: #f6f7fb;
+            --text: #172033;
+            --text-muted: #64748b;
+            --border: #e5e7eb;
+            --sidebar-w: 276px;
+            --header-h: 64px;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 10px 30px rgba(15, 23, 42, .06);
+            --shadow-lg: 0 18px 46px rgba(15, 23, 42, .12);
+        }
+
+        body {
+            background:
+                linear-gradient(180deg, rgba(15, 118, 110, .045), rgba(246, 247, 251, 0) 260px),
+                var(--bg);
+        }
+
+        #sidebar {
+            background: var(--surface);
+            border-right: 1px solid rgba(242, 122, 26, .16);
+            box-shadow: 8px 0 28px rgba(194, 86, 12, .08);
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(242, 122, 26, .2);
+        }
+
+        .sidebar-brand {
+            justify-content: center;
+            min-height: 78px;
+            padding: 14px 18px;
+            color: var(--primary-dark);
+            border-bottom: 1px solid rgba(242, 122, 26, .14);
+            background: linear-gradient(180deg, #fff7ed, #ffffff);
+        }
+
+        .sidebar-brand-logo {
+            width: 148px;
+            max-height: 48px;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+        }
+
+        .sidebar-section {
+            padding: 10px 12px 0;
+        }
+
+        .sidebar-section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: .68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .sidebar-section-label::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(242, 122, 26, .12);
+        }
+
+        .sidebar-section-label:hover {
+            background: #fff7ed;
+            color: var(--primary-dark);
+        }
+
+        .sidebar-section-label .fa-chevron-down {
+            margin-left: auto;
+            font-size: .62rem;
+            transition: transform .18s ease;
+        }
+
+        .sidebar-section-label[aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        .nav-item-sb {
+            min-height: 38px;
+            gap: 11px;
+            padding: 7px 10px;
+            border-radius: 10px;
+            color: #475569;
+            font-size: .84rem;
+            margin-bottom: 3px;
+            border: 1px solid transparent;
+        }
+
+        .nav-item-sb i {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: var(--primary);
+            background: rgba(242, 122, 26, .09);
+            font-size: .82rem;
+        }
+
+        .nav-item-sb:hover {
+            background: #fff7ed;
+            color: var(--primary-dark);
+            border-color: rgba(242, 122, 26, .16);
+        }
+
+        .nav-item-sb:hover i {
+            color: #fff;
+            background: var(--primary);
+        }
+
+        .nav-item-sb.active {
+            background: linear-gradient(135deg, #fff0db, #fffaf4);
+            color: var(--primary-dark);
+            border-color: rgba(242, 122, 26, .25);
+            box-shadow: inset 4px 0 0 var(--primary), 0 8px 20px rgba(242, 122, 26, .1);
+        }
+
+        .nav-item-sb.active i {
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        }
+
+        .nav-text {
+            display: block;
+            min-width: 0;
+        }
+
+        .nav-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid rgba(242, 122, 26, .14);
+            background: #fffaf4;
+        }
+
+        #topbar {
+            height: var(--header-h);
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(226, 232, 240, .85);
+            padding: 0 28px;
+        }
+
+        .topbar-toggle,
+        .topbar-btn {
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .topbar-title {
+            font-size: .95rem;
+        }
+
+        .topbar-context {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+
+        .topbar-context small {
+            color: var(--text-muted);
+            font-size: .72rem;
+            font-weight: 500;
+        }
+
+        .topbar-avatar {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+
+        .page-content {
+            padding: 28px;
+        }
+
+        .card-page {
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226, 232, 240, .9);
+        }
+
+        .table thead th,
+        .table thead.table-dark th {
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+        }
+
+        .btn {
+            letter-spacing: 0;
+        }
+
+        .sidebar-logout {
+            color: #dc2626 !important;
+        }
+
+        .sidebar-logout:hover {
+            background: rgba(239, 68, 68, .08) !important;
+            color: #b91c1c !important;
+        }
+
+        @media (max-width: 991px) {
+            :root {
+                --sidebar-w: 286px;
+                --header-h: 58px;
+            }
+
+            #topbar {
+                padding: 0 14px;
+            }
+
+            .page-content {
+                padding: 16px;
+            }
+        }
     </style>
     @yield('css')
 </head>
@@ -601,130 +842,164 @@
 
         {{-- MAIN --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-label">Main</div>
-            <a href="{{ route('admin.dashboard') }}"
-                class="nav-item-sb {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <i class="fa-solid fa-gauge-high"></i> Dashboard
-            </a>
-            <a href="{{ route('admin.ai-assistant.index') }}"
-                class="nav-item-sb {{ request()->routeIs('admin.ai-assistant.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Assistant
-            </a>
-            @can('orders.view')
-                <a href="{{ route('admin.orders.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-file-invoice"></i> Đơn hàng
+            <button class="sidebar-section-label" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMain"
+                aria-expanded="{{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.ai-assistant.*') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'true' : 'false' }}">
+                Điều hành <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div id="sidebarMain"
+                class="collapse {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.ai-assistant.*') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'show' : '' }}">
+                <a href="{{ route('admin.dashboard') }}"
+                    class="nav-item-sb {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <i class="fa-solid fa-gauge-high"></i><span class="nav-label">Tổng quan</span>
                 </a>
-            @endcan
-            @can('tracking.view')
-                <a href="{{ route('admin.order-tracking.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.order-tracking.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-truck-fast"></i> Order Tracking
+                <a href="{{ route('admin.ai-assistant.index') }}"
+                    class="nav-item-sb {{ request()->routeIs('admin.ai-assistant.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span class="nav-label">AI Assistant</span>
                 </a>
-            @endcan
+                @can('orders.view')
+                    <a href="{{ route('admin.orders.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-file-invoice"></i><span class="nav-label">Đơn hàng</span>
+                    </a>
+                @endcan
+                @can('tracking.view')
+                    <a href="{{ route('admin.order-tracking.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.order-tracking.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-truck-fast"></i><span class="nav-label">Theo dõi đơn</span>
+                    </a>
+                @endcan
+            </div>
         </div>
 
         {{-- SẢN XUẤT --}}
-        @can('lenh_sx.view')
+        @if (auth()->user()?->can('lenh_sx.view') || auth()->user()?->can('production.view'))
             <div class="sidebar-section">
-                <div class="sidebar-section-label">Sản Xuất</div>
-                <a href="{{ route('admin.lenh-san-xuat.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.lenh-san-xuat.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-clipboard-list"></i> Lệnh Sản Xuất
-                </a>
-                <a href="{{ route('admin.quy-trinh-san-xuat.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.quy-trinh-san-xuat.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-diagram-project"></i> Quy trình SX
-                </a>
-                <a href="{{ route('admin.dinh-muc-nvl.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.dinh-muc-nvl.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-list-ol"></i> BOM / Định mức
-                </a>
+                <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sidebarProduction"
+                    aria-expanded="{{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-reports.*') ? 'true' : 'false' }}">
+                    Sản xuất <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="sidebarProduction"
+                    class="collapse {{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-reports.*') ? 'show' : '' }}">
+                    @can('lenh_sx.view')
+                        <a href="{{ route('admin.lenh-san-xuat.index') }}"
+                            class="nav-item-sb {{ request()->routeIs('admin.lenh-san-xuat.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-clipboard-list"></i><span class="nav-label">Lệnh sản xuất</span>
+                        </a>
+                        <a href="{{ route('admin.quy-trinh-san-xuat.index') }}"
+                            class="nav-item-sb {{ request()->routeIs('admin.quy-trinh-san-xuat.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-diagram-project"></i><span class="nav-label">Quy trình SX</span>
+                        </a>
+                        <a href="{{ route('admin.dinh-muc-nvl.index') }}"
+                            class="nav-item-sb {{ request()->routeIs('admin.dinh-muc-nvl.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-list-ol"></i><span class="nav-label">BOM / Định mức</span>
+                        </a>
+                    @endcan
+                    @can('production.view')
+                        <a href="{{ route('admin.production-reports.index') }}"
+                            class="nav-item-sb {{ request()->routeIs('admin.production-reports.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-industry"></i><span class="nav-label">Báo cáo SX</span>
+                        </a>
+                    @endcan
+                </div>
             </div>
-        @endcan
-        @can('production.view')
-            <div class="sidebar-section" style="padding-top:0">
-                <a href="{{ route('admin.production-reports.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.production-reports.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-industry"></i> Báo cáo SX
-                </a>
-            </div>
-        @endcan
+        @endif
 
         {{-- KHO --}}
         @can('warehouse.view')
             <div class="sidebar-section">
-                <div class="sidebar-section-label">Kho</div>
-                <a href="{{ route('admin.warehouse-transactions.dashboard') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
-                    <i class="fa-solid fa-chart-column"></i> Dashboard Kho
-                </a>
-                <a href="{{ route('admin.warehouse-transactions.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') && ! request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
-                    <i class="fa-solid fa-warehouse"></i> Giao dịch Kho
-                </a>
-                <a href="{{ route('admin.warehouse-documents.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-documents.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-file-invoice"></i> Phiếu kho
-                </a>
-                <a href="{{ route('admin.warehouse-transactions.ton-kho') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active' : '' }}">
-                    <i class="fa-solid fa-boxes-stacked"></i> Tồn kho
-                </a>
-                <a href="{{ route('admin.costing.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.costing.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-calculator"></i> Giá vốn
-                </a>
+                <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sidebarWarehouse"
+                    aria-expanded="{{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') ? 'true' : 'false' }}">
+                    Kho <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="sidebarWarehouse"
+                    class="collapse {{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') ? 'show' : '' }}">
+                    <a href="{{ route('admin.warehouse-transactions.dashboard') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
+                        <i class="fa-solid fa-chart-column"></i><span class="nav-label">Dashboard kho</span>
+                    </a>
+                    <a href="{{ route('admin.warehouse-transactions.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') && ! request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
+                        <i class="fa-solid fa-warehouse"></i><span class="nav-label">Giao dịch kho</span>
+                    </a>
+                    <a href="{{ route('admin.warehouse-documents.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-documents.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-file-invoice"></i><span class="nav-label">Phiếu kho</span>
+                    </a>
+                    <a href="{{ route('admin.warehouse-transactions.ton-kho') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.ton-kho') ? 'active' : '' }}">
+                        <i class="fa-solid fa-boxes-stacked"></i><span class="nav-label">Tồn kho</span>
+                    </a>
+                    <a href="{{ route('admin.costing.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.costing.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-calculator"></i><span class="nav-label">Giá vốn</span>
+                    </a>
+                </div>
             </div>
         @endcan
 
         {{-- DANH MỤC --}}
         @can('catalog.view')
             <div class="sidebar-section">
-                <div class="sidebar-section-label">Danh mục</div>
-                <a href="{{ route('admin.hang-hoa.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.hang-hoa.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-box-open"></i> Hàng hóa
-                </a>
-                <a href="{{ route('admin.khach-hang.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.khach-hang.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-building"></i> Khách hàng
-                </a>
-                <a href="{{ route('admin.nha-cung-cap.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.nha-cung-cap.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-truck"></i> Nhà cung cấp
-                </a>
-                <a href="{{ route('admin.purchase-orders.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.purchase-orders.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-cart-shopping"></i> Đặt hàng NVL
-                </a>
+                <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sidebarCatalog"
+                    aria-expanded="{{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'true' : 'false' }}">
+                    Danh mục <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="sidebarCatalog"
+                    class="collapse {{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'show' : '' }}">
+                    <a href="{{ route('admin.hang-hoa.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.hang-hoa.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-box-open"></i><span class="nav-label">Hàng hóa</span>
+                    </a>
+                    <a href="{{ route('admin.khach-hang.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.khach-hang.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-building"></i><span class="nav-label">Khách hàng</span>
+                    </a>
+                    <a href="{{ route('admin.nha-cung-cap.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.nha-cung-cap.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-truck"></i><span class="nav-label">Nhà cung cấp</span>
+                    </a>
+                    <a href="{{ route('admin.purchase-orders.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.purchase-orders.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-cart-shopping"></i><span class="nav-label">Đặt hàng NVL</span>
+                    </a>
+                </div>
             </div>
         @endcan
 
         {{-- HỆ THỐNG --}}
         @role('admin')
             <div class="sidebar-section">
-                <div class="sidebar-section-label">Hệ thống</div>
-                <a href="{{ route('admin.users.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-users"></i> Người dùng
-                </a>
-                <a href="{{ route('admin.notifications.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-bell"></i> Thông báo
-                    @php $unread = \App\Models\ErpNotification::unread()->count(); @endphp
-                    @if ($unread > 0)
-                        <span class="badge bg-danger ms-auto" style="font-size:.6rem">{{ $unread }}</span>
-                    @endif
-                </a>
-                <a href="{{ route('admin.settings.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-gears"></i> Cài đặt
-                </a>
-                <a href="{{ route('admin.activity-logs.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-list-check"></i> Nhật ký
-                </a>
+                <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sidebarSystem"
+                    aria-expanded="{{ request()->routeIs('admin.users.*') || request()->routeIs('admin.notifications.*') || request()->routeIs('admin.settings.*') || request()->routeIs('admin.activity-logs.*') ? 'true' : 'false' }}">
+                    Hệ thống <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="sidebarSystem"
+                    class="collapse {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.notifications.*') || request()->routeIs('admin.settings.*') || request()->routeIs('admin.activity-logs.*') ? 'show' : '' }}">
+                    <a href="{{ route('admin.users.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-users"></i><span class="nav-label">Người dùng</span>
+                    </a>
+                    <a href="{{ route('admin.notifications.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-bell"></i><span class="nav-label">Thông báo</span>
+                        @php $unread = \App\Models\ErpNotification::unread()->count(); @endphp
+                        @if ($unread > 0)
+                            <span class="badge bg-danger ms-auto" style="font-size:.6rem">{{ $unread }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('admin.settings.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-gears"></i><span class="nav-label">Cài đặt</span>
+                    </a>
+                    <a href="{{ route('admin.activity-logs.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-list-check"></i><span class="nav-label">Nhật ký</span>
+                    </a>
+                </div>
             </div>
         @endrole
 
@@ -732,9 +1007,10 @@
         <div class="sidebar-footer">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="nav-item-sb w-100 text-start border-0"
-                    style="background:none;color:#ef4444;cursor:pointer">
-                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                <button type="submit" class="nav-item-sb sidebar-logout w-100 text-start border-0"
+                    style="background:none;cursor:pointer">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="nav-label">Đăng xuất</span>
                 </button>
             </form>
         </div>

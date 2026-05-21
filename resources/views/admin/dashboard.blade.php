@@ -265,14 +265,268 @@
                 <h4 class="page-title mb-1">
                     <i class="fa-solid fa-gauge-high me-2"></i>Dashboard
                 </h4>
-                <p class="text-muted mb-0" style="font-size:.85rem">Tổng quan hệ thống quản lý</p>
+                <p class="text-muted mb-0" style="font-size:.85rem">
+                    Vận hành từ {{ \Carbon\Carbon::parse($filters['date_from'])->format('d/m/Y') }}
+                    đến {{ \Carbon\Carbon::parse($filters['date_to'])->format('d/m/Y') }}
+                </p>
             </div>
             <span class="badge" style="background:#f1f5f9;color:var(--text);font-size:.8rem;padding:.5em 1em;">
                 <i class="fa-regular fa-calendar me-1"></i>{{ now()->format('d/m/Y H:i') }}
             </span>
         </div>
 
+        <div class="card-page mb-4">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm"
+                        value="{{ $filters['date_from'] }}">
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm"
+                        value="{{ $filters['date_to'] }}">
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label">Khách hàng</label>
+                    <select name="khach_hang_id" id="dashboardKhachHang" class="form-select form-select-sm">
+                        <option value="">Tất cả khách hàng</option>
+                        @foreach ($khachHangOptions as $id => $ten)
+                            <option value="{{ $id }}" {{ (string) $filters['khach_hang_id'] === (string) $id ? 'selected' : '' }}>
+                                {{ $ten }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label">Nhóm hàng</label>
+                    <select name="nhom_hang" id="dashboardNhomHang" class="form-select form-select-sm"
+                        data-selected="{{ $filters['nhom_hang'] }}">
+                        <option value="">Tất cả nhóm hàng</option>
+                        @foreach ($nhomHangOptions as $nhom)
+                            <option value="{{ $nhom['ma_nhom'] }}" {{ $filters['nhom_hang'] === $nhom['ma_nhom'] ? 'selected' : '' }}>
+                                {{ $nhom['label'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-filter me-1"></i>Lọc
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+
         <div id="production-tracking-top"></div>
+
+        {{-- Báo cáo cần xử lý --}}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:12px">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-2" style="color:#f7941d"></i>Báo cáo cần xử lý
+                </h6>
+                <span class="badge" style="background:#fff7ed;color:#c55f00">Gần hạn • Giao hàng • NVL • WIP</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa">
+                            <div class="text-muted small">Lệnh gần hạn / trễ chưa xong</div>
+                            <div class="fs-4 fw-bold">{{ $reportDashboard['near_due_production']->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#ecfdf5;border:1px solid #a7f3d0">
+                            <div class="text-muted small">Đơn đã giao</div>
+                            <div class="fs-4 fw-bold">{{ $reportDashboard['order_status_counts']['shipped'] }}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#eff6ff;border:1px solid #bfdbfe">
+                            <div class="text-muted small">Đơn chưa giao</div>
+                            <div class="fs-4 fw-bold">
+                                {{ $reportDashboard['order_status_counts']['pending'] + $reportDashboard['order_status_counts']['in_production'] + $reportDashboard['order_status_counts']['done'] }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="p-3 rounded-3" style="background:#fef2f2;border:1px solid #fecaca">
+                            <div class="text-muted small">Mã thiếu NVL</div>
+                            <div class="fs-4 fw-bold">{{ $reportDashboard['material_shortages']->count() }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#fff7ed;border:1px solid #fed7aa !important">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">1. Lệnh gần đến ngày nhưng chưa xong</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Lệnh/Lot</th>
+                                                <th>Khách</th>
+                                                <th>Công đoạn kẹt</th>
+                                                <th class="text-end">Hạn</th>
+                                                <th class="text-end">Còn</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($reportDashboard['near_due_production'] as $r)
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                            {{ $r['tracking_number'] }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td><span class="badge bg-warning text-dark">{{ $r['stage'] }}</span></td>
+                                                    <td class="text-end">{{ $r['due_date'] }}</td>
+                                                    <td class="text-end fw-bold {{ $r['days_left'] < 0 ? 'text-danger' : ($r['days_left'] === 0 ? 'text-warning' : '') }}">
+                                                        {{ $r['days_left'] }} ngày
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="5" class="text-muted">Không có lệnh gần hạn hoặc trễ trong 7 ngày.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc;border:1px solid #e2e8f0 !important">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">2. Đơn hàng chưa giao</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Job No</th>
+                                                <th>Khách</th>
+                                                <th>Mã HH</th>
+                                                <th class="text-end">Hạn</th>
+                                                <th class="text-end">Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($reportDashboard['undelivered_orders'] as $r)
+                                                <tr>
+                                                    <td class="fw-semibold">{{ $r['job_no'] }}</td>
+                                                    <td>{{ $r['customer'] }}</td>
+                                                    <td>{{ $r['ma_hh'] }}</td>
+                                                    <td class="text-end">{{ $r['due_date'] }}</td>
+                                                    <td class="text-end"><span class="badge bg-secondary">{{ $r['status'] }}</span></td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="5" class="text-muted">Không có đơn chưa giao trong phạm vi lọc.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#fef2f2;border:1px solid #fecaca !important">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">3. Thiếu nguyên vật liệu</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>NVL</th>
+                                                <th class="text-end">Cần</th>
+                                                <th class="text-end">Tồn</th>
+                                                <th class="text-end">Thiếu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($reportDashboard['material_shortages'] as $r)
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-semibold">{{ $r['ma_hh'] }}</div>
+                                                        <div class="text-muted" style="font-size:.7rem">{{ $r['ten_hh'] }}</div>
+                                                    </td>
+                                                    <td class="text-end">{{ number_format($r['required'], 0) }}</td>
+                                                    <td class="text-end">{{ number_format($r['on_hand'], 0) }}</td>
+                                                    <td class="text-end fw-bold text-danger">{{ number_format($r['shortage'], 0) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Không thiếu NVL theo kế hoạch hiện tại.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="card border-0 h-100" style="background:#f8fafc;border:1px solid #e2e8f0 !important">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">4. Cảnh báo thêm</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <div class="p-3 rounded-3 bg-white border h-100">
+                                            <div class="text-muted small">Công đoạn kẹt &gt; 7 ngày</div>
+                                            <div class="fs-5 fw-bold">{{ $reportDashboard['stuck_stages']->sum('over_7_days') }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 rounded-3 bg-white border h-100">
+                                            <div class="text-muted small">PO/NVL trễ</div>
+                                            <div class="fs-5 fw-bold">{{ $reportDashboard['late_po_count'] }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 rounded-3 bg-white border h-100">
+                                            <div class="text-muted small">Thiếu BOM/giá vốn</div>
+                                            <div class="fs-5 fw-bold">{{ $reportDashboard['missing_cost_data']->count() }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Công đoạn</th>
+                                                <th class="text-end">WIP</th>
+                                                <th class="text-end">Tuổi TB</th>
+                                                <th class="text-end">&gt; 7 ngày</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($reportDashboard['stuck_stages'] as $r)
+                                                <tr>
+                                                    <td>{{ $r['stage'] }}</td>
+                                                    <td class="text-end">{{ $r['count'] }}</td>
+                                                    <td class="text-end">{{ $r['avg_days'] }}</td>
+                                                    <td class="text-end fw-bold text-danger">{{ $r['over_7_days'] }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="text-muted">Không có công đoạn kẹt quá 7 ngày.</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- Operations Dashboard (vận hành thật) --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius:12px">
@@ -304,7 +558,7 @@
                     </div>
                     <div class="col-xl-3 col-md-6">
                         <div class="p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ddd6fe">
-                            <div class="text-muted small">Tỷ lệ lỗi 30 ngày</div>
+                            <div class="text-muted small">Tỷ lệ lỗi</div>
                             <div class="fs-4 fw-bold">{{ $opsDashboard['quality']['defect_rate_30d'] }}%</div>
                         </div>
                     </div>
@@ -1101,6 +1355,39 @@
             if (productionTrackingTop && productionTrackingCard) {
                 productionTrackingTop.replaceWith(productionTrackingCard);
             }
+
+            const nhomHangByKhachHang = @json($nhomHangByKhachHang);
+            const allNhomHangOptions = @json($nhomHangOptions);
+            const khachHangSelect = document.getElementById('dashboardKhachHang');
+            const nhomHangSelect = document.getElementById('dashboardNhomHang');
+
+            function renderNhomHangOptions() {
+                if (!khachHangSelect || !nhomHangSelect) return;
+
+                const selectedCustomer = khachHangSelect.value;
+                const selectedNhom = nhomHangSelect.dataset.selected || nhomHangSelect.value;
+                const items = selectedCustomer ? (nhomHangByKhachHang[selectedCustomer] || []) : allNhomHangOptions;
+
+                nhomHangSelect.innerHTML = '<option value="">Tất cả nhóm hàng</option>';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.ma_nhom;
+                    option.textContent = item.label;
+                    option.selected = item.ma_nhom === selectedNhom;
+                    nhomHangSelect.appendChild(option);
+                });
+
+                if (selectedNhom && !items.some(item => item.ma_nhom === selectedNhom)) {
+                    nhomHangSelect.value = '';
+                    nhomHangSelect.dataset.selected = '';
+                }
+            }
+
+            khachHangSelect?.addEventListener('change', function () {
+                nhomHangSelect.dataset.selected = '';
+                renderNhomHangOptions();
+            });
+            renderNhomHangOptions();
 
             // ── Shared config ──────────────────────────────────────────
             const ORANGE      = '#f7941d';
