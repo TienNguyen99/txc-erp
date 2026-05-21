@@ -118,22 +118,34 @@ class DashboardMetricsService
                 'due_date' => $order->sig_need_date?->format('d/m/Y') ?? '-',
             ]);
 
-        $undeliveredOrders = $this->orderQuery($filters)
-            ->with('khachHang')
-            ->where('status', '!=', 'shipped')
-            ->orderByRaw('sig_need_date is null, sig_need_date asc')
-            ->limit(10)
+        $allUndeliveredLots = $this->trackingQuery($filters)
+            ->with('order.khachHang')
+            ->whereNotIn('cong_doan', OrderTracking::deliveredStages())
+            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped'))
             ->get()
-            ->map(fn($order) => [
-                'job_no' => $order->job_no,
-                'fty_po' => $order->fty_po,
-                'customer' => $order->khachHang?->ten_kh ?? 'N/A',
-                'ma_hh' => $order->ma_hh,
-                'status' => $order->status,
-                'qty' => (float) ($order->yrd ?? 0),
-                'due_date' => $order->sig_need_date?->format('d/m/Y') ?? '-',
-                'days_left' => $order->sig_need_date ? now()->startOfDay()->diffInDays($order->sig_need_date->startOfDay(), false) : null,
-            ]);
+            ->groupBy(fn($tracking) => $tracking->tracking_number ?: 'NO_LOT_' . $tracking->id)
+            ->map(function (Collection $rows, string $trackingNumber) {
+                $dueDates = $rows->pluck('order.sig_need_date')->filter();
+                $dueDate = $dueDates->sort()->first();
+                $customer = $rows->pluck('order.khachHang.ten_kh')->filter()->unique()->take(2)->implode(', ') ?: 'N/A';
+                $stages = $rows->pluck('cong_doan')->filter()->unique()->take(3)->implode(', ') ?: 'Chờ sản xuất';
+
+                return [
+                    'tracking_number' => str_starts_with($trackingNumber, 'NO_LOT_') ? '-' : $trackingNumber,
+                    'customer' => $customer,
+                    'total_items' => $rows->count(),
+                    'total_qty' => $rows->sum(fn($tracking) => (float) ($tracking->sl_don_hang ?? 0)),
+                    'stage' => $stages,
+                    'due_date' => $dueDate ? $dueDate->format('d/m/Y') : '-',
+                    'days_left' => $dueDate ? now()->startOfDay()->diffInDays($dueDate->copy()->startOfDay(), false) : null,
+                ];
+            })
+            ->sortBy(fn($row) => $row['days_left'] ?? 999999)
+            ->values();
+
+        $undeliveredLots = $allUndeliveredLots
+            ->take(10)
+            ->values();
 
         $latePurchaseOrders = PurchaseOrder::with('nhaCungCap')
             ->whereNotIn('trang_thai', ['received', 'cancelled'])
@@ -175,7 +187,8 @@ class DashboardMetricsService
                 'shipped' => (int) ($orderStatusCounts['shipped'] ?? 0),
             ],
             'delivered_orders' => $deliveredOrders,
-            'undelivered_orders' => $undeliveredOrders,
+            'undelivered_lot_count' => $allUndeliveredLots->count(),
+            'undelivered_lots' => $undeliveredLots,
             'material_shortages' => $opsDashboard['action']['bom_material_shortages'],
             'stuck_stages' => $stuckStages,
             'late_po_count' => $opsDashboard['procurement']['late_po_count'],
@@ -198,6 +211,21 @@ class DashboardMetricsService
         return OrderTracking::query()
             ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when(($filters['khach_hang_id'] ?? null) || ($filters['nhom_hang'] ?? null), function ($q) use ($filters) {
+                $q->whereHas('order', function ($orderQ) use ($filters) {
+                    $orderQ
+                        ->when($filters['khach_hang_id'] ?? null, fn($sub, $id) => $sub->where('khach_hang_id', $id))
+                        ->when($filters['nhom_hang'] ?? null, fn($sub, $nhomHang) => $sub->where('ma_hh', 'like', $nhomHang . '%'));
+                });
+            });
+    }
+
+    private function invoicedTrackingQuery(array $filters)
+    {
+        return OrderTracking::query()
+            ->whereNotNull('invoice_issued_at')
+            ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('invoice_issued_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('invoice_issued_at', '<=', $date))
             ->when(($filters['khach_hang_id'] ?? null) || ($filters['nhom_hang'] ?? null), function ($q) use ($filters) {
                 $q->whereHas('order', function ($orderQ) use ($filters) {
                     $orderQ
@@ -714,22 +742,33 @@ class DashboardMetricsService
 
     private function buildFinanceBlock(array $filters): array
     {
-        $orders = $this->orderQuery($filters)->with('khachHang')->get();
+        $orders = $this->orderQuery($filters)->with(['khachHang', 'tracking'])->get();
         $materialCostMap = \App\Models\DanhMucHangHoa::pluck('gia_nvl', 'ma_hh');
 
         $orderMargins = $orders->map(function ($o) use ($materialCostMap) {
             $qty = (float) ($o->yrd ?? 0);
             $price = (float) ($o->price_usd ?? $o->price_usd_auto ?? 0);
             $revenue = $qty * $price;
+            $trackingInvoiceRevenue = $o->tracking
+                ->whereNotNull('invoice_issued_at')
+                ->sum(fn($tracking) => (float) ($tracking->sl_don_hang ?? 0) * $price);
+            $invoicedRevenue = $trackingInvoiceRevenue > 0
+                ? $trackingInvoiceRevenue
+                : ($o->status === 'shipped' ? $revenue : 0);
             $unitCost = (float) ($materialCostMap[$o->ma_hh] ?? 0);
             $cost = $qty * $unitCost;
             $margin = $revenue - $cost;
             $marginRate = $revenue > 0 ? round(($margin / $revenue) * 100, 2) : null;
 
             return [
+                'customer_id' => $o->khach_hang_id,
                 'job_no' => $o->job_no,
                 'customer' => $o->khachHang?->ten_kh ?? 'Khách hàng chưa gán',
+                'ma_hh' => $o->ma_hh ?: 'N/A',
+                'ten_hh' => $o->ten_hh ?: ($o->ma_hh ?: 'N/A'),
+                'qty' => $qty,
                 'revenue' => $revenue,
+                'invoiced_revenue' => $invoicedRevenue,
                 'cost' => $cost,
                 'margin' => $margin,
                 'margin_rate' => $marginRate,
@@ -742,15 +781,45 @@ class DashboardMetricsService
             ->values();
 
         $byCustomer = $orderMargins
-            ->groupBy('customer')
-            ->map(function (Collection $rows, string $customer) {
+            ->groupBy(fn($row) => $row['customer_id'] ?: 0)
+            ->map(function (Collection $rows) {
                 $revenue = $rows->sum('revenue');
                 $cost = $rows->sum('cost');
                 $margin = $revenue - $cost;
+                $invoicedRevenue = (float) $rows->sum('invoiced_revenue');
+
                 return [
-                    'customer' => $customer,
+                    'customer' => $rows->first()['customer'],
                     'revenue' => $revenue,
+                    'invoiced_revenue' => $invoicedRevenue,
+                    'uninvoiced_revenue' => max(0, $revenue - $invoicedRevenue),
+                    'invoice_rate' => $revenue > 0 ? round(($invoicedRevenue / $revenue) * 100, 1) : null,
                     'cost' => $cost,
+                    'margin' => $margin,
+                    'margin_rate' => $revenue > 0 ? round(($margin / $revenue) * 100, 2) : null,
+                ];
+            })
+            ->sortByDesc('revenue')
+            ->take(10)
+            ->values();
+
+        $byProduct = $orderMargins
+            ->groupBy('ma_hh')
+            ->map(function (Collection $rows, string $maHh) {
+                $revenue = $rows->sum('revenue');
+                $cost = $rows->sum('cost');
+                $margin = $revenue - $cost;
+                $invoicedRevenue = (float) $rows->sum('invoiced_revenue');
+
+                return [
+                    'ma_hh' => $maHh,
+                    'ten_hh' => $rows->pluck('ten_hh')->filter()->first() ?: $maHh,
+                    'qty' => $rows->sum('qty'),
+                    'order_count' => $rows->count(),
+                    'revenue' => $revenue,
+                    'invoiced_revenue' => $invoicedRevenue,
+                    'uninvoiced_revenue' => max(0, $revenue - $invoicedRevenue),
+                    'invoice_rate' => $revenue > 0 ? round(($invoicedRevenue / $revenue) * 100, 1) : null,
                     'margin' => $margin,
                     'margin_rate' => $revenue > 0 ? round(($margin / $revenue) * 100, 2) : null,
                 ];
@@ -762,6 +831,15 @@ class DashboardMetricsService
         return [
             'top_orders' => $topOrders,
             'by_customer' => $byCustomer,
+            'by_product' => $byProduct,
+            'summary' => [
+                'order_revenue' => $orderMargins->sum('revenue'),
+                'invoiced_revenue' => $orderMargins->sum('invoiced_revenue'),
+                'uninvoiced_revenue' => max(0, $orderMargins->sum('revenue') - $orderMargins->sum('invoiced_revenue')),
+                'invoice_rate' => $orderMargins->sum('revenue') > 0
+                    ? round(($orderMargins->sum('invoiced_revenue') / $orderMargins->sum('revenue')) * 100, 1)
+                    : null,
+            ],
         ];
     }
 
@@ -788,6 +866,26 @@ class DashboardMetricsService
         $exchangeRate = (float) (Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400);
         $totalRevenueUsd = (float) ($this->orderQuery($filters)->selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0);
         $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
+        $invoicedRevenueVnd = $this->orderQuery($filters)
+            ->with('tracking')
+            ->get()
+            ->sum(function ($order) use ($exchangeRate) {
+                $qty = (float) ($order->yrd ?? 0);
+                $price = (float) ($order->price_usd ?? $order->price_usd_auto ?? 0);
+                $revenue = $qty * $price * $exchangeRate;
+                $trackingInvoiceRevenue = $order->tracking
+                    ->whereNotNull('invoice_issued_at')
+                    ->sum(function ($tracking) use ($price, $exchangeRate) {
+                        $qty = (float) ($tracking->sl_don_hang ?? 0);
+                        $rate = (float) ($tracking->invoice_exchange_rate ?? $exchangeRate);
+
+                        return $qty * $price * $rate;
+                    });
+
+                return $trackingInvoiceRevenue > 0
+                    ? $trackingInvoiceRevenue
+                    : ($order->status === 'shipped' ? $revenue : 0);
+            });
 
         return [
             'pending_orders' => $pendingOrders,
@@ -801,6 +899,10 @@ class DashboardMetricsService
             'pct_unproduced' => $pctUnproduced,
             'loss_rate' => $lossRate,
             'total_revenue' => $totalRevenueVnd,
+            'order_revenue' => $totalRevenueVnd,
+            'invoiced_revenue' => $invoicedRevenueVnd,
+            'uninvoiced_revenue' => max(0, $totalRevenueVnd - $invoicedRevenueVnd),
+            'invoice_rate' => $totalRevenueVnd > 0 ? round(($invoicedRevenueVnd / $totalRevenueVnd) * 100, 1) : null,
         ];
     }
 

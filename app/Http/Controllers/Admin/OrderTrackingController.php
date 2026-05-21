@@ -900,8 +900,19 @@ class OrderTrackingController extends Controller
             $customRate = Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400;
         }
 
+        $invoiceNo = OrderTracking::where('tracking_number', $trackingNumber)
+            ->whereNotNull('invoice_no')
+            ->value('invoice_no') ?: ('INV-' . now()->format('Ymd') . '-' . str_replace(['/', ' '], '-', $trackingNumber));
+        $invoiceDate = now();
+
+        OrderTracking::where('tracking_number', $trackingNumber)->update([
+            'invoice_no' => $invoiceNo,
+            'invoice_issued_at' => $invoiceDate,
+            'invoice_exchange_rate' => $customRate,
+        ]);
+
         $filename = 'INVOICE_' . str_replace(['-', '/'], '_', $trackingNumber) . '.xlsx';
-        return Excel::download(new OrderTrackingInvoiceExport($trackingNumber, $customRate), $filename);
+        return Excel::download(new OrderTrackingInvoiceExport($trackingNumber, $customRate, $invoiceNo, $invoiceDate), $filename);
     }
 
     /**

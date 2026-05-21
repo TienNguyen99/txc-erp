@@ -14,11 +14,15 @@ class OrderTrackingInvoiceExport implements FromView, ShouldAutoSize, WithStyles
 {
     protected $trackingNumber;
     protected $exchangeRate;
+    protected $invoiceNo;
+    protected $invoiceDate;
 
-    public function __construct($trackingNumber, $exchangeRate = 25400)
+    public function __construct($trackingNumber, $exchangeRate = 25400, ?string $invoiceNo = null, $invoiceDate = null)
     {
         $this->trackingNumber = $trackingNumber;
         $this->exchangeRate = $exchangeRate;
+        $this->invoiceNo = $invoiceNo;
+        $this->invoiceDate = $invoiceDate ?: now();
     }
 
     public function view(): View
@@ -81,6 +85,8 @@ class OrderTrackingInvoiceExport implements FromView, ShouldAutoSize, WithStyles
 
         return view('admin.exports.invoice', [
             'trackingNumber' => $this->trackingNumber,
+            'invoiceNo'      => $this->invoiceNo,
+            'invoiceDate'    => $this->invoiceDate,
             'items'          => array_values($items),
             'totalQuantity'  => $totalQuantity,
             'subTotal'       => $totalVnd,

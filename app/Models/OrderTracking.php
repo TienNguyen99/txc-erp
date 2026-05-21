@@ -56,12 +56,17 @@ class OrderTracking extends Model
         'sl_don_hang',
         'sl_san_xuat',
         'da_tao_lenh_sx',
+        'invoice_no',
+        'invoice_issued_at',
+        'invoice_exchange_rate',
     ];
 
     protected $casts = [
         'sl_don_hang' => 'decimal:2',
         'sl_san_xuat' => 'decimal:2',
         'ngay_xe_lay_hang' => 'date',
+        'invoice_issued_at' => 'datetime',
+        'invoice_exchange_rate' => 'decimal:2',
     ];
 
     /**

@@ -253,6 +253,98 @@
             animation: shimmer 1.4s infinite linear;
             will-change: background-position;
         }
+
+        .focus-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, .08) !important;
+            overflow: hidden;
+        }
+
+        .focus-card .card-body {
+            padding: 1rem;
+        }
+
+        .focus-card.revenue {
+            border-top: 3px solid #10b981 !important;
+        }
+
+        .focus-card.risk {
+            border-top: 3px solid #f59e0b !important;
+        }
+
+        .focus-card.product {
+            border-top: 3px solid #3b82f6 !important;
+        }
+
+        .focus-card .focus-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .focus-kpi {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .5rem;
+        }
+
+        .focus-kpi > div {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: .65rem .75rem;
+            background: linear-gradient(180deg, #fff, #f8fafc);
+        }
+
+        .focus-kpi .label {
+            font-size: .72rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .focus-kpi .value {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: .15rem;
+        }
+
+        .focus-table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            white-space: nowrap;
+            padding: .65rem .75rem;
+        }
+
+        .focus-table td {
+            font-size: .83rem;
+            vertical-align: middle;
+            padding: .65rem .75rem;
+        }
+
+        .focus-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .focus-table-wrap {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .risk-late {
+            color: #dc2626;
+            font-weight: 800;
+        }
+
+        .risk-due {
+            color: #d97706;
+            font-weight: 800;
+        }
     </style>
 @endsection
 
@@ -323,6 +415,165 @@
             </form>
         </div>
 
+        {{-- Executive focus: doanh thu khách hàng + lot cần xử lý --}}
+        <div class="row g-3 mb-4">
+            <div class="col-xl-4">
+                <div class="card focus-card revenue h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="focus-title">Doanh thu theo khách hàng</div>
+                                <div class="text-muted small">Giá trị đơn, đã hóa đơn/đã giao và phần còn lại</div>
+                            </div>
+                            <span class="badge bg-success-subtle text-success">
+                                {{ $opsDashboard['finance']['summary']['invoice_rate'] ?? 0 }}%
+                            </span>
+                        </div>
+                        <div class="focus-kpi mb-3">
+                            <div>
+                                <div class="label">Giá trị đơn</div>
+                                <div class="value">{{ number_format($opsDashboard['finance']['summary']['order_revenue'], 0) }}</div>
+                            </div>
+                            <div>
+                                <div class="label">Đã HĐ/giao</div>
+                                <div class="value text-success">{{ number_format($opsDashboard['finance']['summary']['invoiced_revenue'], 0) }}</div>
+                            </div>
+                            <div>
+                                <div class="label">Còn lại</div>
+                                <div class="value text-warning">{{ number_format($opsDashboard['finance']['summary']['uninvoiced_revenue'], 0) }}</div>
+                            </div>
+                        </div>
+                        <div class="table-responsive focus-table-wrap">
+                            <table class="table table-sm focus-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Khách hàng</th>
+                                        <th class="text-end">Giá trị đơn</th>
+                                        <th class="text-end">Đã HĐ/giao</th>
+                                        <th class="text-end">Còn lại</th>
+                                        <th class="text-end">Tỷ lệ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($opsDashboard['finance']['by_customer']->take(6) as $r)
+                                        <tr>
+                                            <td class="fw-semibold">{{ $r['customer'] }}</td>
+                                            <td class="text-end">{{ number_format($r['revenue'], 0) }}</td>
+                                            <td class="text-end text-success">{{ number_format($r['invoiced_revenue'], 0) }}</td>
+                                            <td class="text-end text-warning">{{ number_format($r['uninvoiced_revenue'], 0) }}</td>
+                                            <td class="text-end fw-bold">{{ $r['invoice_rate'] ?? 'N/A' }}{{ $r['invoice_rate'] !== null ? '%' : '' }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="5" class="text-muted">Chưa có dữ liệu doanh thu trong phạm vi lọc.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="card focus-card product h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="focus-title">Mặt hàng doanh thu cao</div>
+                                <div class="text-muted small">Theo filter khách hàng, ngày và nhóm hàng hiện tại</div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary">
+                                Top {{ $opsDashboard['finance']['by_product']->count() }}
+                            </span>
+                        </div>
+                        <div class="table-responsive focus-table-wrap">
+                            <table class="table table-sm focus-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã hàng</th>
+                                        <th class="text-end">SL</th>
+                                        <th class="text-end">Doanh thu</th>
+                                        <th class="text-end">Còn lại</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($opsDashboard['finance']['by_product']->take(6) as $r)
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">{{ $r['ma_hh'] }}</div>
+                                                <div class="text-muted" style="font-size:.72rem">{{ \Illuminate\Support\Str::limit($r['ten_hh'], 34) }}</div>
+                                            </td>
+                                            <td class="text-end">{{ number_format($r['qty'], 0) }}</td>
+                                            <td class="text-end fw-semibold">{{ number_format($r['revenue'], 0) }}</td>
+                                            <td class="text-end text-warning">{{ number_format($r['uninvoiced_revenue'], 0) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="text-muted">Chưa có mặt hàng phát sinh doanh thu trong phạm vi lọc.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="card focus-card risk h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="focus-title">Lot trễ / sắp đến hạn</div>
+                                <div class="text-muted small">Ưu tiên theo hạn giao gần nhất trong 7 ngày</div>
+                            </div>
+                            <span class="badge bg-warning-subtle text-warning">
+                                {{ $reportDashboard['near_due_production']->count() }} lot
+                            </span>
+                        </div>
+                        <div class="table-responsive focus-table-wrap">
+                            <table class="table table-sm focus-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Lot</th>
+                                        <th>Khách</th>
+                                        <th>Công đoạn</th>
+                                        <th class="text-end">Hạn</th>
+                                        <th class="text-end">Còn</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($reportDashboard['near_due_production']->take(8) as $r)
+                                        <tr>
+                                            <td>
+                                                <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                    {{ $r['tracking_number'] }}
+                                                </a>
+                                            </td>
+                                            <td>{{ $r['customer'] }}</td>
+                                            <td><span class="badge bg-secondary">{{ $r['stage'] }}</span></td>
+                                            <td class="text-end">{{ $r['due_date'] }}</td>
+                                            <td class="text-end {{ $r['days_left'] < 0 ? 'risk-late' : 'risk-due' }}">
+                                                {{ $r['days_left'] < 0 ? 'Trễ ' . abs($r['days_left']) : $r['days_left'] . ' ngày' }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-muted">
+                                                Không có lot trễ hoặc sắp đến hạn trong 7 ngày. Các lot chưa giao nằm ở bảng bên dưới.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($reportDashboard['undelivered_lot_count'] > 0)
+                            <div class="mt-3 small text-muted">
+                                Tổng lot chưa giao: <span class="fw-bold text-dark">{{ $reportDashboard['undelivered_lot_count'] }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="production-tracking-top"></div>
 
         {{-- Báo cáo cần xử lý --}}
@@ -349,9 +600,9 @@
                     </div>
                     <div class="col-xl-3 col-md-6">
                         <div class="p-3 rounded-3" style="background:#eff6ff;border:1px solid #bfdbfe">
-                            <div class="text-muted small">Đơn chưa giao</div>
+                            <div class="text-muted small">Lot chưa giao</div>
                             <div class="fs-4 fw-bold">
-                                {{ $reportDashboard['order_status_counts']['pending'] + $reportDashboard['order_status_counts']['in_production'] + $reportDashboard['order_status_counts']['done'] }}
+                                {{ $reportDashboard['undelivered_lot_count'] }}
                             </div>
                         </div>
                     </div>
@@ -407,29 +658,39 @@
                     <div class="col-xl-6">
                         <div class="card border-0 h-100" style="background:#f8fafc;border:1px solid #e2e8f0 !important">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-2">2. Đơn hàng chưa giao</h6>
+                                <h6 class="fw-bold mb-2">2. Lot chưa giao</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Job No</th>
+                                                <th>Lot</th>
                                                 <th>Khách</th>
-                                                <th>Mã HH</th>
+                                                <th class="text-end">Số mã</th>
+                                                <th class="text-end">SL</th>
                                                 <th class="text-end">Hạn</th>
-                                                <th class="text-end">Trạng thái</th>
+                                                <th class="text-end">Công đoạn</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse($reportDashboard['undelivered_orders'] as $r)
+                                            @forelse($reportDashboard['undelivered_lots'] as $r)
                                                 <tr>
-                                                    <td class="fw-semibold">{{ $r['job_no'] }}</td>
+                                                    <td>
+                                                        @if($r['tracking_number'] !== '-')
+                                                            <a href="{{ route('admin.order-tracking.lot', $r['tracking_number']) }}" class="fw-semibold text-decoration-none">
+                                                                {{ $r['tracking_number'] }}
+                                                            </a>
+                                                        @else
+                                                            <span class="fw-semibold">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $r['customer'] }}</td>
-                                                    <td>{{ $r['ma_hh'] }}</td>
+                                                    <td class="text-end">{{ number_format($r['total_items']) }}</td>
+                                                    <td class="text-end">{{ number_format($r['total_qty'], 2) }}</td>
                                                     <td class="text-end">{{ $r['due_date'] }}</td>
-                                                    <td class="text-end"><span class="badge bg-secondary">{{ $r['status'] }}</span></td>
+                                                    <td class="text-end"><span class="badge bg-secondary">{{ $r['stage'] }}</span></td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="5" class="text-muted">Không có đơn chưa giao trong phạm vi lọc.</td></tr>
+                                                <tr><td colspan="6" class="text-muted">Không có lot chưa giao trong phạm vi lọc.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -890,13 +1151,36 @@
                     <div class="col-xl-6">
                         <div class="card border-0 h-100" style="background:#f8fafc">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-2">Biên lợi nhuận gộp theo khách hàng</h6>
+                                <h6 class="fw-bold mb-2">Doanh thu & hóa đơn theo khách hàng</h6>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-4">
+                                        <div class="p-2 rounded bg-white border">
+                                            <div class="text-muted small">Giá trị đơn hàng</div>
+                                            <div class="fw-bold">{{ number_format($opsDashboard['finance']['summary']['order_revenue'], 2) }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-2 rounded bg-white border">
+                                            <div class="text-muted small">Đã xuất hóa đơn</div>
+                                            <div class="fw-bold text-success">{{ number_format($opsDashboard['finance']['summary']['invoiced_revenue'], 2) }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-2 rounded bg-white border">
+                                            <div class="text-muted small">Chưa hóa đơn</div>
+                                            <div class="fw-bold text-warning">{{ number_format($opsDashboard['finance']['summary']['uninvoiced_revenue'], 2) }}</div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Khách hàng</th>
-                                                <th class="text-end">Doanh thu</th>
+                                                <th class="text-end">Giá trị đơn</th>
+                                                <th class="text-end">Đã hóa đơn</th>
+                                                <th class="text-end">Chưa hóa đơn</th>
+                                                <th class="text-end">Tỷ lệ</th>
                                                 <th class="text-end">Giá vốn</th>
                                                 <th class="text-end">Margin%</th>
                                             </tr>
@@ -906,13 +1190,16 @@
                                                 <tr>
                                                     <td>{{ $r['customer'] }}</td>
                                                     <td class="text-end">{{ number_format($r['revenue'], 2) }}</td>
+                                                    <td class="text-end text-success">{{ number_format($r['invoiced_revenue'], 2) }}</td>
+                                                    <td class="text-end text-warning">{{ number_format($r['uninvoiced_revenue'], 2) }}</td>
+                                                    <td class="text-end">{{ $r['invoice_rate'] ?? 'N/A' }}{{ $r['invoice_rate'] !== null ? '%' : '' }}</td>
                                                     <td class="text-end">{{ number_format($r['cost'], 2) }}</td>
                                                     <td class="text-end fw-bold {{ ($r['margin_rate'] ?? 0) < 0 ? 'text-danger' : 'text-success' }}">
                                                         {{ $r['margin_rate'] ?? 'N/A' }}{{ $r['margin_rate'] !== null ? '%' : '' }}
                                                     </td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="4" class="text-muted">Chưa có dữ liệu tài chính để tính.</td></tr>
+                                                <tr><td colspan="7" class="text-muted">Chưa có dữ liệu tài chính để tính.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -1350,12 +1637,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const productionTrackingTop = document.getElementById('production-tracking-top');
-            const productionTrackingCard = document.getElementById('production-tracking-card');
-            if (productionTrackingTop && productionTrackingCard) {
-                productionTrackingTop.replaceWith(productionTrackingCard);
-            }
-
             const nhomHangByKhachHang = @json($nhomHangByKhachHang);
             const allNhomHangOptions = @json($nhomHangOptions);
             const khachHangSelect = document.getElementById('dashboardKhachHang');

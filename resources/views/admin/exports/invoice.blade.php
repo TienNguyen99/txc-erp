@@ -42,11 +42,11 @@
                 <br>
                 <strong style="font-size: 10pt;">Bản thể hiện của hóa đơn điện tử</strong><br>
                 <i style="font-size: 10pt;">(Electronic invoice display)</i><br>
-                <span style="font-size: 10pt;">Ngày <i>(date)</i> {{ date('d') }} tháng <i>(month)</i> {{ date('m') }} năm <i>(year)</i> {{ date('Y') }}</span>
+                <span style="font-size: 10pt;">Ngày <i>(date)</i> {{ $invoiceDate->format('d') }} tháng <i>(month)</i> {{ $invoiceDate->format('m') }} năm <i>(year)</i> {{ $invoiceDate->format('Y') }}</span>
                 
                 <div style="float: right; text-align: left; font-size: 10pt; margin-top: -60px; margin-right: 20px;">
                     Ký hiệu <i>(Serial)</i>: &nbsp;&nbsp;<b>1C26TTD</b><br>
-                    Số <i>(Invoice No)</i>: &nbsp;&nbsp;&nbsp;<b style="color: red;">{{ rand(100, 999) }}</b>
+                    Số <i>(Invoice No)</i>: &nbsp;&nbsp;&nbsp;<b style="color: red;">{{ $invoiceNo }}</b>
                 </div>
             </td>
         </tr>
