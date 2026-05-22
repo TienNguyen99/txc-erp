@@ -865,7 +865,9 @@ class DashboardMetricsService
                 ],
                 'customer_revenue' => [
                     'labels' => $byCustomer->take(6)->pluck('customer')->map(fn($name) => \Illuminate\Support\Str::limit($name, 18))->all(),
-                    'data' => $byCustomer->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
+                    'order_revenue' => $byCustomer->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
+                    'invoiced_revenue' => $byCustomer->take(6)->map(fn($row) => round((float) $row['invoiced_revenue'], 2))->all(),
+                    'uninvoiced_revenue' => $byCustomer->take(6)->map(fn($row) => round((float) $row['uninvoiced_revenue'], 2))->all(),
                 ],
             ],
             'summary' => [
