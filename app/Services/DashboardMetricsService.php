@@ -863,6 +863,10 @@ class DashboardMetricsService
                     'labels' => $byProduct->take(6)->pluck('ma_hh')->all(),
                     'data' => $byProduct->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
                 ],
+                'customer_revenue' => [
+                    'labels' => $byCustomer->take(6)->pluck('customer')->map(fn($name) => \Illuminate\Support\Str::limit($name, 18))->all(),
+                    'data' => $byCustomer->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
+                ],
             ],
             'summary' => [
                 'order_revenue' => $orderRevenue,

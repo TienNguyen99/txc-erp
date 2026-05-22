@@ -479,7 +479,7 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-xl-8">
+            <div class="col-xl-6">
                 <div class="card focus-card revenue h-100">
                     <div class="card-body">
                         <div class="focus-title">Xu hướng doanh thu</div>
@@ -490,7 +490,18 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xl-4">
+            <div class="col-xl-3">
+                <div class="card focus-card revenue h-100">
+                    <div class="card-body">
+                        <div class="focus-title">Top khách hàng</div>
+                        <div class="text-muted small mb-3">Doanh thu theo khách hàng</div>
+                        <div style="position:relative;height:260px;width:100%">
+                            <canvas id="customerRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3">
                 <div class="card focus-card product h-100">
                     <div class="card-body">
                         <div class="focus-title">Top mặt hàng theo doanh thu</div>
@@ -1869,6 +1880,35 @@
                             label: 'Doanh thu',
                             data: financeCharts.product_revenue.data,
                             backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'],
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: .62,
+                        }],
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                        scales: {
+                            x: sharedScales.y,
+                            y: { ...sharedScales.x, ticks: { color: '#475569', font: { size: 10 } } },
+                        },
+                    },
+                });
+            }
+
+            const customerRevenueEl = document.getElementById('customerRevenueChart');
+            if (customerRevenueEl) {
+                const customerCtx = customerRevenueEl.getContext('2d');
+                new Chart(customerCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: financeCharts.customer_revenue.labels,
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: financeCharts.customer_revenue.data,
+                            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6', '#ef4444'],
                             borderRadius: 8,
                             borderSkipped: false,
                             barPercentage: .62,
