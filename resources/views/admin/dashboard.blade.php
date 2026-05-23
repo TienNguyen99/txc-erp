@@ -256,7 +256,7 @@
 
         .focus-card {
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #fff;
             box-shadow: 0 10px 28px rgba(15, 23, 42, .08) !important;
             overflow: hidden;
@@ -282,6 +282,83 @@
             font-size: .95rem;
             font-weight: 700;
             color: #0f172a;
+        }
+
+        .chart-card .card-body {
+            padding: 1.15rem 1.2rem 1rem;
+        }
+
+        .chart-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: .85rem;
+        }
+
+        .chart-subtitle {
+            color: #64748b;
+            font-size: .78rem;
+            margin-top: .18rem;
+        }
+
+        .chart-badge {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: #475569;
+            background: #f8fafc;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .28rem .6rem;
+            white-space: nowrap;
+        }
+
+        .chart-toggle {
+            display: inline-flex;
+            gap: 2px;
+            padding: 3px;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            background: #f8fafc;
+        }
+
+        .chart-toggle button {
+            border: 0;
+            background: transparent;
+            color: #64748b;
+            border-radius: 4px;
+            font-size: .72rem;
+            font-weight: 800;
+            padding: .28rem .55rem;
+            line-height: 1.1;
+        }
+
+        .chart-toggle button.active {
+            background: #fff;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .12);
+        }
+
+        .chart-box {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-box.compact {
+            height: 280px;
+        }
+
+        @media (max-width: 767.98px) {
+            .chart-head {
+                flex-direction: column;
+                gap: .35rem;
+            }
+
+            .chart-box,
+            .chart-box.compact {
+                height: 260px;
+            }
         }
 
         .focus-kpi {
@@ -456,12 +533,15 @@
             <div class="col-xl-3 col-md-6">
                 <div class="card focus-card risk h-100">
                     <div class="card-body">
-                        <div class="text-muted small fw-semibold">Lot rủi ro giao hàng</div>
+                        <div class="text-muted small fw-semibold">Lot cần xử lý</div>
                         <div class="fs-4 fw-bold mt-2">{{ $reportDashboard['lot_risk_summary']['total'] }}</div>
                         <div class="d-flex gap-2 mt-1 small">
                             <span class="risk-late">Trễ {{ $reportDashboard['lot_risk_summary']['late'] }}</span>
-                            <span class="risk-due">Hôm nay {{ $reportDashboard['lot_risk_summary']['due_today'] }}</span>
-                            <span class="text-muted">7 ngày {{ $reportDashboard['lot_risk_summary']['next_7_days'] }}</span>
+                            <span class="risk-due">VAT {{ $reportDashboard['lot_risk_summary']['vat_pending'] ?? 0 }}</span>
+                            <span class="text-muted">Thiếu hạn {{ $reportDashboard['lot_risk_summary']['no_due'] ?? 0 }}</span>
+                        </div>
+                        <div class="text-muted mt-1" style="font-size:.72rem">
+                            Sắp đến hạn 7 ngày {{ $reportDashboard['lot_risk_summary']['next_7_days'] }}
                         </div>
                     </div>
                 </div>
@@ -479,34 +559,53 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-xl-6">
-                <div class="card focus-card revenue h-100">
+            <div class="col-12">
+                <div class="card focus-card chart-card revenue h-100">
                     <div class="card-body">
-                        <div class="focus-title">Xu hướng doanh thu</div>
-                        <div class="text-muted small mb-3">Giá trị đơn hàng so với đã HĐ/đã giao theo ngày</div>
-                        <div style="position:relative;height:260px;width:100%">
+                        <div class="chart-head">
+                            <div>
+                                <div class="focus-title">Xu hướng doanh thu</div>
+                                <div class="chart-subtitle" id="revenueTrendSubtitle">Theo ngày: cột là giá trị đơn, đường là phần đã HĐ/giao</div>
+                            </div>
+                            <div class="chart-toggle" aria-label="Chọn kỳ doanh thu">
+                                <button type="button" class="active" data-revenue-period="day">Ngày</button>
+                                <button type="button" data-revenue-period="month">Tháng</button>
+                                <button type="button" data-revenue-period="year">Năm</button>
+                            </div>
+                        </div>
+                        <div class="chart-box">
                             <canvas id="financeRevenueTrendChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3">
-                <div class="card focus-card revenue h-100">
+            <div class="col-xl-6">
+                <div class="card focus-card chart-card revenue h-100">
                     <div class="card-body">
-                        <div class="focus-title">Top khách hàng</div>
-                        <div class="text-muted small mb-3">Đã HĐ/giao và còn lại trên giá trị đơn</div>
-                        <div style="position:relative;height:260px;width:100%">
+                        <div class="chart-head">
+                            <div>
+                                <div class="focus-title">Top khách hàng</div>
+                                <div class="chart-subtitle">Xanh là đã HĐ/giao, vàng là còn phải thu</div>
+                            </div>
+                            <span class="chart-badge">Công nợ</span>
+                        </div>
+                        <div class="chart-box compact">
                             <canvas id="customerRevenueChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3">
-                <div class="card focus-card product h-100">
+            <div class="col-xl-6">
+                <div class="card focus-card chart-card product h-100">
                     <div class="card-body">
-                        <div class="focus-title">Top mặt hàng theo doanh thu</div>
-                        <div class="text-muted small mb-3">Tự đổi theo khách hàng/nhóm hàng đang lọc</div>
-                        <div style="position:relative;height:260px;width:100%">
+                        <div class="chart-head">
+                            <div>
+                                <div class="focus-title">Top mặt hàng theo doanh thu</div>
+                                <div class="chart-subtitle">Mã hàng có đóng góp lớn nhất trong phạm vi lọc</div>
+                            </div>
+                            <span class="chart-badge">Mặt hàng</span>
+                        </div>
+                        <div class="chart-box compact">
                             <canvas id="productRevenueChart"></canvas>
                         </div>
                     </div>
@@ -554,103 +653,195 @@
             });
             renderNhomHangOptions();
 
-            // ── Shared config ──────────────────────────────────────────
-            const ORANGE      = '#f7941d';
-            const ORANGE_DARK = '#e07b08';
-            const PALETTE     = ['#f7941d','#3b82f6','#10b981','#ef4444','#f59e0b','#8b5cf6'];
+            // ── Shared chart config ────────────────────────────────────
+            const ORANGE = '#f59e0b';
+            const BLUE = '#2563eb';
+            const GREEN = '#10b981';
+            const AMBER = '#f59e0b';
+            const GRID = '#eef2f7';
+            const TEXT = '#334155';
+            const MUTED = '#94a3b8';
+
+            const formatNumber = value => Number(value || 0).toLocaleString('vi-VN');
+            const formatCompact = value => {
+                const number = Number(value || 0);
+                if (Math.abs(number) >= 1_000_000_000) return `${(number / 1_000_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}B`;
+                if (Math.abs(number) >= 1_000_000) return `${(number / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}M`;
+                if (Math.abs(number) >= 1_000) return `${(number / 1_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}K`;
+                return number.toLocaleString('vi-VN');
+            };
 
             const sharedTooltip = {
-                backgroundColor: '#1e293b',
+                backgroundColor: '#0f172a',
                 titleColor: '#f8fafc',
-                bodyColor: '#cbd5e1',
-                padding: 12,
-                cornerRadius: 10,
+                bodyColor: '#e2e8f0',
+                padding: 11,
+                cornerRadius: 8,
                 borderColor: 'rgba(255,255,255,.08)',
                 borderWidth: 1,
                 displayColors: true,
                 boxWidth: 8, boxHeight: 8, boxPadding: 4,
                 usePointStyle: true,
+                callbacks: {
+                    label(context) {
+                        return ` ${context.dataset.label}: ${formatNumber(context.parsed.y ?? context.parsed.x)}`;
+                    },
+                },
             };
 
             const sharedScales = {
                 y: {
                     beginAtZero: true,
-                    grid: { color: '#f1f5f9', drawBorder: false },
+                    grid: { color: GRID, drawBorder: false },
                     border: { display: false },
-                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                    ticks: {
+                        color: MUTED,
+                        font: { size: 10, weight: 600 },
+                        callback: value => formatCompact(value),
+                        maxTicksLimit: 5,
+                    },
                 },
                 x: {
                     grid: { display: false },
                     border: { display: false },
-                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                    ticks: { color: MUTED, font: { size: 10, weight: 600 } },
                 },
             };
 
-            // Plugin: vẽ center-text cho doughnut
-            const doughnutCenterPlugin = {
-                id: 'centerText',
-                afterDraw(chart) {
-                    if (chart.config.type !== 'doughnut') return;
-                    const { ctx, chartArea: { top, bottom, left, right } } = chart;
-                    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    const cx = (left + right) / 2, cy = (top + bottom) / 2;
+            const valueLabelPlugin = {
+                id: 'valueLabel',
+                afterDatasetsDraw(chart, args, options) {
+                    if (!options?.enabled) return;
+                    const { ctx, chartArea } = chart;
                     ctx.save();
-                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.font = 'bold 22px Inter, sans-serif';
-                    ctx.fillStyle = '#1e293b';
-                    ctx.fillText(total, cx, cy - 8);
-                    ctx.font = '500 10px Inter, sans-serif';
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.fillText('Tổng', cx, cy + 12);
+                    ctx.font = '700 10px Inter, sans-serif';
+                    ctx.fillStyle = options.color || TEXT;
+                    ctx.textBaseline = 'middle';
+
+                    if (options.mode === 'stackTotal') {
+                        const rowCount = chart.data.labels.length;
+                        for (let index = 0; index < rowCount; index++) {
+                            const total = chart.data.datasets.reduce((sum, dataset) => sum + Number(dataset.data[index] || 0), 0);
+                            const visibleMetas = chart.data.datasets
+                                .map((dataset, datasetIndex) => chart.getDatasetMeta(datasetIndex))
+                                .filter(meta => !meta.hidden);
+                            const lastMeta = visibleMetas.at(-1);
+                            const point = lastMeta?.data[index];
+                            if (!point || total <= 0) continue;
+                            ctx.textAlign = 'left';
+                            ctx.fillText(formatCompact(total), Math.min(point.x + 8, chartArea.right - 42), point.y);
+                        }
+                    }
+
+                    if (options.mode === 'barEnd') {
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((bar, index) => {
+                            const value = chart.data.datasets[0].data[index];
+                            if (!value) return;
+                            ctx.textAlign = 'left';
+                            ctx.fillText(formatCompact(value), Math.min(bar.x + 8, chartArea.right - 42), bar.y);
+                        });
+                    }
                     ctx.restore();
                 }
             };
-            Chart.register(doughnutCenterPlugin);
+            Chart.register(valueLabelPlugin);
 
             const financeCharts = @json($opsDashboard['finance']['charts']);
             const financeTrendEl = document.getElementById('financeRevenueTrendChart');
             if (financeTrendEl) {
                 const financeTrendCtx = financeTrendEl.getContext('2d');
                 const financeGrad = financeTrendCtx.createLinearGradient(0, 0, 0, 260);
-                financeGrad.addColorStop(0, 'rgba(16,185,129,.22)');
+                financeGrad.addColorStop(0, 'rgba(16,185,129,.18)');
                 financeGrad.addColorStop(1, 'rgba(16,185,129,0)');
-                new Chart(financeTrendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: financeCharts.revenue_trend.labels,
+                const revenueSeries = financeCharts.revenue_timeseries || { day: financeCharts.revenue_trend };
+                const revenueSubtitle = document.getElementById('revenueTrendSubtitle');
+                const revenuePeriodText = {
+                    day: 'Theo ngày: tăng/giảm so với ngày trước',
+                    month: 'Theo tháng: tăng/giảm so với tháng trước',
+                    year: 'Theo năm: tăng/giảm so với năm trước',
+                };
+                const makeRevenueData = period => {
+                    const series = revenueSeries[period] || revenueSeries.day;
+                    return {
+                        labels: series.labels,
                         datasets: [
                             {
                                 label: 'Giá trị đơn',
-                                data: financeCharts.revenue_trend.order_revenue,
-                                borderColor: '#f7941d',
-                                backgroundColor: 'rgba(247,148,29,.08)',
-                                borderWidth: 2.5,
-                                tension: .35,
-                                pointRadius: 2,
-                                pointHoverRadius: 5,
+                                type: 'bar',
+                                data: series.order_revenue,
+                                backgroundColor: 'rgba(245,158,11,.18)',
+                                borderColor: 'rgba(245,158,11,.55)',
+                                borderWidth: 1,
+                                borderRadius: 3,
+                                borderSkipped: false,
+                                barPercentage: .45,
+                                categoryPercentage: .62,
+                                maxBarThickness: 24,
                             },
                             {
                                 label: 'Đã HĐ/giao',
-                                data: financeCharts.revenue_trend.invoiced_revenue,
-                                borderColor: '#10b981',
+                                type: 'line',
+                                data: series.invoiced_revenue,
+                                borderColor: GREEN,
                                 backgroundColor: financeGrad,
-                                borderWidth: 2.5,
+                                borderWidth: 3,
                                 fill: true,
-                                tension: .35,
-                                pointRadius: 2,
+                                tension: .38,
+                                pointRadius: 0,
                                 pointHoverRadius: 5,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: GREEN,
+                                pointBorderWidth: 2,
                             },
                         ],
-                    },
+                    };
+                };
+                const financeTrendChart = new Chart(financeTrendCtx, {
+                    type: 'bar',
+                    data: makeRevenueData('day'),
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
-                            tooltip: sharedTooltip,
+                            legend: {
+                                position: 'top',
+                                align: 'end',
+                                labels: { boxWidth: 8, usePointStyle: true, font: { size: 11, weight: 700 }, color: TEXT },
+                            },
+                            tooltip: {
+                                ...sharedTooltip,
+                                callbacks: {
+                                    label(context) {
+                                        return ` ${context.dataset.label}: ${formatNumber(context.parsed.y ?? context.parsed.x)}`;
+                                    },
+                                    afterBody(items) {
+                                        const period = financeTrendChart.$period || 'day';
+                                        const index = items[0].dataIndex;
+                                        const series = revenueSeries[period] || revenueSeries.day;
+                                        const pct = series.change_pct[index];
+                                        const amount = series.change_amount[index] || 0;
+                                        if (pct === null || pct === undefined) return 'Kỳ trước: chưa có dữ liệu';
+                                        const sign = amount >= 0 ? '+' : '';
+                                        return `So kỳ trước: ${sign}${formatNumber(amount)} (${sign}${pct}%)`;
+                                    },
+                                },
+                            },
                         },
                         scales: sharedScales,
+                        interaction: { mode: 'index', intersect: false },
                     },
+                });
+                financeTrendChart.$period = 'day';
+                document.querySelectorAll('[data-revenue-period]').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const period = button.dataset.revenuePeriod;
+                        financeTrendChart.data = makeRevenueData(period);
+                        financeTrendChart.$period = period;
+                        revenueSubtitle.textContent = revenuePeriodText[period] || revenuePeriodText.day;
+                        document.querySelectorAll('[data-revenue-period]').forEach(item => item.classList.toggle('active', item === button));
+                        financeTrendChart.update();
+                    });
                 });
             }
 
@@ -664,20 +855,36 @@
                         datasets: [{
                             label: 'Doanh thu',
                             data: financeCharts.product_revenue.data,
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'],
-                            borderRadius: 8,
+                            backgroundColor: financeCharts.product_revenue.data.map((_, index) => index === 0 ? BLUE : 'rgba(37,99,235,.18)'),
+                            borderColor: financeCharts.product_revenue.data.map((_, index) => index === 0 ? BLUE : 'rgba(37,99,235,.28)'),
+                            borderWidth: 1,
+                            borderRadius: 3,
                             borderSkipped: false,
-                            barPercentage: .62,
+                            barPercentage: .46,
+                            categoryPercentage: .66,
+                            maxBarThickness: 24,
                         }],
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: sharedTooltip },
+                        layout: { padding: { right: 46 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: sharedTooltip,
+                            valueLabel: { enabled: true, mode: 'barEnd', color: BLUE },
+                        },
                         scales: {
-                            x: sharedScales.y,
-                            y: { ...sharedScales.x, ticks: { color: '#475569', font: { size: 10 } } },
+                            x: {
+                                ...sharedScales.y,
+                                ticks: { ...sharedScales.y.ticks, display: false },
+                                grid: { display: false },
+                            },
+                            y: {
+                                ...sharedScales.x,
+                                ticks: { color: TEXT, font: { size: 11, weight: 700 } },
+                            },
                         },
                     },
                 });
@@ -694,18 +901,22 @@
                             {
                                 label: 'Đã HĐ/giao',
                                 data: financeCharts.customer_revenue.invoiced_revenue,
-                                backgroundColor: '#10b981',
-                                borderRadius: 8,
+                                backgroundColor: GREEN,
+                                borderRadius: 3,
                                 borderSkipped: false,
-                                barPercentage: .62,
+                                barPercentage: .46,
+                                categoryPercentage: .66,
+                                maxBarThickness: 24,
                             },
                             {
                                 label: 'Còn lại',
                                 data: financeCharts.customer_revenue.uninvoiced_revenue,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 8,
+                                backgroundColor: 'rgba(245,158,11,.9)',
+                                borderRadius: 3,
                                 borderSkipped: false,
-                                barPercentage: .62,
+                                barPercentage: .46,
+                                categoryPercentage: .66,
+                                maxBarThickness: 24,
                             },
                         ],
                     },
@@ -713,22 +924,40 @@
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: { padding: { right: 46 } },
                         plugins: {
-                            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
+                            legend: {
+                                position: 'top',
+                                align: 'end',
+                                labels: { boxWidth: 8, usePointStyle: true, font: { size: 11, weight: 700 }, color: TEXT },
+                            },
                             tooltip: {
                                 ...sharedTooltip,
                                 callbacks: {
+                                    label(context) {
+                                        return ` ${context.dataset.label}: ${formatNumber(context.parsed.x)}`;
+                                    },
                                     afterBody(items) {
                                         const index = items[0].dataIndex;
                                         const total = financeCharts.customer_revenue.order_revenue[index] || 0;
-                                        return `Tổng đơn: ${Number(total).toLocaleString('en-US')}`;
+                                        return `Tổng đơn: ${formatNumber(total)}`;
                                     },
                                 },
                             },
+                            valueLabel: { enabled: true, mode: 'stackTotal', color: TEXT },
                         },
                         scales: {
-                            x: { ...sharedScales.y, stacked: true },
-                            y: { ...sharedScales.x, stacked: true, ticks: { color: '#475569', font: { size: 10 } } },
+                            x: {
+                                ...sharedScales.y,
+                                stacked: true,
+                                ticks: { ...sharedScales.y.ticks, display: false },
+                                grid: { display: false },
+                            },
+                            y: {
+                                ...sharedScales.x,
+                                stacked: true,
+                                ticks: { color: TEXT, font: { size: 11, weight: 700 } },
+                            },
                         },
                     },
                 });

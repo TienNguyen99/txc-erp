@@ -173,6 +173,14 @@ class DashboardMetricsService
                 'total_items' => $row['total_items'],
             ]);
         $lotRiskRows = $opsDashboard['otd']['at_risk_lots'];
+        $pendingVatLots = $this->buildPendingVatLots($filters);
+        $attentionLotKeys = $lotRiskRows
+            ->pluck('tracking_number')
+            ->merge($allUndeliveredLots->pluck('tracking_number'))
+            ->merge($pendingVatLots->pluck('tracking_number'))
+            ->filter(fn($trackingNumber) => $trackingNumber && $trackingNumber !== '-')
+            ->unique()
+            ->values();
 
         $stuckStages = $opsDashboard['wip']['aging']
             ->filter(fn($row) => (int) $row['over_7_days'] > 0)
@@ -185,7 +193,9 @@ class DashboardMetricsService
                 'late' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] < 0)->count(),
                 'due_today' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] === 0)->count(),
                 'next_7_days' => $lotRiskRows->filter(fn($row) => (int) $row['days_left'] > 0 && (int) $row['days_left'] <= 7)->count(),
-                'total' => $lotRiskRows->count(),
+                'no_due' => $allUndeliveredLots->filter(fn($row) => $row['days_left'] === null)->count(),
+                'vat_pending' => $pendingVatLots->count(),
+                'total' => $attentionLotKeys->count(),
             ],
             'order_status_counts' => [
                 'pending' => (int) ($orderStatusCounts['pending'] ?? 0),
@@ -196,6 +206,7 @@ class DashboardMetricsService
             'delivered_orders' => $deliveredOrders,
             'undelivered_lot_count' => $allUndeliveredLots->count(),
             'undelivered_lots' => $undeliveredLots,
+            'pending_vat_lots' => $pendingVatLots,
             'material_shortages' => $opsDashboard['action']['bom_material_shortages'],
             'stuck_stages' => $stuckStages,
             'late_po_count' => $opsDashboard['procurement']['late_po_count'],
@@ -240,6 +251,35 @@ class DashboardMetricsService
                         ->when($filters['nhom_hang'] ?? null, fn($sub, $nhomHang) => $sub->where('ma_hh', 'like', $nhomHang . '%'));
                 });
             });
+    }
+
+    private function buildPendingVatLots(array $filters): Collection
+    {
+        return $this->trackingQuery($filters)
+            ->with('order.khachHang')
+            ->whereNotNull('tracking_number')
+            ->whereNull('invoice_issued_at')
+            ->get()
+            ->groupBy('tracking_number')
+            ->map(function (Collection $rows, string $trackingNumber) {
+                $dueDate = $rows->pluck('order.sig_need_date')->filter()->sort()->first();
+                $deliveredDate = $rows->pluck('ngay_xe_lay_hang')->filter()->sort()->last()
+                    ?: $rows->pluck('updated_at')->filter()->sort()->last();
+                $baseDate = $dueDate ?: $deliveredDate;
+
+                return [
+                    'tracking_number' => $trackingNumber,
+                    'customer' => $rows->pluck('order.khachHang.ten_kh')->filter()->unique()->take(3)->implode(', ') ?: 'N/A',
+                    'due_date' => $dueDate ? Carbon::parse($dueDate)->format('d/m/Y') : '-',
+                    'delivered_date' => $deliveredDate ? Carbon::parse($deliveredDate)->format('d/m/Y') : '-',
+                    'days_left' => $baseDate ? (int) now()->startOfDay()->diffInDays(Carbon::parse($baseDate)->startOfDay(), false) : 0,
+                    'total_items' => $rows->count(),
+                    'total_qty' => $rows->sum(fn($tracking) => (float) ($tracking->sl_don_hang ?? 0)),
+                    'stage' => 'Chưa xuất VAT',
+                ];
+            })
+            ->sortBy('days_left')
+            ->values();
     }
 
     private function productionQuery(array $filters)
@@ -841,24 +881,19 @@ class DashboardMetricsService
         $invoicedRevenue = (float) $orderMargins->sum('invoiced_revenue');
         $previousOrderRevenue = (float) $previousRows->sum('revenue');
         $previousInvoicedRevenue = (float) $previousRows->sum('invoiced_revenue');
-        $dateFrom = Carbon::parse($filters['date_from']);
-        $dateTo = Carbon::parse($filters['date_to']);
-        $trendDates = collect();
-        for ($date = $dateFrom->copy(); $date->lte($dateTo); $date->addDay()) {
-            $trendDates->push($date->format('Y-m-d'));
-        }
-        $rowsByDate = $orderMargins->groupBy('created_date');
+        $revenueTimeseries = [
+            'day' => $this->buildRevenueTimeseries($filters, 'day'),
+            'month' => $this->buildRevenueTimeseries($filters, 'month'),
+            'year' => $this->buildRevenueTimeseries($filters, 'year'),
+        ];
 
         return [
             'top_orders' => $topOrders,
             'by_customer' => $byCustomer,
             'by_product' => $byProduct,
             'charts' => [
-                'revenue_trend' => [
-                    'labels' => $trendDates->map(fn($date) => Carbon::parse($date)->format('d/m'))->all(),
-                    'order_revenue' => $trendDates->map(fn($date) => round((float) ($rowsByDate[$date] ?? collect())->sum('revenue'), 2))->all(),
-                    'invoiced_revenue' => $trendDates->map(fn($date) => round((float) ($rowsByDate[$date] ?? collect())->sum('invoiced_revenue'), 2))->all(),
-                ],
+                'revenue_trend' => $revenueTimeseries['day'],
+                'revenue_timeseries' => $revenueTimeseries,
                 'product_revenue' => [
                     'labels' => $byProduct->take(6)->pluck('ma_hh')->all(),
                     'data' => $byProduct->take(6)->map(fn($row) => round((float) $row['revenue'], 2))->all(),
@@ -908,6 +943,86 @@ class DashboardMetricsService
         }
 
         return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    private function buildRevenueTimeseries(array $filters, string $granularity): array
+    {
+        $end = Carbon::parse($filters['date_to']);
+
+        if ($granularity === 'month') {
+            $start = $end->copy()->startOfMonth()->subMonths(11);
+            $end = $end->copy()->endOfMonth();
+            $periodFilters = array_merge($filters, [
+                'date_from' => $start->toDateString(),
+                'date_to' => $end->toDateString(),
+            ]);
+            $buckets = collect();
+            for ($cursor = $start->copy(); $cursor->lte($end); $cursor->addMonth()) {
+                $buckets->push([
+                    'key' => $cursor->format('Y-m'),
+                    'label' => $cursor->format('m/Y'),
+                ]);
+            }
+            $rows = $this->buildFinanceRowsFor($periodFilters)
+                ->groupBy(fn($row) => Carbon::parse($row['created_date'])->format('Y-m'));
+        } elseif ($granularity === 'year') {
+            $start = $end->copy()->startOfYear()->subYears(4);
+            $end = $end->copy()->endOfYear();
+            $periodFilters = array_merge($filters, [
+                'date_from' => $start->toDateString(),
+                'date_to' => $end->toDateString(),
+            ]);
+            $buckets = collect();
+            for ($cursor = $start->copy(); $cursor->lte($end); $cursor->addYear()) {
+                $buckets->push([
+                    'key' => $cursor->format('Y'),
+                    'label' => $cursor->format('Y'),
+                ]);
+            }
+            $rows = $this->buildFinanceRowsFor($periodFilters)
+                ->groupBy(fn($row) => Carbon::parse($row['created_date'])->format('Y'));
+        } else {
+            $start = Carbon::parse($filters['date_from']);
+            $periodFilters = $filters;
+            $buckets = collect();
+            for ($cursor = $start->copy(); $cursor->lte($end); $cursor->addDay()) {
+                $buckets->push([
+                    'key' => $cursor->format('Y-m-d'),
+                    'label' => $cursor->format('d/m'),
+                ]);
+            }
+            $rows = $this->buildFinanceRowsFor($periodFilters)->groupBy('created_date');
+        }
+
+        $orderRevenue = $buckets
+            ->map(fn($bucket) => round((float) ($rows[$bucket['key']] ?? collect())->sum('revenue'), 2))
+            ->values();
+        $invoicedRevenue = $buckets
+            ->map(fn($bucket) => round((float) ($rows[$bucket['key']] ?? collect())->sum('invoiced_revenue'), 2))
+            ->values();
+
+        $change = $orderRevenue->map(function ($value, int $index) use ($orderRevenue) {
+            if ($index === 0) {
+                return [
+                    'amount' => null,
+                    'pct' => null,
+                ];
+            }
+
+            $previous = (float) ($orderRevenue[$index - 1] ?? 0);
+            return [
+                'amount' => round((float) $value - $previous, 2),
+                'pct' => $this->trendPercentage((float) $value, $previous),
+            ];
+        });
+
+        return [
+            'labels' => $buckets->pluck('label')->all(),
+            'order_revenue' => $orderRevenue->all(),
+            'invoiced_revenue' => $invoicedRevenue->all(),
+            'change_amount' => $change->pluck('amount')->all(),
+            'change_pct' => $change->pluck('pct')->all(),
+        ];
     }
 
     private function buildFinanceRowsFor(array $filters): Collection
