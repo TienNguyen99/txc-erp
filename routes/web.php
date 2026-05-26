@@ -141,9 +141,10 @@ Route::middleware('auth')->group(function () {
                Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/export-dashboard', [WarehouseTransactionController::class, 'exportInventoryDashboard'])->name('warehouse-transactions.export-dashboard')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');
-               Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
-               Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])->name('warehouse-transactions.xuat-hang-loat')->middleware('permission:warehouse.edit');
-               Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])->name('warehouse-transactions.nhap-theo-lenh');
+                Route::post('warehouse-transactions/import', [WarehouseTransactionController::class, 'import'])->name('warehouse-transactions.import')->middleware('permission:warehouse.create');
+                Route::post('warehouse-transactions/xuat-hang-loat', [WarehouseTransactionController::class, 'xuatHangLoat'])->name('warehouse-transactions.xuat-hang-loat')->middleware('permission:warehouse.edit');
+                Route::post('warehouse-transactions/sync-shipped-xuat-kho', [WarehouseTransactionController::class, 'syncShippedMissingXuatKho'])->name('warehouse-transactions.sync-shipped-xuat-kho')->middleware('permission:warehouse.edit');
+                Route::get('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'nhapTheoLenh'])->name('warehouse-transactions.nhap-theo-lenh');
                Route::post('warehouse-transactions/nhap-theo-lenh', [WarehouseTransactionController::class, 'storeNhapTheoLenh'])->name('warehouse-transactions.store-nhap-theo-lenh')->middleware('permission:warehouse.create');
                Route::get('warehouse-transactions/ton-kho', [WarehouseTransactionController::class, 'tonKho'])->name('warehouse-transactions.ton-kho');
                Route::get('warehouse-transactions/export-packing-list', [WarehouseTransactionController::class, 'exportPackingList'])->name('warehouse-transactions.export-packing-list')->middleware('permission:warehouse.export');

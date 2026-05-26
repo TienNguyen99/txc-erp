@@ -32,24 +32,57 @@ class WarehouseTransactionController extends Controller
 
         // ═══ SOẠN HÀNG: Phân theo tracking_number (lô giao) ═══
         // Danh sách tracking_number có sẵn (chưa giao hết)
-        $availableTrackings = OrderTracking::select('tracking_number')
-            ->where('cong_doan', '!=', 'shipped')
-            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
-                ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
-            ->distinct()
+        $deliveredStages = OrderTracking::deliveredStages();
+        $deliveredPlaceholders = implode(',', array_fill(0, count($deliveredStages), '?'));
+
+        $lotSummaries = OrderTracking::query()
+            ->join('orders', 'order_tracking.order_id', '=', 'orders.id')
+            ->whereNotNull('order_tracking.tracking_number')
+            ->whereNotNull('orders.ma_hh')
+            ->where('orders.ma_hh', '!=', '')
+            ->select('order_tracking.tracking_number')
+            ->selectRaw('COUNT(*) as total_items')
+            ->selectRaw(
+                "SUM(CASE WHEN orders.status != ? AND order_tracking.cong_doan NOT IN ({$deliveredPlaceholders}) THEN 1 ELSE 0 END) as open_items",
+                array_merge(['shipped'], $deliveredStages)
+            )
+            ->groupBy('order_tracking.tracking_number')
+            ->orderBy('order_tracking.tracking_number')
+            ->get();
+
+        $missingXuatKhoTrackings = $this->missingXuatKhoShippedTrackings();
+        $missingXuatKhoByLot = $missingXuatKhoTrackings
+            ->groupBy('tracking_number')
+            ->map->count();
+
+        $availableTrackings = $lotSummaries
+            ->filter(fn($lot) => (int) $lot->open_items > 0)
             ->pluck('tracking_number')
-            ->sort()
             ->values();
+
+        $lotStats = (object) [
+            'total_lots' => $lotSummaries->count(),
+            'open_lots' => $lotSummaries->filter(fn($lot) => (int) $lot->open_items > 0)->count(),
+            'shipped_lots' => $lotSummaries->filter(fn($lot) => (int) $lot->open_items === 0)->count(),
+            'missing_xuat_kho' => $missingXuatKhoTrackings->count(),
+        ];
 
         $selectedTracking = $request->input('tracking_filter', '');
 
         // Lấy tracking theo lô đã chọn (hoặc tất cả nếu không filter)
         $trackings = OrderTracking::with('order')
-            ->where('cong_doan', '!=', 'shipped')
+            ->whereNotIn('cong_doan', $deliveredStages)
             ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
                 ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
             ->when($selectedTracking, fn($q) => $q->where('tracking_number', $selectedTracking))
             ->get();
+
+        $selectedLotSummary = $selectedTracking
+            ? $lotSummaries->firstWhere('tracking_number', $selectedTracking)
+            : null;
+        $selectedLotMissingXuatKho = $selectedTracking
+            ? (int) ($missingXuatKhoByLot[$selectedTracking] ?? 0)
+            : 0;
 
         // Tính tồn kho 1 lần cho mỗi ma_hh (tránh N+1)
         $allMaHh = $trackings->map(fn($t) => $t->order->ma_hh)->unique();
@@ -239,9 +272,86 @@ class WarehouseTransactionController extends Controller
             'xuatDates',
             'soanHang',
             'soanStats',
+            'lotStats',
+            'selectedLotSummary',
+            'selectedLotMissingXuatKho',
             'availableTrackings',
             'selectedTracking'
         ));
+    }
+
+    public function syncShippedMissingXuatKho(Request $request)
+    {
+        $trackingFilter = $request->input('tracking_number');
+        $trackings = $this->missingXuatKhoShippedTrackings($trackingFilter);
+        $exchangeRate = (float) (Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400);
+        $created = 0;
+
+        DB::transaction(function () use ($trackings, $exchangeRate, &$created) {
+            foreach ($trackings as $tracking) {
+                if ($this->hasXuatKhoForTracking($tracking)) {
+                    continue;
+                }
+
+                $order = $tracking->order;
+                if (!$order?->ma_hh) {
+                    continue;
+                }
+
+                WarehouseTransaction::create([
+                    'cong_doan' => 'XUATKHO',
+                    'ma_hh' => $order->ma_hh,
+                    'ngay' => now()->toDateString(),
+                    'size' => $tracking->kich ?? $tracking->size,
+                    'mau' => $tracking->mau ?? $order->color,
+                    'so_luong' => (float) ($tracking->sl_don_hang ?? $order->yrd ?? 0),
+                    'price_usd' => $order->price_usd ?? $order->price_usd_auto ?? 0,
+                    'exchange_rate' => $exchangeRate,
+                    'lenh_sx' => $order->lenh_sanxuat ?? $order->job_no,
+                    'note' => "Auto sync XUATKHO - Tracking #{$tracking->id} - Job: {$order->job_no}",
+                ]);
+
+                $tracking->update(['cong_doan' => OrderTracking::STAGE_XUAT_KHO]);
+                $created++;
+            }
+        });
+
+        return redirect()
+            ->route('admin.warehouse-transactions.index', $trackingFilter ? ['tracking_filter' => $trackingFilter] : [])
+            ->with('success', "Đã đồng bộ {$created} dòng XUATKHO cho các order đã shipped.");
+    }
+
+    private function missingXuatKhoShippedTrackings(?string $trackingNumber = null)
+    {
+        return OrderTracking::with('order')
+            ->whereNotNull('tracking_number')
+            ->when($trackingNumber, fn($q) => $q->where('tracking_number', $trackingNumber))
+            ->whereHas('order', fn($q) => $q->where('status', 'shipped')
+                ->whereNotNull('ma_hh')
+                ->where('ma_hh', '!=', ''))
+            ->get()
+            ->filter(fn($tracking) => !$this->hasXuatKhoForTracking($tracking))
+            ->values();
+    }
+
+    private function hasXuatKhoForTracking(OrderTracking $tracking): bool
+    {
+        $order = $tracking->order;
+        if (!$order?->ma_hh) {
+            return false;
+        }
+
+        return WarehouseTransaction::xuatKho()
+            ->where('ma_hh', $order->ma_hh)
+            ->where(function ($q) use ($tracking, $order) {
+                $q->where('note', 'like', "%Tracking #{$tracking->id}%")
+                    ->orWhere(function ($sub) use ($tracking, $order) {
+                        $lenhList = collect([$order->lenh_sanxuat, $order->job_no])->filter()->values();
+                        $sub->whereIn('lenh_sx', $lenhList)
+                            ->where('so_luong', '>=', (float) ($tracking->sl_don_hang ?? $order->yrd ?? 0));
+                    });
+            })
+            ->exists();
     }
 
     public function dashboard(Request $request, WarehouseInventoryDashboardService $dashboardService)

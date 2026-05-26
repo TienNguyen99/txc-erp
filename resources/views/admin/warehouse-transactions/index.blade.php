@@ -156,6 +156,8 @@
                     <i class="fa-solid fa-dolly-flatbed me-2"></i>Soạn Hàng (Phiếu xuất kho)
                 </h5>
                 <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-dark fs-6">Lot shipped: {{ $lotStats->shipped_lots ?? 0 }}</span>
+                    <span class="badge bg-danger fs-6">Thieu XUATKHO: {{ $lotStats->missing_xuat_kho ?? 0 }}</span>
                     <span class="badge bg-success fs-6">Đủ hàng: {{ $soanStats->du_hang }}</span>
                     <span class="badge fs-6" style="background:#fd7e14;color:#fff">Thiếu 1 phần: {{ $soanStats->thieu_1_phan }}</span>
                     <span class="badge bg-warning text-dark fs-6">Đang SX: {{ $soanStats->dang_sx }}</span>
@@ -362,6 +364,30 @@
                     </div>
                 </form>
             @else
+                @if (($lotStats->missing_xuat_kho ?? 0) > 0)
+                    <div class="alert alert-danger py-2 mb-3" style="font-size:.85rem">
+                        C&oacute; {{ $lotStats->missing_xuat_kho }} dong order da shipped nhung chua co XUATKHO, ton kho chua duoc tru.
+                        <form method="POST" action="{{ route('admin.warehouse-transactions.sync-shipped-xuat-kho') }}" class="d-inline ms-2">
+                            @csrf
+                            @if ($selectedTracking)
+                                <input type="hidden" name="tracking_number" value="{{ $selectedTracking }}">
+                            @endif
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Tao XUATKHO cho cac order da shipped nhung chua tru ton?')">
+                                Dong bo XUATKHO
+                            </button>
+                        </form>
+                    </div>
+                @endif
+                @if (($lotStats->shipped_lots ?? 0) > 0)
+                    <div class="alert alert-secondary py-2 mb-3" style="font-size:.85rem">
+                        C&oacute; {{ $lotStats->shipped_lots }} lot da shipped nen khong hien thi trong danh sach soan hang.
+                    </div>
+                @endif
+                @if (false && ($lotStats->shipped_lots ?? 0) > 0)
+                    <div class="alert alert-secondary py-2 mb-3" style="font-size:.85rem">
+                        CÃ³ {{ $lotStats->shipped_lots }} lot Ä‘Ã£ shipped nÃªn khÃ´ng hiá»ƒn thá»‹ trong danh sÃ¡ch soáº¡n hÃ ng.
+                    </div>
+                @endif
                 <p class="text-muted text-center mb-0">
                     @if ($selectedTracking)
                         Không có phiếu nào cần soạn hàng cho lô <strong>{{ $selectedTracking }}</strong>.
