@@ -7,6 +7,30 @@
         <div class="card-page">
             @include('admin.partials.alert')
 
+            <div class="border rounded p-3 mb-3 bg-light">
+                <form method="POST" action="{{ route('admin.lenh-san-xuat.import-template') }}" enctype="multipart/form-data"
+                    class="row g-2 align-items-end">
+                    @csrf
+                    <div class="col-md-6 col-lg-5">
+                        <label class="form-label mb-1 fw-semibold" style="font-size:.85rem">
+                            <i class="fa-solid fa-file-excel text-success me-1"></i>Import file mẫu lên lệnh SX
+                        </label>
+                        <input type="file" name="file" class="form-control form-control-sm" accept=".xlsx,.xls,.csv" required>
+                        <div class="form-text">
+                            Cột A-O: PO, Nhân viên theo, Khách hàng, Model/Style, Item code, Description, Size, Color, Unit, Quantity, Vị trí, Receiving date, Delivery date, Ngày KH yêu cầu, Nơi giao.
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ route('admin.lenh-san-xuat.template') }}" class="btn btn-outline-success btn-sm me-1">
+                            <i class="fa-solid fa-download me-1"></i>Tải template
+                        </a>
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fa-solid fa-upload me-1"></i>Import Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             {{-- ═══ FILTER CHART ═══ --}}
             <form method="GET" class="row g-2 mb-3">
                 <div class="col-md-4">

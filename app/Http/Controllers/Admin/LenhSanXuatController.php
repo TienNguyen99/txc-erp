@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Exports\LenhSanXuatExport;
+use App\Exports\ProductionOrderTemplateExport;
+use App\Imports\ProductionOrderTemplateImport;
 use App\Models\DanhMucHangHoa;
 use App\Models\LenhSanXuat;
 use App\Models\LenhSanXuatItem;
@@ -160,6 +162,47 @@ class LenhSanXuatController extends Controller
 
         return redirect()->route('admin.lenh-san-xuat.show', $lenh)
             ->with('success', "Đã tạo lệnh SX {$lenhSo} với {$lenh->items()->count()} mã HH.");
+    }
+
+    /**
+     * Import orders from the production-order Excel template.
+     */
+    public function importTemplate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        try {
+            $import = new ProductionOrderTemplateImport();
+            Excel::import($import, $request->file('file'));
+
+            $message = "Import OK: total {$import->getProcessedRows()} rows | created {$import->getCreatedCount()} | updated {$import->getUpdatedCount()} | skipped {$import->getSkippedCount()}";
+            $skippedRows = $import->getSkippedRows();
+            if (!empty($skippedRows)) {
+                $preview = collect($skippedRows)
+                    ->take(5)
+                    ->map(fn ($row) => "row {$row['row']}: {$row['reason']}")
+                    ->implode('; ');
+                $message .= ". Skipped: {$preview}";
+            }
+
+            $charts = $import->getImportedCharts();
+            $redirect = redirect()->route('admin.lenh-san-xuat.index', $charts ? ['chart' => $charts] : []);
+
+            return $redirect->with($import->getSkippedCount() > 0 ? 'warning' : 'success', $message);
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.lenh-san-xuat.index')
+                ->with('error', 'Import error: ' . $e->getMessage());
+        }
+    }
+
+    public function template()
+    {
+        return Excel::download(
+            new ProductionOrderTemplateExport(),
+            'mau_import_lenh_san_xuat.xlsx'
+        );
     }
 
     /**

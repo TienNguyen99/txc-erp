@@ -10,6 +10,7 @@ use App\Models\OrderTracking;
 use App\Models\ProductionReport;
 use App\Models\Setting;
 use App\Models\WarehouseTransaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
@@ -148,6 +149,37 @@ class OrderTrackingController extends Controller
             $tn->children = $trackingsForOT[$tn->tracking_number] ?? collect();
         }
 
+        try {
+            $pickupMonth = Carbon::createFromFormat('Y-m', $request->input('pickup_month', now()->format('Y-m')))
+                ->startOfMonth();
+        } catch (\Throwable $e) {
+            $pickupMonth = now()->startOfMonth();
+        }
+        $calendarStart = $pickupMonth->copy()->startOfWeek(Carbon::MONDAY);
+        $calendarEnd = $pickupMonth->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+
+        $pickupLotsByDate = OrderTracking::query()
+            ->whereNotNull('tracking_number')
+            ->whereNotNull('ngay_xe_lay_hang')
+            ->whereBetween('ngay_xe_lay_hang', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+            ->select('tracking_number', 'ngay_xe_lay_hang')
+            ->selectRaw('COUNT(*) as total_items')
+            ->groupBy('tracking_number', 'ngay_xe_lay_hang')
+            ->orderBy('ngay_xe_lay_hang')
+            ->orderBy('tracking_number')
+            ->get()
+            ->groupBy(fn($lot) => Carbon::parse($lot->ngay_xe_lay_hang)->format('Y-m-d'));
+
+        $pickupCalendarDays = collect();
+        for ($day = $calendarStart->copy(); $day->lte($calendarEnd); $day->addDay()) {
+            $dateKey = $day->format('Y-m-d');
+            $pickupCalendarDays->push([
+                'date' => $day->copy(),
+                'date_key' => $dateKey,
+                'lots' => $pickupLotsByDate->get($dateKey, collect()),
+            ]);
+        }
+
         return view('admin.order-tracking.index', compact(
             'data',
             'allOrders',
@@ -157,7 +189,9 @@ class OrderTrackingController extends Controller
             'hasFilter',
             'stages',
             'stats',
-            'trackingNumbers'
+            'trackingNumbers',
+            'pickupMonth',
+            'pickupCalendarDays'
         ));
     }
 

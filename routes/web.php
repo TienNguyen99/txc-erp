@@ -104,6 +104,8 @@ Route::middleware('auth')->group(function () {
           // ── Lệnh Sản Xuất ──
           Route::middleware('permission:lenh_sx.view')->group(function () {
                Route::get('lenh-san-xuat', [AdminLenhSanXuatController::class, 'index'])->name('lenh-san-xuat.index');
+               Route::get('lenh-san-xuat/template', [AdminLenhSanXuatController::class, 'template'])->name('lenh-san-xuat.template');
+               Route::post('lenh-san-xuat/import-template', [AdminLenhSanXuatController::class, 'importTemplate'])->name('lenh-san-xuat.import-template')->middleware('permission:lenh_sx.create');
                Route::post('lenh-san-xuat', [AdminLenhSanXuatController::class, 'store'])->name('lenh-san-xuat.store')->middleware('permission:lenh_sx.create');
                Route::get('lenh-san-xuat/{lenhSanXuat}', [AdminLenhSanXuatController::class, 'show'])->name('lenh-san-xuat.show');
                Route::post('lenh-san-xuat/{lenhSanXuat}/toggle-items', [AdminLenhSanXuatController::class, 'toggleItems'])->name('lenh-san-xuat.toggle-items')->middleware('permission:lenh_sx.edit');

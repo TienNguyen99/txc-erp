@@ -47,6 +47,72 @@
                 </div>
             </form>
 
+            {{-- Pickup calendar --}}
+            <div class="border rounded-3 mb-3 overflow-hidden" style="background:#fff;">
+                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between px-3 py-2 border-bottom"
+                    style="background:#fff7ed;">
+                    <div>
+                        <div class="fw-bold" style="color:#9a3412">
+                            <i class="fa-solid fa-calendar-days me-1"></i>Lịch xe lấy hàng
+                        </div>
+                        <div class="text-muted small">Ngày có lot sẽ hiển thị màu đỏ để dễ ưu tiên điều phối.</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="btn btn-outline-secondary btn-sm"
+                            href="{{ route('admin.order-tracking.index', array_merge(request()->except('page'), ['pickup_month' => $pickupMonth->copy()->subMonth()->format('Y-m')])) }}">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                        <span class="fw-semibold px-2">{{ $pickupMonth->format('m/Y') }}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                            href="{{ route('admin.order-tracking.index', array_merge(request()->except('page'), ['pickup_month' => $pickupMonth->copy()->addMonth()->format('Y-m')])) }}">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="p-2">
+                    <div class="d-grid text-center text-muted small fw-semibold mb-1"
+                        style="grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;">
+                        <div>T2</div>
+                        <div>T3</div>
+                        <div>T4</div>
+                        <div>T5</div>
+                        <div>T6</div>
+                        <div>T7</div>
+                        <div>CN</div>
+                    </div>
+                    <div class="d-grid" style="grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;">
+                        @foreach ($pickupCalendarDays as $calendarDay)
+                            @php
+                                $date = $calendarDay['date'];
+                                $lots = $calendarDay['lots'];
+                                $hasLots = $lots->count() > 0;
+                                $isCurrentMonth = $date->isSameMonth($pickupMonth);
+                                $visibleLots = $lots->take(3);
+                            @endphp
+                            <div class="rounded-2 border p-2 {{ $hasLots ? 'border-danger' : 'border-light' }}"
+                                style="min-height:112px;background:{{ $hasLots ? '#fff1f2' : ($isCurrentMonth ? '#fff' : '#f8fafc') }};opacity:{{ $isCurrentMonth ? '1' : '.55' }};">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="fw-bold {{ $hasLots ? 'text-danger' : 'text-secondary' }}">{{ $date->day }}</span>
+                                    @if ($hasLots)
+                                        <span class="badge bg-danger">{{ $lots->count() }}</span>
+                                    @endif
+                                </div>
+                                @foreach ($visibleLots as $lot)
+                                    <a href="{{ route('admin.order-tracking.lot', $lot->tracking_number) }}"
+                                        class="d-block text-decoration-none small text-danger fw-semibold text-truncate"
+                                        title="{{ $lot->tracking_number }}">
+                                        <i class="fa-solid fa-truck-fast me-1"></i>{{ $lot->tracking_number }}
+                                    </a>
+                                @endforeach
+                                @if ($lots->count() > $visibleLots->count())
+                                    <div class="small text-danger-emphasis mt-1">+{{ $lots->count() - $visibleLots->count() }} lot nữa</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
             {{-- ═══ DASHBOARD CARDS ═══ --}}
             @if ($hasFilter)
                 {{-- Nút tạo Order Tracking Number --}}
