@@ -7,6 +7,7 @@ use App\Models\DanhMucHangHoa;
 use App\Imports\DanhMucHangHoaImport;
 use App\Exports\DanhMucHangHoaExport;
 use App\Exports\DanhMucHangHoaTemplateExport;
+use App\Support\ItemCode;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
@@ -26,8 +27,10 @@ class DanhMucHangHoaController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge(['ma_hh' => ItemCode::normalize($request->input('ma_hh'))]);
+
         $validated = $request->validate([
-            'ma_hh'    => 'required|string|unique:danh_muc_hang_hoa,ma_hh',
+            'ma_hh'    => ['required', 'string', 'regex:' . ItemCode::VALIDATION_REGEX, 'unique:danh_muc_hang_hoa,ma_hh'],
             'ten_hh'   => 'required|string|max:255',
             'mau'      => 'nullable|string',
             'kich_co'  => 'nullable|string',
@@ -67,8 +70,10 @@ class DanhMucHangHoaController extends Controller
 
     public function update(Request $request, DanhMucHangHoa $hangHoa)
     {
+        $request->merge(['ma_hh' => ItemCode::normalize($request->input('ma_hh'))]);
+
         $validated = $request->validate([
-            'ma_hh'    => 'required|string|unique:danh_muc_hang_hoa,ma_hh,' . $hangHoa->id,
+            'ma_hh'    => ['required', 'string', 'regex:' . ItemCode::VALIDATION_REGEX, 'unique:danh_muc_hang_hoa,ma_hh,' . $hangHoa->id],
             'ten_hh'   => 'required|string|max:255',
             'mau'      => 'nullable|string',
             'kich_co'  => 'nullable|string',

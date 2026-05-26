@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\DanhMucHangHoa;
+use App\Support\ItemCode;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -11,6 +12,11 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
 {
     public function model(array $row)
     {
+        $maHh = ItemCode::normalize($row['ma_hh'] ?? null);
+        if (! ItemCode::isValid($maHh)) {
+            throw new \InvalidArgumentException("ma_hh '{$row['ma_hh']}' khong hop le. Chi cho phep chu, so, dau gach ngang (-) va gach duoi (_).");
+        }
+
         $fillable = (new DanhMucHangHoa)->getFillable();
         $data = collect($row)->only($fillable)->toArray();
         $data['active'] = $data['active'] ?? true;
@@ -31,7 +37,7 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
         }
 
         return DanhMucHangHoa::updateOrCreate(
-            ['ma_hh' => $row['ma_hh']],
+            ['ma_hh' => $maHh],
             $data
         );
     }
@@ -39,7 +45,7 @@ class DanhMucHangHoaImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'ma_hh'  => 'required|string',
+            'ma_hh'  => ['required', 'string'],
             'ten_hh' => 'required|string',
         ];
     }

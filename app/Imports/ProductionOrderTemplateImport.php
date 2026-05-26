@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
 use App\Models\Order;
+use App\Support\ItemCode;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\OnEachRow;
@@ -35,7 +36,11 @@ class ProductionOrderTemplateImport implements OnEachRow, WithStartRow
         $staff = $this->clean($row[1] ?? null);
         $customerName = $this->clean($row[2] ?? null);
         $style = $this->clean($row[3] ?? null);
-        $itemCode = $this->clean($row[4] ?? null);
+        $itemCode = ItemCode::normalize($row[4] ?? null) ?: null;
+        if ($itemCode !== null && ! ItemCode::isValid($itemCode)) {
+            $this->skip($excelRow->getIndex(), "Invalid Item code '{$itemCode}'. Only letters, numbers, hyphen, and underscore are allowed.");
+            return;
+        }
         $description = $this->clean($row[5] ?? null);
         $size = $this->clean($row[6] ?? null);
         $color = $this->clean($row[7] ?? null);

@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
 use App\Models\Order;
+use App\Support\ItemCode;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\OnEachRow;
@@ -34,7 +35,10 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
             return;
         }
 
-        $maHh = $this->cleanString($this->value($row, 'ma_hh', 'item_code', 'ma_hang'));
+        $maHh = ItemCode::normalize($this->value($row, 'ma_hh', 'item_code', 'ma_hang'));
+        if ($maHh !== '' && ! ItemCode::isValid($maHh)) {
+            throw new \InvalidArgumentException("ma_hh '{$maHh}' khong hop le. Chi cho phep chu, so, dau gach ngang (-) va gach duoi (_).");
+        }
         $color = $this->cleanString($this->value($row, 'color', 'mau'));
         $priceUsd = $this->toNumeric($this->value($row, 'price_usd', 'don_gia'));
         $rowKey = mb_strtolower($jobNo . '|' . $maHh . '|' . $color);

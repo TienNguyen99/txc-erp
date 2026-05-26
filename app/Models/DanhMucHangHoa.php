@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ItemCode;
 use Illuminate\Database\Eloquent\Model;
 
 class DanhMucHangHoa extends Model
@@ -26,6 +27,11 @@ class DanhMucHangHoa extends Model
         'gia_nvl'          => 'decimal:4',
         'ton_toi_thieu'    => 'integer',
     ];
+
+    public function setMaHhAttribute($value): void
+    {
+        $this->attributes['ma_hh'] = ItemCode::normalize($value);
+    }
 
     public function warehouseTransactions()
     {

@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
 use App\Models\Setting;
+use App\Support\ItemCode;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -51,7 +52,12 @@ class OrderSyncController extends Controller
                 $jobNo = trim($row['job_no'] ?? '');
                 if (empty($jobNo)) { $skipped++; continue; }
 
-                $maHh     = trim($row['ma_hh'] ?? '');
+                $maHh     = ItemCode::normalize($row['ma_hh'] ?? null);
+                if ($maHh !== '' && ! ItemCode::isValid($maHh)) {
+                    $errors[] = "Row $i: ma_hh '{$maHh}' khong hop le.";
+                    $skipped++;
+                    continue;
+                }
                 $color    = trim($row['color'] ?? '');
                 $priceUsd = $this->toNumeric($row['price_usd'] ?? null);
 

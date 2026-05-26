@@ -10,6 +10,7 @@ use App\Imports\CustomerOrderImport;
 use App\Exports\OrderExport;
 use App\Exports\OrderTemplateExport;
 use App\Exports\OtherCustomerOrderTemplateExport;
+use App\Support\ItemCode;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
@@ -51,6 +52,10 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('ma_hh')) {
+            $request->merge(['ma_hh' => ItemCode::normalize($request->input('ma_hh')) ?: null]);
+        }
+
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
             'job_no'        => 'required|string',
@@ -58,7 +63,7 @@ class OrderController extends Controller
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
             'unit'          => 'nullable|string',
-            'ma_hh'         => 'nullable|string',
+            'ma_hh'         => ['nullable', 'string', 'regex:' . ItemCode::VALIDATION_REGEX],
             'ten_hh'        => 'nullable|string',
             'yrd'           => 'nullable|numeric',
             'can_giao_1'    => 'nullable|numeric',
@@ -85,6 +90,10 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order)
     {
+        if ($request->has('ma_hh')) {
+            $request->merge(['ma_hh' => ItemCode::normalize($request->input('ma_hh')) ?: null]);
+        }
+
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
             'job_no'        => 'required|string',
@@ -92,7 +101,7 @@ class OrderController extends Controller
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
             'unit'          => 'nullable|string',
-            'ma_hh'         => 'nullable|string',
+            'ma_hh'         => ['nullable', 'string', 'regex:' . ItemCode::VALIDATION_REGEX],
             'ten_hh'        => 'nullable|string',
             'yrd'           => 'nullable|numeric',
             'can_giao_1'    => 'nullable|numeric',

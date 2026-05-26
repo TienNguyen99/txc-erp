@@ -37,7 +37,8 @@
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Mã HH <span class="text-danger">*</span></label>
                         <input type="text" name="ma_hh" class="form-control @error('ma_hh') is-invalid @enderror"
-                            value="{{ old('ma_hh', $hangHoa->ma_hh ?? '') }}" required>
+                            value="{{ old('ma_hh', $hangHoa->ma_hh ?? '') }}" pattern="[A-Za-z0-9_-]+"
+                            title="Chi cho phep chu, so, dau gach ngang (-) va gach duoi (_)." required>
                         @error('ma_hh')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

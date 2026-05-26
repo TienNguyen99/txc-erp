@@ -2,6 +2,7 @@
 // app/Models/WarehouseTransaction.php
 namespace App\Models;
 
+use App\Support\ItemCode;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
@@ -31,6 +32,12 @@ class WarehouseTransaction extends Model
         'price_usd'     => 'decimal:4',
         'exchange_rate' => 'decimal:2',
     ];
+
+    public function setMaHhAttribute($value): void
+    {
+        $normalized = ItemCode::normalize($value);
+        $this->attributes['ma_hh'] = $normalized === '' ? null : $normalized;
+    }
 
     // Scope lọc nhanh
     public function scopeNhapKho($query)

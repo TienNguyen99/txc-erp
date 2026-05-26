@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
 use Illuminate\Http\Request;
 use App\Http\Resources\DanhMucHangHoaResource;
+use App\Support\ItemCode;
 
 class DanhMucHangHoaApiController extends Controller
 {
@@ -53,8 +54,12 @@ class DanhMucHangHoaApiController extends Controller
 
     private function validatedData(Request $request, bool $partial = false): array
     {
+        if ($request->has('ma_hh')) {
+            $request->merge(['ma_hh' => ItemCode::normalize($request->input('ma_hh'))]);
+        }
+
         return $request->validate([
-            'ma_hh' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
+            'ma_hh' => [$partial ? 'sometimes' : 'required', 'string', 'max:255', 'regex:' . ItemCode::VALIDATION_REGEX],
             'ten_hh' => ['nullable', 'string', 'max:255'],
             'mau' => ['nullable', 'string', 'max:255'],
             'kich_co' => ['nullable', 'string', 'max:255'],
