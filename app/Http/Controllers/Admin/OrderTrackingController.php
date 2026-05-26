@@ -54,25 +54,46 @@ class OrderTrackingController extends Controller
                 ->get();
 
             // ═══ DASHBOARD: Tổng hợp theo ma_hh ═══
-            $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) {
+            $ordersById = $orders->keyBy('id');
+            $allOrderIds = $orders->pluck('id')->filter()->values();
+            $maHhList = $orders->pluck('ma_hh')->filter()->unique()->values();
+
+            $trackingsByMaHh = OrderTracking::whereIn('order_id', $allOrderIds)
+                ->get()
+                ->groupBy(fn($tracking) => $ordersById[$tracking->order_id]->ma_hh ?? $tracking->size);
+
+            $productionByMaHh = ProductionReport::whereIn('size', $maHhList)
+                ->selectRaw('size')
+                ->selectRaw('SUM(CASE WHEN cong_doan != ? THEN sl_dat ELSE 0 END) as sl_production', ['Đã nhập kho'])
+                ->selectRaw('SUM(CASE WHEN cong_doan = ? THEN sl_dat ELSE 0 END) as sl_produced_done', ['Đã nhập kho'])
+                ->groupBy('size')
+                ->get()
+                ->keyBy('size');
+
+            $warehouseByMaHh = WarehouseTransaction::whereIn('ma_hh', $maHhList)
+                ->whereIn('cong_doan', ['NHAPKHO', 'XUATKHO'])
+                ->selectRaw('ma_hh')
+                ->selectRaw('SUM(CASE WHEN cong_doan = ? THEN so_luong ELSE 0 END) as nhap', ['NHAPKHO'])
+                ->selectRaw('SUM(CASE WHEN cong_doan = ? THEN so_luong ELSE 0 END) as xuat', ['XUATKHO'])
+                ->groupBy('ma_hh')
+                ->get()
+                ->keyBy('ma_hh');
+
+            $summary = $orders->groupBy('ma_hh')->map(function ($group, $maHh) use ($trackingsByMaHh, $productionByMaHh, $warehouseByMaHh) {
                 $totalQty = $group->sum('yrd');
                 $orderIds = $group->pluck('id');
 
-                $trackings = OrderTracking::whereIn('order_id', $orderIds)->get();
+                $trackings = $trackingsByMaHh[$maHh] ?? collect();
                 $stageBreakdown = collect(OrderTracking::STAGES)->mapWithKeys(function ($info, $stage) use ($trackings) {
                     return [$stage => $trackings->where('cong_doan', $stage)->sum('sl_don_hang')];
                 });
 
-                $slProduction = ProductionReport::where('size', $maHh)
-                    ->where('cong_doan', '!=', 'Đã nhập kho')
-                    ->sum('sl_dat');
-
-                $slProducedDone = ProductionReport::where('size', $maHh)
-                    ->where('cong_doan', 'Đã nhập kho')
-                    ->sum('sl_dat');
-
-                $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
-                $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+                $production = $productionByMaHh[$maHh] ?? null;
+                $slProduction = (float) ($production->sl_production ?? 0);
+                $slProducedDone = (float) ($production->sl_produced_done ?? 0);
+                $warehouse = $warehouseByMaHh[$maHh] ?? null;
+                $nhap = (float) ($warehouse->nhap ?? 0);
+                $xuat = (float) ($warehouse->xuat ?? 0);
                 $tonKho = $nhap - $xuat;
                 $thieu = max(0, $totalQty - $tonKho);
 
@@ -132,10 +153,22 @@ class OrderTrackingController extends Controller
             ->selectRaw('MIN(created_at) as created_at')
             ->selectRaw('MIN(ngay_xe_lay_hang) as ngay_xe_lay_hang')
             ->selectRaw('COUNT(*) as total_items')
+            ->selectRaw('COUNT(invoice_issued_at) as invoiced_items')
+            ->selectRaw('MAX(invoice_no) as invoice_no')
+            ->selectRaw('MAX(invoice_issued_at) as invoice_issued_at')
             ->groupBy('tracking_number')
             ->orderByDesc('created_at')
             ->limit(30)
             ->get();
+
+        $plNumbersByTracking = OrderTracking::whereIn('tracking_number', $trackingNumbers->pluck('tracking_number'))
+            ->whereNotNull('pl_number')
+            ->select('tracking_number', 'pl_number')
+            ->distinct()
+            ->orderBy('pl_number')
+            ->get()
+            ->groupBy('tracking_number')
+            ->map(fn($rows) => $rows->pluck('pl_number')->filter()->unique()->values());
 
         // Load details for children to show in the dropdown
         $trackingsForOT = OrderTracking::whereIn('tracking_number', $trackingNumbers->pluck('tracking_number'))
@@ -147,6 +180,12 @@ class OrderTrackingController extends Controller
 
         foreach ($trackingNumbers as $tn) {
             $tn->children = $trackingsForOT[$tn->tracking_number] ?? collect();
+            $tn->pl_numbers = $plNumbersByTracking[$tn->tracking_number] ?? collect();
+            $tn->vat_status = match (true) {
+                (int) $tn->invoiced_items === 0 => 'not_issued',
+                (int) $tn->invoiced_items < (int) $tn->total_items => 'partial',
+                default => 'issued',
+            };
         }
 
         try {

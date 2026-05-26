@@ -187,6 +187,8 @@
                                             <th class="no-sort"><input type="checkbox" id="checkAllLots"></th>
                                             <th class="no-sort">#</th>
                                             <th class="no-sort">Order Tracking Number</th>
+                                            <th class="no-sort">PL Number</th>
+                                            <th class="text-center no-sort">VAT</th>
                                             <th class="text-center no-sort">Số tracking</th>
                                             <th class="no-sort">Ngày xe lấy hàng</th>
                                             <th class="no-sort">Ngày tạo</th>
@@ -203,6 +205,35 @@
                                                         class="fw-bold text-decoration-none">
                                                         <i class="fa-solid fa-hashtag text-primary me-1"></i>{{ $tn->tracking_number }}
                                                     </a>
+                                                </td>
+                                                <td>
+                                                    @forelse ($tn->pl_numbers as $pl)
+                                                        <span class="badge bg-light text-dark border me-1">{{ $pl }}</span>
+                                                    @empty
+                                                        <span class="text-muted">—</span>
+                                                    @endforelse
+                                                </td>
+                                                <td class="text-center">
+                                                    @php
+                                                        $invoicedItems = (int) ($tn->invoiced_items ?? 0);
+                                                        $totalItems = (int) ($tn->total_items ?? 0);
+                                                    @endphp
+                                                    @if ($invoicedItems > 0 && $invoicedItems >= $totalItems)
+                                                        <span class="badge bg-success" title="{{ $tn->invoice_no ?: 'Đã xuất VAT' }}">
+                                                            <i class="fa-solid fa-file-invoice-dollar me-1"></i>Đã xuất
+                                                        </span>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $tn->invoice_issued_at ? \Carbon\Carbon::parse($tn->invoice_issued_at)->format('d/m/Y') : '' }}
+                                                        </div>
+                                                    @elseif ($invoicedItems > 0)
+                                                        <span class="badge bg-warning text-dark" title="{{ $invoicedItems }}/{{ $totalItems }} tracking đã xuất VAT">
+                                                            <i class="fa-solid fa-triangle-exclamation me-1"></i>Một phần
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-light text-muted border">
+                                                            <i class="fa-regular fa-file-lines me-1"></i>Chưa xuất
+                                                        </span>
+                                                    @endif
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge bg-info">{{ $tn->total_items }} items</span>
@@ -235,7 +266,7 @@
                                                 </td>
                                             </tr>
                                             <tr class="collapse bg-light" id="child-{{ $loop->iteration }}">
-                                                <td colspan="7" class="p-3">
+                                                <td colspan="9" class="p-3">
                                                     <h6 class="fw-bold text-secondary mb-2" style="font-size:.85rem"><i class="fa-solid fa-code-branch me-1"></i>Các lệnh con (Tracking Child)</h6>
                                                     @if($tn->children->count())
                                                         <table class="table table-sm table-bordered bg-white mb-0">

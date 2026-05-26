@@ -5,7 +5,10 @@
             <h4 class="page-title mb-0"><i class="fa-solid fa-file-invoice me-2"></i>Quản lý Đơn hàng</h4>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.orders.template') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fa-solid fa-file-lines me-1"></i>Tải Template
+                    <i class="fa-solid fa-file-lines me-1"></i>Template SIG
+                </a>
+                <a href="{{ route('admin.orders.template-other-customer') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-file-lines me-1"></i>Template khách khác
                 </a>
                 <a href="{{ route('admin.orders.export') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-file-excel me-1"></i>Export Excel

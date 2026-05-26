@@ -1082,26 +1082,24 @@ class DashboardMetricsService
         $exchangeRate = (float) (Setting::where('key', 'usd_to_vnd')->value('value') ?? 25400);
         $totalRevenueUsd = (float) ($this->orderQuery($filters)->selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0)) as total')->value('total') ?? 0);
         $totalRevenueVnd = $totalRevenueUsd * $exchangeRate;
-        $invoicedRevenueVnd = $this->orderQuery($filters)
-            ->with('tracking')
-            ->get()
-            ->sum(function ($order) use ($exchangeRate) {
-                $qty = (float) ($order->yrd ?? 0);
-                $price = (float) ($order->price_usd ?? $order->price_usd_auto ?? 0);
-                $revenue = $qty * $price * $exchangeRate;
-                $trackingInvoiceRevenue = $order->tracking
-                    ->whereNotNull('invoice_issued_at')
-                    ->sum(function ($tracking) use ($price, $exchangeRate) {
-                        $qty = (float) ($tracking->sl_don_hang ?? 0);
-                        $rate = (float) ($tracking->invoice_exchange_rate ?? $exchangeRate);
-
-                        return $qty * $price * $rate;
-                    });
-
-                return $trackingInvoiceRevenue > 0
-                    ? $trackingInvoiceRevenue
-                    : ($order->status === 'shipped' ? $revenue : 0);
-            });
+        $trackingInvoiceRevenueVnd = (float) (OrderTracking::query()
+            ->join('orders', 'order_tracking.order_id', '=', 'orders.id')
+            ->whereNotNull('order_tracking.invoice_issued_at')
+            ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('orders.created_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('orders.created_at', '<=', $date))
+            ->when($filters['khach_hang_id'] ?? null, fn($q, $id) => $q->where('orders.khach_hang_id', $id))
+            ->when($filters['nhom_hang'] ?? null, fn($q, $nhomHang) => $q->where('orders.ma_hh', 'like', $nhomHang . '%'))
+            ->selectRaw(
+                'SUM(order_tracking.sl_don_hang * COALESCE(orders.price_usd, orders.price_usd_auto, 0) * COALESCE(order_tracking.invoice_exchange_rate, ?)) as total',
+                [$exchangeRate]
+            )
+            ->value('total') ?? 0);
+        $shippedWithoutInvoiceRevenueVnd = (float) ($this->orderQuery($filters)
+            ->where('status', 'shipped')
+            ->whereDoesntHave('tracking', fn($q) => $q->whereNotNull('invoice_issued_at'))
+            ->selectRaw('SUM(yrd * COALESCE(price_usd, price_usd_auto, 0) * ?) as total', [$exchangeRate])
+            ->value('total') ?? 0);
+        $invoicedRevenueVnd = $trackingInvoiceRevenueVnd + $shippedWithoutInvoiceRevenueVnd;
 
         return [
             'pending_orders' => $pendingOrders,

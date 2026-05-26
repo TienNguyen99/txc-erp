@@ -9,9 +9,11 @@ use App\Http\Resources\DanhMucKhachHangResource;
 
 class DanhMucKhachHangApiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return DanhMucKhachHangResource::collection(DanhMucKhachHang::all());
+        $perPage = min((int) $request->integer('per_page', 50), 200);
+
+        return DanhMucKhachHangResource::collection(DanhMucKhachHang::query()->orderBy('ma_kh')->paginate($perPage));
     }
 
     public function show($id)
@@ -25,7 +27,7 @@ class DanhMucKhachHangApiController extends Controller
 
     public function store(Request $request)
     {
-        $item = DanhMucKhachHang::create($request->all());
+        $item = DanhMucKhachHang::create($this->validatedData($request));
         return (new DanhMucKhachHangResource($item))->response()->setStatusCode(201);
     }
 
@@ -35,7 +37,7 @@ class DanhMucKhachHangApiController extends Controller
         if (!$item) {
             return response()->json(['message' => 'DanhMucKhachHang not found'], 404);
         }
-        $item->update($request->all());
+        $item->update($this->validatedData($request, true));
         return new DanhMucKhachHangResource($item);
     }
 
@@ -47,5 +49,20 @@ class DanhMucKhachHangApiController extends Controller
         }
         $item->delete();
         return response()->json(['message' => 'DanhMucKhachHang deleted']);
+    }
+
+    private function validatedData(Request $request, bool $partial = false): array
+    {
+        return $request->validate([
+            'ma_kh' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
+            'ten_kh' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
+            'nguoi_lien_he' => ['nullable', 'string', 'max:255'],
+            'sdt' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'dia_chi' => ['nullable', 'string'],
+            'ma_so_thue' => ['nullable', 'string', 'max:255'],
+            'ghi_chu' => ['nullable', 'string'],
+            'active' => ['nullable', 'boolean'],
+        ]);
     }
 }

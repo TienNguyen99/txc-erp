@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
                Route::post('orders/assign-pl', [OrderController::class, 'assignPlNumber'])->name('orders.assign-pl')->middleware('permission:orders.edit');
                Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export')->middleware('permission:orders.export');
                Route::get('orders/template', [OrderController::class, 'template'])->name('orders.template');
+               Route::get('orders/template-other-customer', [OrderController::class, 'otherCustomerTemplate'])->name('orders.template-other-customer');
                Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
                Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create')->middleware('permission:orders.create');
                Route::post('orders', [OrderController::class, 'store'])->name('orders.store')->middleware('permission:orders.create');

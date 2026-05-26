@@ -2,13 +2,16 @@
 
 namespace App\Imports;
 
-use App\Models\Order;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
+use App\Models\Order;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Row;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
 {
@@ -25,15 +28,15 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         $row = $excelRow->toArray();
         $this->processedRows++;
 
-        $jobNo = trim((string) ($row['job_no'] ?? ''));
+        $jobNo = $this->cleanString($this->value($row, 'job_no', 'po', 'so_po'));
         if ($jobNo === '') {
             $this->skippedCount++;
             return;
         }
 
-        $maHh     = trim($row['ma_hh'] ?? '');
-        $color    = trim($row['color'] ?? '');
-        $priceUsd = $this->toNumeric($row['price_usd'] ?? null);
+        $maHh = $this->cleanString($this->value($row, 'ma_hh', 'item_code', 'ma_hang'));
+        $color = $this->cleanString($this->value($row, 'color', 'mau'));
+        $priceUsd = $this->toNumeric($this->value($row, 'price_usd', 'don_gia'));
         $rowKey = mb_strtolower($jobNo . '|' . $maHh . '|' . $color);
 
         if (isset($this->seenKeys[$rowKey])) {
@@ -47,70 +50,80 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         }
         $this->seenKeys[$rowKey] = $excelRow->getIndex();
 
-        $khachHangId = null;
-        if (!empty($row['khach_hang_id'])) {
-            $val = trim($row['khach_hang_id']);
-            $q = DanhMucKhachHang::where('ma_kh', $val);
-            if (is_numeric($val)) {
-                $q->orWhere('id', $val);
-            }
-            $khachHangId = $q->value('id');
-        }
+        $customerValue = $this->cleanString($this->value($row, 'khach_hang_id', 'khach_hang', 'customer', 'ma_kh'));
+        $khachHangId = $customerValue !== '' ? $this->resolveCustomerId($customerValue) : null;
 
-        // Tự động tạo/cập nhật danh mục hàng hóa nếu có ma_hh
+        $tenHh = $this->cleanString($this->value($row, 'ten_hh', 'description', 'ten_hang'));
+        $unit = $this->cleanString($this->value($row, 'unit', 'don_vi'));
+        $size = $this->cleanString($this->value($row, 'size', 'kich_co'));
+        $receivingDate = $this->toDate($this->value($row, 'order_receiving_date', 'tagtime_etc', 'ngay_nhan_order'));
+        $deliveryDate = $this->toDate($this->value($row, 'delivery_date', 'ngay_giao'));
+        $customerNeedDate = $this->toDate($this->value($row, 'customer_need_date', 'sig_need_date', 'ngay_can'));
+
         if ($maHh !== '') {
             $this->importedMaHh[] = $maHh;
 
             DanhMucHangHoa::updateOrCreate(
                 ['ma_hh' => $maHh],
                 array_filter([
-                    'ten_hh'  => $row['ten_hh'] ?? $maHh,
-                    'mau'     => $row['color'] ?? null,
-                    'don_vi'  => $row['unit'] ?? null,
+                    'ten_hh' => $tenHh !== '' ? $tenHh : $maHh,
+                    'mau' => $color !== '' ? $color : null,
+                    'kich_co' => $size !== '' ? $size : null,
+                    'don_vi' => $unit !== '' ? $unit : null,
                     'don_gia' => $priceUsd,
-                    'active'  => true,
-                ], fn($v) => $v !== null)
+                    'active' => true,
+                ], fn ($value) => $value !== null)
             );
         }
 
         $order = Order::firstOrNew([
             'job_no' => $jobNo,
-            'ma_hh'  => $maHh ?: null,
-            'color'  => $color ?: null,
+            'ma_hh' => $maHh ?: null,
+            'color' => $color ?: null,
         ]);
         $wasExisting = $order->exists;
 
-        $order->khach_hang_id  = $khachHangId;
-        $order->ten_hh         = $row['ten_hh'] ?? null;
-        $order->fty_po         = $row['fty_po'] ?? null;
-        $order->im_number      = $row['im_number'] ?? null;
-        $order->unit           = $row['unit'] ?? null;
-        $order->yrd            = $this->toNumeric($row['yrd'] ?? null);
-        $order->can_giao_1     = $this->toNumeric($row['can_giao_1'] ?? null);
-        $order->can_giao_2     = $this->toNumeric($row['can_giao_2'] ?? null);
-        $order->pl_number      = $row['pl_number'] ?? null;
-        $order->tagtime_etc    = $this->toDate($row['tagtime_etc'] ?? null);
-        $order->sig_need_date  = $this->toDate($row['sig_need_date'] ?? null);
-        $order->chart          = $row['chart'] ?? null;
-        $order->price_usd_auto = $this->toNumeric($row['price_usd_auto'] ?? null);
-        $order->price_usd      = $this->toNumeric($row['price_usd'] ?? null);
+        $order->khach_hang_id = $khachHangId;
+        $order->ten_hh = $tenHh ?: null;
+        $order->fty_po = $this->cleanString($this->value($row, 'fty_po', 'po', 'job_no')) ?: null;
+        $order->im_number = $this->cleanString($this->value($row, 'im_number', 'im', 'ma_hang')) ?: null;
+        $order->unit = $unit ?: null;
+        $order->qty = $this->toNumeric($this->value($row, 'qty', 'quantity', 'so_luong', 'yrd'));
+        $order->yrd = $this->toNumeric($this->value($row, 'yrd', 'quantity', 'so_luong', 'qty'));
+        $order->can_giao_1 = $this->toNumeric($this->value($row, 'can_giao_1'));
+        $order->can_giao_2 = $this->toNumeric($this->value($row, 'can_giao_2'));
+        $order->pl_number = $this->cleanString($this->value($row, 'pl_number', 'job_no')) ?: null;
+        $order->tagtime_etc = $receivingDate ?: $this->toDate($this->value($row, 'tagtime_etc'));
+        $order->sig_need_date = $customerNeedDate ?: $deliveryDate;
+        $order->chart = $this->cleanString($this->value($row, 'chart', 'style')) ?: null;
+        $order->price_usd_auto = $this->toNumeric($this->value($row, 'price_usd_auto'));
+        $order->price_usd = $priceUsd;
 
-        // Chỉ cập nhật các trường nhạy cảm nếu file Excel thực sự có dữ liệu
-        // Tránh tình trạng file Excel để trống làm mất dữ liệu đã nhập trên phần mềm
         if (isset($row['to_khai']) && $row['to_khai'] !== '') {
             $order->to_khai = $row['to_khai'];
+        } else {
+            $importNote = $this->buildImportNote(
+                $this->cleanString($this->value($row, 'nhan_vien_theo')),
+                $this->cleanString($this->value($row, 'vi_tri')),
+                $this->cleanString($this->value($row, 'noi_giao')),
+                $size,
+                $receivingDate,
+                $deliveryDate,
+                $customerNeedDate
+            );
+
+            if ($importNote !== null) {
+                $order->to_khai = $importNote;
+            }
         }
+
         if (isset($row['lenh_sanxuat']) && $row['lenh_sanxuat'] !== '') {
             $order->lenh_sanxuat = $row['lenh_sanxuat'];
         }
 
-        // Bảo vệ trạng thái (status): Chỉ set về pending nếu là đơn mới
-        // Không hạ cấp status nếu đơn hàng đã vào sản xuất hoặc đã giao
         if (!$order->exists) {
             $order->status = $row['status'] ?? 'pending';
-        } else if (isset($row['status']) && $row['status'] !== '') {
-            // Nếu file Excel có ép status và không rỗng, thì có thể cho phép cập nhật
-            // (Tuỳ logic doanh nghiệp, có thể bỏ dòng này nếu không muốn Excel đè status)
+        } elseif (isset($row['status']) && $row['status'] !== '') {
             $order->status = $row['status'];
         }
 
@@ -122,39 +135,111 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         }
     }
 
-    /**
-     * Chuyển giá trị sang số, trả về null nếu không phải số (VD: "đã giao").
-     */
     private function toNumeric($value): ?float
     {
         if ($value === null || $value === '') {
             return null;
         }
+
         $clean = str_replace([',', ' '], ['', ''], trim((string) $value));
+
         return is_numeric($clean) ? (float) $clean : null;
     }
 
-    /**
-     * Chuyển giá trị sang date (Y-m-d), hỗ trợ Excel serial number.
-     */
     private function toDate($value): ?string
     {
-        if (empty($value)) {
+        if ($value === null || $value === '') {
             return null;
         }
-        if (is_numeric($value) && (int) $value > 30000) {
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        if (is_numeric($value) && (float) $value > 30000) {
             try {
-                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((int) $value)->format('Y-m-d');
-            } catch (\Exception $e) {
+                return ExcelDate::excelToDateTimeObject((float) $value)->format('Y-m-d');
+            } catch (\Throwable) {
                 return null;
             }
         }
-        // Nếu là chuỗi ngày hợp lệ
-        $parsed = date_create((string) $value);
-        if ($parsed && $parsed->format('Y') >= 2000) {
-            return $parsed->format('Y-m-d');
+
+        $value = trim((string) $value);
+        foreach (['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y'] as $format) {
+            try {
+                return Carbon::createFromFormat($format, $value)->format('Y-m-d');
+            } catch (\Throwable) {
+                // Try next format.
+            }
         }
+
+        try {
+            $parsed = Carbon::parse($value);
+
+            return (int) $parsed->format('Y') >= 2000 ? $parsed->format('Y-m-d') : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function value(array $row, string ...$keys)
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row) && $row[$key] !== null && $row[$key] !== '') {
+                return $row[$key];
+            }
+        }
+
         return null;
+    }
+
+    private function cleanString($value): string
+    {
+        return $value === null ? '' : trim((string) $value);
+    }
+
+    private function resolveCustomerId(string $value): ?int
+    {
+        $query = DanhMucKhachHang::query()
+            ->where('ma_kh', $value)
+            ->orWhere('ten_kh', $value);
+
+        if (is_numeric($value)) {
+            $query->orWhere('id', $value);
+        }
+
+        $id = $query->value('id');
+        if ($id) {
+            return $id;
+        }
+
+        return DanhMucKhachHang::create([
+            'ma_kh' => Str::upper(Str::slug($value, '')),
+            'ten_kh' => $value,
+            'active' => true,
+        ])->id;
+    }
+
+    private function buildImportNote(
+        string $staff,
+        string $location,
+        string $deliveryPlace,
+        string $size,
+        ?string $receivingDate,
+        ?string $deliveryDate,
+        ?string $customerNeedDate
+    ): ?string {
+        $parts = array_filter([
+            $staff !== '' ? "nhan_vien_theo={$staff}" : null,
+            $location !== '' ? "vi_tri={$location}" : null,
+            $deliveryPlace !== '' ? "noi_giao={$deliveryPlace}" : null,
+            $size !== '' ? "size={$size}" : null,
+            $receivingDate ? "order_receiving_date={$receivingDate}" : null,
+            $deliveryDate ? "delivery_date={$deliveryDate}" : null,
+            $customerNeedDate ? "customer_need_date={$customerNeedDate}" : null,
+        ]);
+
+        return $parts ? 'IMPORT_ORDER | ' . implode(' | ', $parts) : null;
     }
 
     public function getImportedMaHh(): array

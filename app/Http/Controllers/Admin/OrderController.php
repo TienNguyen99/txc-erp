@@ -9,6 +9,7 @@ use App\Imports\OrderImport;
 use App\Imports\CustomerOrderImport;
 use App\Exports\OrderExport;
 use App\Exports\OrderTemplateExport;
+use App\Exports\OtherCustomerOrderTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
@@ -149,6 +150,11 @@ class OrderController extends Controller
     public function template()
     {
         return Excel::download(new OrderTemplateExport, 'template-don-hang.xlsx');
+    }
+
+    public function otherCustomerTemplate()
+    {
+        return Excel::download(new OtherCustomerOrderTemplateExport, 'template-don-hang-khach-khac.xlsx');
     }
 
     public function importCustomer(Request $request)

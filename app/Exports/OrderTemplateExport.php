@@ -37,7 +37,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = 'U'; // 21 columns A-U
+        $lastCol = 'U';
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
