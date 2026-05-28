@@ -25,9 +25,9 @@ Artisan::command('ops:heartbeat', function () {
 })->purpose('Send hourly heartbeat for monitoring');
 
 Artisan::command('ops:check-low-stock', function () {
-    $created = ErpNotification::checkLowStock();
+    $created = ErpNotification::syncOperationalChecks();
 
-    $this->info("Low stock check completed. Created {$created} notification(s).");
+    $this->info("Operational notification check completed. Created {$created} notification(s).");
     return self::SUCCESS;
 })->purpose('Create notifications for items below minimum stock');
 

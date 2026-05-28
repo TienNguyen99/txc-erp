@@ -15,7 +15,26 @@ class DanhMucHangHoaController extends Controller
 {
     public function index(Request $request)
     {
-        $data = DanhMucHangHoa::when($request->search, fn($q, $s) => $q->where('ma_hh', 'like', "%$s%")->orWhere('ten_hh', 'like', "%$s%"))
+        $missing = $request->get('missing');
+        $data = DanhMucHangHoa::query()
+                    ->when($request->search, function ($q, $s) {
+                        $q->where(function ($sub) use ($s) {
+                            $sub->where('ma_hh', 'like', "%$s%")
+                                ->orWhere('ten_hh', 'like', "%$s%");
+                        });
+                    })
+                    ->when($missing === 'price', function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->whereNull('don_gia')
+                                ->orWhere('don_gia', '<=', 0);
+                        });
+                    })
+                    ->when($missing === 'carton_norm', function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->whereNull('dinh_muc_thung')
+                                ->orWhere('dinh_muc_thung', '<=', 0);
+                        });
+                    })
                     ->latest()->paginate(15)->withQueryString();
         return view('admin.hang-hoa.index', compact('data'));
     }

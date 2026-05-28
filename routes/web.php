@@ -187,6 +187,7 @@ Route::middleware('auth')->group(function () {
            Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
            Route::post('notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+           Route::patch('notifications/{notification}/status', [NotificationController::class, 'updateStatus'])->name('notifications.status');
            Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
            // ── Đính kèm tài liệu ──

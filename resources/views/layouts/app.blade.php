@@ -1033,9 +1033,10 @@
                 <i class="fa-solid fa-bell"></i>
                 <span id="unreadBadge"
                     style="
-                position:absolute;top:4px;right:4px;
-                width:8px;height:8px;border-radius:50%;
-                background:#ef4444;display:none;
+                position:absolute;top:0;right:0;
+                min-width:16px;height:16px;padding:0 4px;border-radius:999px;
+                background:#ef4444;color:#fff;display:none;
+                font-size:.62rem;font-weight:800;line-height:16px;text-align:center;
             "></span>
             </a>
 
@@ -1157,7 +1158,10 @@
                 .then(r => r.json())
                 .then(d => {
                     const b = document.getElementById('unreadBadge');
-                    if (b) b.style.display = d.count > 0 ? 'block' : 'none';
+                    if (b) {
+                        b.textContent = d.count > 99 ? '99+' : d.count;
+                        b.style.display = d.count > 0 ? 'block' : 'none';
+                    }
                 }).catch(() => {});
         @endauth
         }

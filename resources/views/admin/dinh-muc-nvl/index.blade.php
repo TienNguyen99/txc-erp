@@ -18,11 +18,25 @@
             <div class="col-md-4">
                 <label class="form-label">Tìm kiếm Sản phẩm</label>
                 <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="Nhập Mã hoặc Tên HH..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control" placeholder="Nhập Mã hoặc Tên HH..."
+                        value="{{ request('search') }}">
+                    @if(request('missing'))
+                        <input type="hidden" name="missing" value="{{ request('missing') }}">
+                    @endif
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-search"></i></button>
                 </div>
             </div>
         </form>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="{{ route('admin.dinh-muc-nvl.index') }}"
+                class="btn btn-sm {{ request('missing') ? 'btn-outline-secondary' : 'btn-primary' }}">
+                Tất cả
+            </a>
+            <a href="{{ route('admin.dinh-muc-nvl.index', ['missing' => 'bom']) }}"
+                class="btn btn-sm {{ request('missing') === 'bom' ? 'btn-warning' : 'btn-outline-warning' }}">
+                <i class="fa-solid fa-list-check me-1"></i>Thiếu BOM
+            </a>
+        </div>
     </div>
 
     <div class="card-page p-0">
@@ -49,12 +63,12 @@
                                 @if($sp->dinh_muc_nvl_count > 0)
                                     <span class="badge bg-success">{{ $sp->dinh_muc_nvl_count }} mục</span>
                                 @else
-                                    <span class="badge bg-light text-muted border">Chưa có</span>
+                                    <span class="badge bg-warning text-dark">Thiếu BOM</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 <a href="{{ route('admin.dinh-muc-nvl.show', $sp->id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa-solid fa-gear me-1"></i> Cấu hình BOM
+                                    <i class="fa-solid fa-gear me-1"></i>Cấu hình BOM
                                 </a>
                             </td>
                         </tr>
@@ -67,7 +81,7 @@
             </table>
         </div>
     </div>
-    
+
     <div class="mt-4">
         {{ $products->links() }}
     </div>

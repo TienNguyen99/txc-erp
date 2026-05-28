@@ -16,11 +16,16 @@ class DinhMucNvlController extends Controller
     {
         // Get products that have BOMs, or just list all products that might need BOMs.
         $query = DanhMucHangHoa::withCount('dinhMucNvl')->orderBy('id', 'desc');
+        if ($request->get('missing') === 'bom') {
+            $query->whereDoesntHave('dinhMucNvl');
+        }
         
         if ($request->has('search')) {
             $search = $request->get('search');
-            $query->where('ma_hh', 'like', "%{$search}%")
-                  ->orWhere('ten_hh', 'like', "%{$search}%");
+            $query->where(function ($sub) use ($search) {
+                $sub->where('ma_hh', 'like', "%{$search}%")
+                    ->orWhere('ten_hh', 'like', "%{$search}%");
+            });
         }
         
         $products = $query->paginate(20);
@@ -79,4 +84,3 @@ class DinhMucNvlController extends Controller
         return back()->with('success', 'Đã xóa nguyên vật liệu khỏi định mức!');
     }
 }
-
