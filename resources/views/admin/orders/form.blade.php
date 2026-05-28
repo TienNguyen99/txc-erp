@@ -30,6 +30,18 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Nhân viên theo</label>
+                        <select name="nhan_vien_id" class="form-select">
+                            <option value="">-- Chọn nhân viên --</option>
+                            @foreach ($nhanViens ?? [] as $id => $ten)
+                                <option value="{{ $id }}"
+                                    {{ old('nhan_vien_id', $order->nhan_vien_id ?? '') == $id ? 'selected' : '' }}>
+                                    {{ $ten }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Job No <span class="text-danger">*</span></label>
                         <input type="text" name="job_no" class="form-control @error('job_no') is-invalid @enderror"
@@ -69,9 +81,19 @@
                             value="{{ old('ma_hh', $order->ma_hh ?? '') }}">
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label fw-semibold">Quy cách</label>
+                        <input type="text" name="quy_cach" class="form-control"
+                            value="{{ old('quy_cach', $order->quy_cach ?? '') }}">
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold">Tên HH</label>
                         <input type="text" name="ten_hh" class="form-control"
                             value="{{ old('ten_hh', $order->ten_hh ?? '') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Kích cỡ</label>
+                        <input type="text" name="kich_co" class="form-control"
+                            value="{{ old('kich_co', $order->kich_co ?? '') }}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Cần giao 1</label>
@@ -97,6 +119,11 @@
                         <label class="form-label fw-semibold">Sig Need Date</label>
                         <input type="date" name="sig_need_date" class="form-control"
                             value="{{ old('sig_need_date', isset($order) ? $order->sig_need_date?->format('Y-m-d') : '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Nơi giao</label>
+                        <input type="text" name="noi_giao" class="form-control"
+                            value="{{ old('noi_giao', $order->noi_giao ?? '') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Chart</label>

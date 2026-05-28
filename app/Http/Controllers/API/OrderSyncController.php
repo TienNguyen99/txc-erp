@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
 use App\Models\Setting;
+use App\Models\User;
 use App\Support\ItemCode;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,14 @@ class OrderSyncController extends Controller
                         ->orWhere('ten_kh', 'like', "%$val%")
                         ->value('id');
                 }
+                if (!empty($row['khach_hang_id'])) {
+                    $khachHangId = DanhMucKhachHang::whereKey((int) $row['khach_hang_id'])->value('id') ?: $khachHangId;
+                }
+
+                $nhanVienId = null;
+                if (!empty($row['nhan_vien_id'])) {
+                    $nhanVienId = User::whereKey((int) $row['nhan_vien_id'])->value('id');
+                }
 
                 // Auto-upsert danh mục hàng hóa
                 if ($maHh !== '') {
@@ -77,6 +86,8 @@ class OrderSyncController extends Controller
                         array_filter([
                             'ten_hh'  => $row['ten_hh'] ?? $maHh,
                             'mau'     => $color ?: null,
+                            'kich_co' => $row['kich_co'] ?? null,
+                            'quy_cach'=> $row['quy_cach'] ?? null,
                             'don_vi'  => $row['unit'] ?? null,
                             'don_gia' => $priceUsd,
                             'active'  => true,
@@ -88,6 +99,10 @@ class OrderSyncController extends Controller
                     ['job_no' => $jobNo, 'ma_hh' => $maHh ?: null, 'color' => $color ?: null],
                     array_filter([
                         'khach_hang_id'  => $khachHangId,
+                        'nhan_vien_id'   => $nhanVienId,
+                        'quy_cach'       => $row['quy_cach'] ?? null,
+                        'kich_co'        => $row['kich_co'] ?? null,
+                        'noi_giao'       => $row['noi_giao'] ?? null,
                         'fty_po'         => $row['fty_po'] ?? null,
                         'im_number'      => $row['im_number'] ?? null,
                         'ten_hh'         => $row['ten_hh'] ?? null,

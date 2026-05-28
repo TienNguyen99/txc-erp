@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\DanhMucKhachHang;
+use App\Models\User;
 use App\Imports\OrderImport;
 use App\Imports\CustomerOrderImport;
 use App\Exports\OrderExport;
@@ -18,7 +19,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::query()->with('khachHang');
+        $query = Order::query()->with(['khachHang', 'nhanVien']);
 
         $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
         $nhomHangs = collect();
@@ -47,7 +48,8 @@ class OrderController extends Controller
     public function create()
     {
         $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
-        return view('admin.orders.form', compact('khachHangs'));
+        $nhanViens = User::orderBy('name')->pluck('name', 'id');
+        return view('admin.orders.form', compact('khachHangs', 'nhanViens'));
     }
 
     public function store(Request $request)
@@ -58,20 +60,24 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
+            'nhan_vien_id'  => 'nullable|exists:users,id',
+            'chart'         => 'nullable|string',
             'job_no'        => 'required|string',
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
             'unit'          => 'nullable|string',
             'ma_hh'         => ['nullable', 'string', 'regex:' . ItemCode::VALIDATION_REGEX],
+            'quy_cach'      => 'nullable|string',
             'ten_hh'        => 'nullable|string',
+            'kich_co'       => 'nullable|string',
+            'noi_giao'      => 'nullable|string',
             'yrd'           => 'nullable|numeric',
             'can_giao_1'    => 'nullable|numeric',
             'can_giao_2'    => 'nullable|numeric',
             'pl_number'     => 'nullable|string',
             'tagtime_etc'   => 'nullable|date',
             'sig_need_date' => 'nullable|date',
-            'chart'         => 'nullable|string',
             'price_usd_auto'=> 'nullable|numeric',
             'price_usd'     => 'nullable|numeric',
             'to_khai'       => 'nullable|string',
@@ -85,7 +91,8 @@ class OrderController extends Controller
     public function edit(Order $order)
     {
         $khachHangs = DanhMucKhachHang::where('active', true)->pluck('ten_kh', 'id');
-        return view('admin.orders.form', compact('order', 'khachHangs'));
+        $nhanViens = User::orderBy('name')->pluck('name', 'id');
+        return view('admin.orders.form', compact('order', 'khachHangs', 'nhanViens'));
     }
 
     public function update(Request $request, Order $order)
@@ -96,20 +103,24 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'khach_hang_id' => 'nullable|exists:danh_muc_khach_hang,id',
+            'nhan_vien_id'  => 'nullable|exists:users,id',
+            'chart'         => 'nullable|string',
             'job_no'        => 'required|string',
             'fty_po'        => 'nullable|string',
             'im_number'     => 'nullable|string',
             'color'         => 'nullable|string',
             'unit'          => 'nullable|string',
             'ma_hh'         => ['nullable', 'string', 'regex:' . ItemCode::VALIDATION_REGEX],
+            'quy_cach'      => 'nullable|string',
             'ten_hh'        => 'nullable|string',
+            'kich_co'       => 'nullable|string',
+            'noi_giao'      => 'nullable|string',
             'yrd'           => 'nullable|numeric',
             'can_giao_1'    => 'nullable|numeric',
             'can_giao_2'    => 'nullable|numeric',
             'pl_number'     => 'nullable|string',
             'tagtime_etc'   => 'nullable|date',
             'sig_need_date' => 'nullable|date',
-            'chart'         => 'nullable|string',
             'price_usd_auto'=> 'nullable|numeric',
             'price_usd'     => 'nullable|numeric',
             'to_khai'       => 'nullable|string',

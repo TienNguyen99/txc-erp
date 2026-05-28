@@ -20,22 +20,26 @@ class Order extends Model
     }
 
     protected $fillable = [
+        'chart',
+        'nhan_vien_id',
         'khach_hang_id',
+        'ma_hh',
+        'quy_cach',
+        'ten_hh',
+        'kich_co',
+        'color',
+        'unit',
+        'yrd',
+        'tagtime_etc',
+        'sig_need_date',
+        'noi_giao',
         'job_no',
         'fty_po',
         'im_number',
-        'color',
         'qty',
-        'unit',
-        'ma_hh',
-        'ten_hh',
-        'yrd',
         'can_giao_1',
         'can_giao_2',
         'pl_number',
-        'tagtime_etc',
-        'sig_need_date',
-        'chart',
         'price_usd_auto',
         'price_usd',
         'to_khai',
@@ -66,6 +70,11 @@ class Order extends Model
     public function khachHang()
     {
         return $this->belongsTo(DanhMucKhachHang::class, 'khach_hang_id');
+    }
+
+    public function nhanVien()
+    {
+        return $this->belongsTo(User::class, 'nhan_vien_id');
     }
 
     public function attachments()

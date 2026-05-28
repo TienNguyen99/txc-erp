@@ -12,21 +12,31 @@ class OtherCustomerOrderTemplateExport implements FromArray, WithHeadings, WithS
     public function headings(): array
     {
         return [
-            'job_no',
-            'nhan_vien_theo',
-            'khach_hang',
             'chart',
+            'nhan_vien_id',
+            'khach_hang_id',
             'ma_hh',
+            'quy_cach',
             'ten_hh',
-            'size',
+            'kich_co',
             'color',
             'unit',
             'yrd',
-            'vi_tri',
-            'order_receiving_date',
-            'delivery_date',
-            'customer_need_date',
+            'tagtime_etc',
+            'sig_need_date',
             'noi_giao',
+            'job_no',
+            'fty_po',
+            'im_number',
+            'qty',
+            'can_giao_1',
+            'can_giao_2',
+            'pl_number',
+            'price_usd_auto',
+            'price_usd',
+            'to_khai',
+            'lenh_sanxuat',
+            'status',
         ];
     }
 
@@ -34,28 +44,38 @@ class OtherCustomerOrderTemplateExport implements FromArray, WithHeadings, WithS
     {
         return [
             [
-                'PB1-SAMDANG-31517',
-                'NGAN',
-                'PLPC',
                 '310613-AW25',
+                '',
+                1,
                 '9810030133',
+                'Quan cuon',
                 'DAY RAI SILICONE 2 DUONG (SOI RECYCLE)',
                 '30MM',
                 'DKT-N07A BLACK',
                 'MET',
                 3980,
-                '',
                 '04/03/2025',
                 '04/05/2025',
-                '',
                 'PLPC',
+                'PB1-SAMDANG-31517',
+                'PB1-SAMDANG-31517',
+                '9810030133',
+                3980,
+                '',
+                '',
+                'PB1-SAMDANG-31517',
+                '',
+                '',
+                '',
+                '',
+                'pending',
             ],
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = 'O';
+        $lastCol = 'Y';
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
@@ -71,7 +91,9 @@ class OtherCustomerOrderTemplateExport implements FromArray, WithHeadings, WithS
         $sheet->freezePane('A2');
         $sheet->setAutoFilter("A1:{$lastCol}1");
         $sheet->getStyle('J2')->getNumberFormat()->setFormatCode('#,##0.00');
-        $sheet->getStyle('L2:N2')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+        $sheet->getStyle('K2:L2')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+        $sheet->getStyle('Q2:S2')->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('U2:V2')->getNumberFormat()->setFormatCode('#,##0.0000');
 
         return [];
     }

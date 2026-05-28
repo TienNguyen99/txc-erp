@@ -11,30 +11,36 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
 {
     public function collection()
     {
-        return Order::with('khachHang')->orderBy('id', 'desc')->get();
+        return Order::with(['khachHang', 'nhanVien'])->orderBy('id', 'desc')->get();
     }
 
     public function headings(): array
     {
         return [
-            'job_no',
-            'fty_po',
+            'chart',
+            'nhan_vien_id',
             'khach_hang_id',
-            'im_number',
+            'ma_hh',
+            'quy_cach',
+            'ten_hh',
+            'kich_co',
             'color',
             'unit',
-            'ma_hh',
-            'ten_hh',
             'yrd',
+            'tagtime_etc',
+            'sig_need_date',
+            'noi_giao',
+            'job_no',
+            'fty_po',
+            'im_number',
+            'qty',
             'can_giao_1',
             'can_giao_2',
             'pl_number',
-            'tagtime_etc',
-            'sig_need_date',
-            'chart',
             'price_usd_auto',
             'price_usd',
             'to_khai',
+            'lenh_sanxuat',
             'status',
         ];
     }
@@ -42,24 +48,30 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
     public function map($row): array
     {
         return [
-            $row->job_no,
-            $row->fty_po,
-            $row->khachHang?->ma_kh,
-            $row->im_number,
+            $row->chart,
+            $row->nhan_vien_id,
+            $row->khach_hang_id,
+            $row->ma_hh,
+            $row->quy_cach,
+            $row->ten_hh,
+            $row->kich_co,
             $row->color,
             $row->unit,
-            $row->ma_hh,
-            $row->ten_hh,
             $row->yrd,
+            $row->tagtime_etc?->format('Y-m-d'),
+            $row->sig_need_date?->format('Y-m-d'),
+            $row->noi_giao,
+            $row->job_no,
+            $row->fty_po,
+            $row->im_number,
+            $row->qty,
             $row->can_giao_1,
             $row->can_giao_2,
             $row->pl_number,
-            $row->tagtime_etc?->format('Y-m-d'),
-            $row->sig_need_date?->format('Y-m-d'),
-            $row->chart,
             $row->price_usd_auto,
             $row->price_usd,
             $row->to_khai,
+            $row->lenh_sanxuat,
             $row->status,
         ];
     }

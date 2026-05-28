@@ -2,7 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\DanhMucHangHoa;
+use App\Exports\OtherCustomerOrderTemplateExport;
+use App\Exports\OrderTemplateExport;
 use App\Models\DanhMucKhachHang;
 use App\Models\Order;
 use App\Models\User;
@@ -19,44 +20,51 @@ class OrderImportTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_other_customer_template_uses_order_columns(): void
+    {
+        $expected = (new Order())->getFillable();
+
+        $this->assertSame($expected, (new OrderTemplateExport())->headings());
+        $this->assertSame($expected, (new OtherCustomerOrderTemplateExport())->headings());
+    }
+
     public function test_other_customer_template_import_creates_order_customer_and_item(): void
     {
         $user = $this->adminWithPermissions(['orders.view', 'orders.import']);
+        $customer = DanhMucKhachHang::create([
+            'ma_kh' => 'PLPC',
+            'ten_kh' => 'PLPC',
+            'active' => true,
+        ]);
 
         $file = $this->xlsxUpload([
+            (new OtherCustomerOrderTemplateExport())->headings(),
             [
-                'job_no',
-                'nhan_vien_theo',
-                'khach_hang',
-                'chart',
-                'ma_hh',
-                'ten_hh',
-                'size',
-                'color',
-                'unit',
-                'yrd',
-                'vi_tri',
-                'order_receiving_date',
-                'delivery_date',
-                'customer_need_date',
-                'noi_giao',
-            ],
-            [
-                'PB1-SAMDANG-31517',
-                'NGAN',
-                'PLPC',
                 '310613-AW25',
+                $user->id,
+                $customer->id,
                 '9810030133',
+                'Quan cuon',
                 'DAY RAI SILICONE 2 DUONG',
                 '30MM',
                 'DKT-N07A BLACK',
                 'MET',
                 3980,
-                'A1',
                 '04/03/2025',
                 '04/05/2025',
-                '',
                 'PLPC',
+                'PB1-SAMDANG-31517',
+                'PB1-SAMDANG-31517',
+                '9810030133',
+                3980,
+                '',
+                '',
+                'PB1-SAMDANG-31517',
+                '',
+                '',
+                '',
+                '',
+                'pending',
             ],
         ]);
 
@@ -65,20 +73,17 @@ class OrderImportTest extends TestCase
             ->assertRedirect(route('admin.orders.index'))
             ->assertSessionHas('success');
 
-        $customer = DanhMucKhachHang::where('ma_kh', 'PLPC')->first();
-        $this->assertNotNull($customer);
-
         $order = Order::where('job_no', 'PB1-SAMDANG-31517')->first();
         $this->assertNotNull($order);
+        $this->assertSame($user->id, $order->nhan_vien_id);
         $this->assertSame($customer->id, $order->khach_hang_id);
         $this->assertSame('9810030133', $order->ma_hh);
+        $this->assertSame('Quan cuon', $order->quy_cach);
+        $this->assertSame('30MM', $order->kich_co);
+        $this->assertSame('PLPC', $order->noi_giao);
         $this->assertSame('310613-AW25', $order->chart);
         $this->assertSame('2025-05-04', $order->sig_need_date->format('Y-m-d'));
-        $this->assertStringContainsString('delivery_date=2025-05-04', $order->to_khai);
-
-        $item = DanhMucHangHoa::where('ma_hh', '9810030133')->first();
-        $this->assertNotNull($item);
-        $this->assertSame('30MM', $item->kich_co);
+        $this->assertNull($order->to_khai);
     }
 
     private function adminWithPermissions(array $permissions): User

@@ -88,6 +88,8 @@ class ProductionOrderTemplateImport implements OnEachRow, WithStartRow
             'im_number' => $itemCode,
             'unit' => $unit,
             'ten_hh' => $description,
+            'kich_co' => $size,
+            'noi_giao' => $deliveryPlace,
             'yrd' => $quantity,
             'qty' => $quantity,
             'pl_number' => $po,

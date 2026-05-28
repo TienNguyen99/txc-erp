@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\DanhMucHangHoa;
 use App\Models\DanhMucKhachHang;
 use App\Models\Order;
+use App\Models\User;
 use App\Support\ItemCode;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -56,10 +57,14 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
 
         $customerValue = $this->cleanString($this->value($row, 'khach_hang_id', 'khach_hang', 'customer', 'ma_kh'));
         $khachHangId = $customerValue !== '' ? $this->resolveCustomerId($customerValue) : null;
+        $staffValue = $this->cleanString($this->value($row, 'nhan_vien_id', 'nhan_vien_theo'));
+        $nhanVienId = $staffValue !== '' ? $this->resolveUserId($staffValue) : null;
 
         $tenHh = $this->cleanString($this->value($row, 'ten_hh', 'description', 'ten_hang'));
         $unit = $this->cleanString($this->value($row, 'unit', 'don_vi'));
-        $size = $this->cleanString($this->value($row, 'size', 'kich_co'));
+        $kichCo = $this->cleanString($this->value($row, 'kich_co', 'size'));
+        $quyCach = $this->cleanString($this->value($row, 'quy_cach'));
+        $noiGiao = $this->cleanString($this->value($row, 'noi_giao'));
         $receivingDate = $this->toDate($this->value($row, 'order_receiving_date', 'tagtime_etc', 'ngay_nhan_order'));
         $deliveryDate = $this->toDate($this->value($row, 'delivery_date', 'ngay_giao'));
         $customerNeedDate = $this->toDate($this->value($row, 'customer_need_date', 'sig_need_date', 'ngay_can'));
@@ -72,7 +77,8 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
                 array_filter([
                     'ten_hh' => $tenHh !== '' ? $tenHh : $maHh,
                     'mau' => $color !== '' ? $color : null,
-                    'kich_co' => $size !== '' ? $size : null,
+                    'kich_co' => $kichCo !== '' ? $kichCo : null,
+                    'quy_cach' => $quyCach !== '' ? $quyCach : null,
                     'don_vi' => $unit !== '' ? $unit : null,
                     'don_gia' => $priceUsd,
                     'active' => true,
@@ -88,7 +94,11 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         $wasExisting = $order->exists;
 
         $order->khach_hang_id = $khachHangId;
+        $order->nhan_vien_id = $nhanVienId;
         $order->ten_hh = $tenHh ?: null;
+        $order->quy_cach = $quyCach ?: null;
+        $order->kich_co = $kichCo ?: null;
+        $order->noi_giao = $noiGiao ?: null;
         $order->fty_po = $this->cleanString($this->value($row, 'fty_po', 'po', 'job_no')) ?: null;
         $order->im_number = $this->cleanString($this->value($row, 'im_number', 'im', 'ma_hang')) ?: null;
         $order->unit = $unit ?: null;
@@ -109,11 +119,7 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
             $importNote = $this->buildImportNote(
                 $this->cleanString($this->value($row, 'nhan_vien_theo')),
                 $this->cleanString($this->value($row, 'vi_tri')),
-                $this->cleanString($this->value($row, 'noi_giao')),
-                $size,
-                $receivingDate,
-                $deliveryDate,
-                $customerNeedDate
+                $this->cleanString($this->value($row, 'delivery_date', 'customer_need_date'))
             );
 
             if ($importNote !== null) {
@@ -224,23 +230,27 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         ])->id;
     }
 
+    private function resolveUserId(string $value): ?int
+    {
+        if (is_numeric($value)) {
+            return User::whereKey((int) $value)->value('id');
+        }
+
+        return User::query()
+            ->where('name', $value)
+            ->orWhere('email', $value)
+            ->value('id');
+    }
+
     private function buildImportNote(
         string $staff,
         string $location,
-        string $deliveryPlace,
-        string $size,
-        ?string $receivingDate,
-        ?string $deliveryDate,
-        ?string $customerNeedDate
+        string $legacyDates
     ): ?string {
         $parts = array_filter([
             $staff !== '' ? "nhan_vien_theo={$staff}" : null,
             $location !== '' ? "vi_tri={$location}" : null,
-            $deliveryPlace !== '' ? "noi_giao={$deliveryPlace}" : null,
-            $size !== '' ? "size={$size}" : null,
-            $receivingDate ? "order_receiving_date={$receivingDate}" : null,
-            $deliveryDate ? "delivery_date={$deliveryDate}" : null,
-            $customerNeedDate ? "customer_need_date={$customerNeedDate}" : null,
+            $legacyDates !== '' ? "legacy_dates={$legacyDates}" : null,
         ]);
 
         return $parts ? 'IMPORT_ORDER | ' . implode(' | ', $parts) : null;

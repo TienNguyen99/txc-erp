@@ -97,11 +97,15 @@
                             <th>Job No</th>
                             <th>Fty PO</th>
                             <th>Khách hàng</th>
+                            <th>Nhân viên</th>
                             <th>IM#</th>
                             <th>Color</th>
                             <th>YRD</th>
                             <th>Mã HH</th>
                             <th>Tên HH</th>
+                            <th>Quy cách</th>
+                            <th>Kích cỡ</th>
+                            <th>Nơi giao</th>
                             <th>PL Number</th>
                             <th>Lệnh SX</th>
                             <th>Status</th>
@@ -116,11 +120,15 @@
                                 <td class="fw-semibold">{{ $item->job_no }}</td>
                                 <td>{{ $item->fty_po }}</td>
                                 <td>{{ $item->khachHang?->ma_kh ?? '—' }}</td>
+                                <td>{{ $item->nhanVien?->name ?? '—' }}</td>
                                 <td>{{ $item->im_number }}</td>
                                 <td>{{ $item->color }}</td>
                                 <td>{{ number_format($item->yrd, 2) }}</td>
                                 <td>{{ $item->ma_hh }}</td>
                                 <td>{{ $item->ten_hh }}</td>
+                                <td>{{ $item->quy_cach }}</td>
+                                <td>{{ $item->kich_co }}</td>
+                                <td>{{ $item->noi_giao }}</td>
                                 <td>{{ $item->pl_number ?: '—' }}</td>
                                 <td>{{ $item->lenh_sanxuat }}</td>
                                 <td>
@@ -140,7 +148,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="text-muted text-center">Không có dữ liệu</td>
+                                <td colspan="17" class="text-muted text-center">Không có dữ liệu</td>
                             </tr>
                         @endforelse
                     </tbody>
