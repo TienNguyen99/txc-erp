@@ -39,12 +39,13 @@ class WarehouseTransactionTemplateExport implements WithHeadings, WithStyles
 
         // Sample row
         $sheet->fromArray([
-            'NHAPKHO', 'MH001', date('Y-m-d'), '60"', 'Trắng', '100', 'NV01', 'LSX001', 'Ghi chú mẫu'
+            'NHAPKHO', 'MH001', date('d/m/Y'), '60"', 'Trắng', '100', 'NV01', 'LSX001', 'Ghi chú mẫu'
         ], null, 'A2');
 
         $sheet->getStyle('A2:I2')->applyFromArray([
             'font' => ['italic' => true, 'color' => ['rgb' => '999999']],
         ]);
+        $sheet->getStyle('C2:C200')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
 
         // Dropdown for cong_doan
         $validation = $sheet->getCell('A2')->getDataValidation();

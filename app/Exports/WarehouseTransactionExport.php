@@ -34,7 +34,7 @@ class WarehouseTransactionExport implements FromCollection, WithHeadings, WithMa
         return [
             $row->cong_doan,
             $row->ma_hh,
-            $row->ngay?->format('Y-m-d'),
+            $row->ngay?->format('d/m/Y'),
             $row->size,
             $row->mau,
             $row->so_luong,

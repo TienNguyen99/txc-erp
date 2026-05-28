@@ -113,6 +113,7 @@ class WarehouseDocumentTest extends TestCase
             'pl_number' => 'PL-SHIPPED-001',
             'size' => 'HH-SHIPPED',
             'cong_doan' => 'Chờ sản xuất',
+            'ngay_xe_lay_hang' => '2026-05-21',
             'sl_don_hang' => 50,
         ]);
 
@@ -130,6 +131,7 @@ class WarehouseDocumentTest extends TestCase
         $this->assertDatabaseHas('warehouse_transactions', [
             'cong_doan' => 'XUATKHO',
             'ma_hh' => 'HH-SHIPPED',
+            'ngay' => '2026-05-21 00:00:00',
             'so_luong' => 50,
         ]);
         $this->assertSame(OrderTracking::STAGE_XUAT_KHO, OrderTracking::first()->fresh()->cong_doan);

@@ -963,8 +963,10 @@ class DashboardMetricsService
                     'label' => $cursor->format('m/Y'),
                 ]);
             }
-            $rows = $this->buildFinanceRowsFor($periodFilters)
+            $orderRows = $this->buildFinanceRowsFor($periodFilters)
                 ->groupBy(fn($row) => Carbon::parse($row['created_date'])->format('Y-m'));
+            $invoicedRows = $this->buildInvoicedRevenueRowsFor($periodFilters)
+                ->groupBy(fn($row) => Carbon::parse($row['invoice_date'])->format('Y-m'));
         } elseif ($granularity === 'year') {
             $start = $end->copy()->startOfYear()->subYears(4);
             $end = $end->copy()->endOfYear();
@@ -979,8 +981,10 @@ class DashboardMetricsService
                     'label' => $cursor->format('Y'),
                 ]);
             }
-            $rows = $this->buildFinanceRowsFor($periodFilters)
+            $orderRows = $this->buildFinanceRowsFor($periodFilters)
                 ->groupBy(fn($row) => Carbon::parse($row['created_date'])->format('Y'));
+            $invoicedRows = $this->buildInvoicedRevenueRowsFor($periodFilters)
+                ->groupBy(fn($row) => Carbon::parse($row['invoice_date'])->format('Y'));
         } else {
             $start = Carbon::parse($filters['date_from']);
             $periodFilters = $filters;
@@ -991,17 +995,18 @@ class DashboardMetricsService
                     'label' => $cursor->format('d/m'),
                 ]);
             }
-            $rows = $this->buildFinanceRowsFor($periodFilters)->groupBy('created_date');
+            $orderRows = $this->buildFinanceRowsFor($periodFilters)->groupBy('created_date');
+            $invoicedRows = $this->buildInvoicedRevenueRowsFor($periodFilters)->groupBy('invoice_date');
         }
 
         $orderRevenue = $buckets
-            ->map(fn($bucket) => round((float) ($rows[$bucket['key']] ?? collect())->sum('revenue'), 2))
+            ->map(fn($bucket) => round((float) ($orderRows[$bucket['key']] ?? collect())->sum('revenue'), 2))
             ->values();
         $invoicedRevenue = $buckets
-            ->map(fn($bucket) => round((float) ($rows[$bucket['key']] ?? collect())->sum('invoiced_revenue'), 2))
+            ->map(fn($bucket) => round((float) ($invoicedRows[$bucket['key']] ?? collect())->sum('invoiced_revenue'), 2))
             ->values();
 
-        $change = $orderRevenue->map(function ($value, int $index) use ($orderRevenue) {
+        $change = $invoicedRevenue->map(function ($value, int $index) use ($invoicedRevenue) {
             if ($index === 0) {
                 return [
                     'amount' => null,
@@ -1009,7 +1014,7 @@ class DashboardMetricsService
                 ];
             }
 
-            $previous = (float) ($orderRevenue[$index - 1] ?? 0);
+            $previous = (float) ($invoicedRevenue[$index - 1] ?? 0);
             return [
                 'amount' => round((float) $value - $previous, 2),
                 'pct' => $this->trendPercentage((float) $value, $previous),
@@ -1060,6 +1065,35 @@ class DashboardMetricsService
     }
 
     // Các số KPI chính hiển thị ở card đầu trang.
+    private function buildInvoicedRevenueRowsFor(array $filters): Collection
+    {
+        return OrderTracking::query()
+            ->with('order')
+            ->whereNotNull('invoice_issued_at')
+            ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('invoice_issued_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('invoice_issued_at', '<=', $date))
+            ->when(($filters['khach_hang_id'] ?? null) || ($filters['nhom_hang'] ?? null), function ($q) use ($filters) {
+                $q->whereHas('order', function ($orderQ) use ($filters) {
+                    $orderQ
+                        ->when($filters['khach_hang_id'] ?? null, fn($sub, $id) => $sub->where('khach_hang_id', $id))
+                        ->when($filters['nhom_hang'] ?? null, fn($sub, $nhomHang) => $sub->where('ma_hh', 'like', $nhomHang . '%'));
+                });
+            })
+            ->get()
+            ->map(function (OrderTracking $tracking) {
+                $order = $tracking->order;
+                $price = (float) ($order?->price_usd ?? $order?->price_usd_auto ?? 0);
+                $qty = (float) ($tracking->sl_don_hang ?? $order?->yrd ?? 0);
+
+                return [
+                    'invoice_date' => $tracking->invoice_issued_at?->format('Y-m-d'),
+                    'invoiced_revenue' => $qty * $price,
+                ];
+            })
+            ->filter(fn($row) => $row['invoice_date'] !== null)
+            ->values();
+    }
+
     private function buildStats(array $filters): array
     {
         $totalOrders = $this->orderQuery($filters)->count();

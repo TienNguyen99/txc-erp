@@ -1167,6 +1167,43 @@
 
         // Table sorting
         document.addEventListener('DOMContentLoaded', function() {
+            const isoToDisplayDate = value => {
+                const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+                return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+            };
+            const displayToIsoDate = value => {
+                const trimmed = (value || '').trim();
+                const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
+                if (dmy) {
+                    return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+                }
+
+                const compactDmy = /^(\d{2})(\d{2})(\d{4})$/.exec(trimmed);
+                if (compactDmy) {
+                    return `${compactDmy[3]}-${compactDmy[2]}-${compactDmy[1]}`;
+                }
+
+                return trimmed;
+            };
+
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                input.type = 'text';
+                input.inputMode = 'numeric';
+                input.placeholder = 'dd/mm/yyyy';
+                input.autocomplete = 'off';
+                input.dataset.dateDisplay = 'dmy';
+                input.value = isoToDisplayDate(input.value);
+                input.addEventListener('blur', () => {
+                    input.value = isoToDisplayDate(displayToIsoDate(input.value));
+                });
+            });
+
+            document.addEventListener('submit', event => {
+                event.target.querySelectorAll?.('input[data-date-display="dmy"]').forEach(input => {
+                    input.value = displayToIsoDate(input.value);
+                });
+            }, true);
+
             const getCellValue = (tr, idx) => {
                 let cell = tr.children[idx];
                 if (!cell) return '';

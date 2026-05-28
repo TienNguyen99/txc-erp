@@ -53,6 +53,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
         foreach (range('A', $lastCol) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
+        $sheet->getStyle('K2:L200')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
 
         return [];
     }

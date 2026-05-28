@@ -50,7 +50,7 @@ class ProductionReportExport implements FromCollection, WithHeadings, WithMappin
     {
         return [
             $row->lenh_sx,
-            $row->ngay_sx?->format('Y-m-d'),
+            $row->ngay_sx?->format('d/m/Y'),
             $row->cong_doan,
             $row->ca,
             $row->ma_nv,

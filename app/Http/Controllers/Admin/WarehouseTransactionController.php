@@ -301,7 +301,7 @@ class WarehouseTransactionController extends Controller
                 WarehouseTransaction::create([
                     'cong_doan' => 'XUATKHO',
                     'ma_hh' => $order->ma_hh,
-                    'ngay' => now()->toDateString(),
+                    'ngay' => $tracking->ngay_xe_lay_hang?->toDateString() ?? now()->toDateString(),
                     'size' => $tracking->kich ?? $tracking->size,
                     'mau' => $tracking->mau ?? $order->color,
                     'so_luong' => (float) ($tracking->sl_don_hang ?? $order->yrd ?? 0),

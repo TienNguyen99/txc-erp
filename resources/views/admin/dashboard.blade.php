@@ -565,7 +565,7 @@
                         <div class="chart-head">
                             <div>
                                 <div class="focus-title">Xu hướng doanh thu</div>
-                                <div class="chart-subtitle" id="revenueTrendSubtitle">Theo ngày: cột là giá trị đơn, đường là phần đã HĐ/giao</div>
+                                <div class="chart-subtitle" id="revenueTrendSubtitle">Theo ngày xuất VAT</div>
                             </div>
                             <div class="chart-toggle" aria-label="Chọn kỳ doanh thu">
                                 <button type="button" class="active" data-revenue-period="day">Ngày</button>
@@ -757,44 +757,29 @@
                 const revenueSeries = financeCharts.revenue_timeseries || { day: financeCharts.revenue_trend };
                 const revenueSubtitle = document.getElementById('revenueTrendSubtitle');
                 const revenuePeriodText = {
-                    day: 'Theo ngày: tăng/giảm so với ngày trước',
-                    month: 'Theo tháng: tăng/giảm so với tháng trước',
-                    year: 'Theo năm: tăng/giảm so với năm trước',
+                    day: 'Theo ngày xuất VAT',
+                    month: 'Theo tháng xuất VAT',
+                    year: 'Theo năm xuất VAT',
                 };
                 const makeRevenueData = period => {
                     const series = revenueSeries[period] || revenueSeries.day;
                     return {
                         labels: series.labels,
-                        datasets: [
-                            {
-                                label: 'Giá trị đơn',
-                                type: 'bar',
-                                data: series.order_revenue,
-                                backgroundColor: 'rgba(245,158,11,.18)',
-                                borderColor: 'rgba(245,158,11,.55)',
-                                borderWidth: 1,
-                                borderRadius: 3,
-                                borderSkipped: false,
-                                barPercentage: .45,
-                                categoryPercentage: .62,
-                                maxBarThickness: 24,
-                            },
-                            {
-                                label: 'Đã HĐ/giao',
-                                type: 'line',
-                                data: series.invoiced_revenue,
-                                borderColor: GREEN,
-                                backgroundColor: financeGrad,
-                                borderWidth: 3,
-                                fill: true,
-                                tension: .38,
-                                pointRadius: 0,
-                                pointHoverRadius: 5,
-                                pointBackgroundColor: '#fff',
-                                pointBorderColor: GREEN,
-                                pointBorderWidth: 2,
-                            },
-                        ],
+                        datasets: [{
+                            label: 'Doanh thu xuất VAT',
+                            type: 'line',
+                            data: series.invoiced_revenue,
+                            borderColor: GREEN,
+                            backgroundColor: financeGrad,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: .38,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: GREEN,
+                            pointBorderWidth: 2,
+                        }],
                     };
                 };
                 const financeTrendChart = new Chart(financeTrendCtx, {
@@ -872,7 +857,14 @@
                         layout: { padding: { right: 46 } },
                         plugins: {
                             legend: { display: false },
-                            tooltip: sharedTooltip,
+                            tooltip: {
+                                ...sharedTooltip,
+                                callbacks: {
+                                    label(context) {
+                                        return ` ${context.dataset.label}: ${formatNumber(context.parsed.x)}`;
+                                    },
+                                },
+                            },
                             valueLabel: { enabled: true, mode: 'barEnd', color: BLUE },
                         },
                         scales: {

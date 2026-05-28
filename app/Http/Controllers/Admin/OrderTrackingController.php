@@ -24,10 +24,19 @@ class OrderTrackingController extends Controller
     public function index(Request $request)
     {
         // Lấy danh sách PL Number và Chart để filter
-        $plNumbers = Order::whereNotNull('pl_number')->where('pl_number', '!=', '')
-            ->distinct()->pluck('pl_number');
-        $charts = Order::whereNotNull('chart')->where('chart', '!=', '')
-            ->distinct()->pluck('chart');
+        $untrackedOrders = Order::query()->whereDoesntHave('tracking');
+        $plNumbers = (clone $untrackedOrders)
+            ->whereNotNull('pl_number')
+            ->where('pl_number', '!=', '')
+            ->distinct()
+            ->orderBy('pl_number')
+            ->pluck('pl_number');
+        $charts = (clone $untrackedOrders)
+            ->whereNotNull('chart')
+            ->where('chart', '!=', '')
+            ->distinct()
+            ->orderBy('chart')
+            ->pluck('chart');
 
         // Lọc orders theo PL Number hoặc Chart
         $plFilter = array_filter((array) $request->input('pl_number', []));

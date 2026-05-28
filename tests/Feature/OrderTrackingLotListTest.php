@@ -50,6 +50,46 @@ class OrderTrackingLotListTest extends TestCase
             ->assertSee('Đã xuất');
     }
 
+    public function test_filters_only_show_orders_without_tracking(): void
+    {
+        $user = $this->adminWithPermissions(['tracking.view']);
+
+        $trackedOrder = Order::create([
+            'job_no' => 'JOB-TRACKED-001',
+            'pl_number' => 'PL-TRACKED',
+            'chart' => 'CHART-TRACKED',
+            'ma_hh' => 'HH-TRACKED',
+            'yrd' => 10,
+            'status' => 'pending',
+        ]);
+
+        OrderTracking::create([
+            'order_id' => $trackedOrder->id,
+            'tracking_number' => 'OT-TRACKED-001',
+            'pl_number' => 'PL-TRACKED',
+            'size' => 'HH-TRACKED',
+            'cong_doan' => 'Chờ sản xuất',
+            'sl_don_hang' => 10,
+        ]);
+
+        Order::create([
+            'job_no' => 'JOB-OPEN-001',
+            'pl_number' => 'PL-OPEN',
+            'chart' => 'CHART-OPEN',
+            'ma_hh' => 'HH-OPEN',
+            'yrd' => 20,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.order-tracking.index'))
+            ->assertOk()
+            ->assertSee('PL-OPEN')
+            ->assertSee('CHART-OPEN')
+            ->assertDontSee('value="PL-TRACKED"', false)
+            ->assertDontSee('value="CHART-TRACKED"', false);
+    }
+
     private function adminWithPermissions(array $permissions): User
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
