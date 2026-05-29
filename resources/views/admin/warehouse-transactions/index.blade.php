@@ -52,6 +52,9 @@
                 <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#packingListModal">
                     <i class="fa-solid fa-file-invoice me-1"></i>Packing List
                 </button>
+                <a href="{{ route('admin.warehouse-transactions.soan-hang') }}" class="btn btn-danger btn-sm">
+                    <i class="fa-solid fa-dolly-flatbed me-1"></i>Soạn hàng
+                </a>
                 <a href="{{ route('admin.warehouse-transactions.nhap-theo-lenh') }}" class="btn btn-success btn-sm">
                     <i class="fa-solid fa-dolly me-1"></i>Nhập kho theo Lệnh SX
                 </a>
@@ -149,8 +152,9 @@
             </div>
         </div>
 
+        @if (false)
         {{-- ═══ SOẠN HÀNG — Phân theo lô giao (tracking_number) ═══ --}}
-        <div class="card-page mb-4">
+        <div class="card-page mb-4 d-none">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0 fw-bold" style="color:#1e3a5f">
                     <i class="fa-solid fa-dolly-flatbed me-2"></i>Soạn Hàng (Phiếu xuất kho)
@@ -217,6 +221,27 @@
                     <i class="fa-solid fa-info-circle me-1"></i>
                     Đang hiển thị lô: <strong>{{ $selectedTracking }}</strong>
                     — Bảng sắp xếp theo <strong>Mã HH → FTY PO</strong> giống file Packing List.
+                </div>
+            @endif
+
+            @php
+                $missingXuatKhoCount = $selectedTracking
+                    ? ($selectedLotMissingXuatKho ?? 0)
+                    : ($lotStats->missing_xuat_kho ?? 0);
+            @endphp
+
+            @if ($missingXuatKhoCount > 0)
+                <div class="alert alert-danger py-2 mb-3" style="font-size:.85rem">
+                    C&oacute; {{ $missingXuatKhoCount }} dong order da shipped nhung chua co XUATKHO, ton kho chua duoc tru.
+                    <form method="POST" action="{{ route('admin.warehouse-transactions.sync-shipped-xuat-kho') }}" class="d-inline ms-2">
+                        @csrf
+                        @if ($selectedTracking)
+                            <input type="hidden" name="tracking_number" value="{{ $selectedTracking }}">
+                        @endif
+                        <button class="btn btn-danger btn-sm" onclick="return confirm('Tao XUATKHO cho cac order da shipped nhung chua tru ton?')">
+                            Dong bo XUATKHO
+                        </button>
+                    </form>
                 </div>
             @endif
 
@@ -364,20 +389,6 @@
                     </div>
                 </form>
             @else
-                @if (($lotStats->missing_xuat_kho ?? 0) > 0)
-                    <div class="alert alert-danger py-2 mb-3" style="font-size:.85rem">
-                        C&oacute; {{ $lotStats->missing_xuat_kho }} dong order da shipped nhung chua co XUATKHO, ton kho chua duoc tru.
-                        <form method="POST" action="{{ route('admin.warehouse-transactions.sync-shipped-xuat-kho') }}" class="d-inline ms-2">
-                            @csrf
-                            @if ($selectedTracking)
-                                <input type="hidden" name="tracking_number" value="{{ $selectedTracking }}">
-                            @endif
-                            <button class="btn btn-danger btn-sm" onclick="return confirm('Tao XUATKHO cho cac order da shipped nhung chua tru ton?')">
-                                Dong bo XUATKHO
-                            </button>
-                        </form>
-                    </div>
-                @endif
                 @if (($lotStats->shipped_lots ?? 0) > 0)
                     <div class="alert alert-secondary py-2 mb-3" style="font-size:.85rem">
                         C&oacute; {{ $lotStats->shipped_lots }} lot da shipped nen khong hien thi trong danh sach soan hang.
@@ -519,6 +530,8 @@
             </div>
         </div>
 
+        @endif
+
         {{-- ═══ DANH SÁCH GIAO DỊCH ═══ --}}
         <div class="card-page">
             <h5 class="fw-bold mb-3" style="color:#1e3a5f"><i class="fa-solid fa-exchange-alt me-2"></i>Giao dịch</h5>
@@ -527,8 +540,6 @@
                 <div class="alert alert-danger">{{ $errors->first() }}</div>
             @endif
             <form method="GET" class="row g-2 mb-3">
-                <input type="hidden" name="thang" value="{{ $thang }}">
-                <input type="hidden" name="nam" value="{{ $nam }}">
                 <div class="col-md-3">
                     <input type="text" name="search" class="form-control form-control-sm"
                         placeholder="Tìm Lệnh SX / Mã NV..." value="{{ request('search') }}">

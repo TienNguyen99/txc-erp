@@ -13,7 +13,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
         return [
             'chart',
             'nhan_vien_id',
-            'khach_hang_id',
+            'ma_kh',
             'ma_hh',
             'quy_cach',
             'ten_hh',

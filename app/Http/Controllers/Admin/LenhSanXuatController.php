@@ -26,7 +26,13 @@ class LenhSanXuatController extends Controller
         $charts = Order::whereNotNull('chart')->where('chart', '!=', '')
             ->distinct()->pluck('chart');
 
-        $chartFilter = array_filter((array) $request->input('chart', []));
+        $chartFilter = collect((array) $request->input('chart', []))
+            ->merge(preg_split('/[\r\n,;]+/', (string) $request->input('chart_bulk', ''), -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
         // Dashboard: khi chọn Chart
         $summary = collect();
@@ -105,12 +111,51 @@ class LenhSanXuatController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'chart'       => 'required|string',
+            'chart'       => 'nullable',
+            'chart_bulk'  => 'nullable|string',
             'pct_hao_hut' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $chart = $request->chart;
+        $charts = collect((array) $request->input('chart', []))
+            ->merge(preg_split('/[\r\n,;]+/', (string) $request->input('chart_bulk', ''), -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
         $pctHaoHut = $request->input('pct_hao_hut', 10);
+
+        if ($charts->isEmpty()) {
+            return redirect()->back()->with('warning', 'Vui long chon hoac dan danh sach Chart truoc khi tao lenh SX.');
+        }
+
+        if ($charts->count() > 1) {
+            $created = collect();
+            $skipped = collect();
+
+            foreach ($charts as $bulkChart) {
+                $ordersForChart = Order::where('chart', $bulkChart)->get();
+                if ($ordersForChart->isEmpty()) {
+                    $skipped->push($bulkChart);
+                    continue;
+                }
+
+                $created->push($this->createLenhFromOrders($bulkChart, $ordersForChart, (float) $pctHaoHut));
+            }
+
+            if ($created->isEmpty()) {
+                return redirect()->back()->with('error', 'Khong tim thay don hang cho cac Chart da chon.');
+            }
+
+            $msg = "Da tao {$created->count()} lenh SX tu {$charts->count()} Chart da chon.";
+            if ($skipped->isNotEmpty()) {
+                $msg .= ' Bo qua Chart khong co don hang: ' . $skipped->take(5)->implode(', ');
+            }
+
+            return redirect()->route('admin.lenh-san-xuat.index', ['chart' => $created->pluck('chart')->all()])
+                ->with('success', $msg);
+        }
+
+        $chart = $charts->first();
 
         // Lấy orders theo Chart
         $orders = Order::where('chart', $chart)->get();
@@ -162,6 +207,49 @@ class LenhSanXuatController extends Controller
 
         return redirect()->route('admin.lenh-san-xuat.show', $lenh)
             ->with('success', "Đã tạo lệnh SX {$lenhSo} với {$lenh->items()->count()} mã HH.");
+    }
+
+    private function createLenhFromOrders(string $chart, $orders, float $pctHaoHut): LenhSanXuat
+    {
+        $grouped = $orders->groupBy('ma_hh');
+        $nhomHhCounts = $grouped->map(function ($group, $maHh) {
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
+            return $hangHoa?->nhom_hh ?? 'LSX';
+        });
+        $nhomHh = $nhomHhCounts->countBy()->sortDesc()->keys()->first() ?: 'LSX';
+
+        $khachHang = $orders->first()->khachHang;
+        $maKh = $khachHang ? $khachHang->ma_kh : 'UNK';
+
+        $lenhSo = LenhSanXuat::generateLenhSo($maKh, $nhomHh);
+        $lenh = LenhSanXuat::create([
+            'lenh_so'     => $lenhSo,
+            'chart'       => $chart,
+            'nhom_hh'     => $nhomHh,
+            'pct_hao_hut' => $pctHaoHut,
+        ]);
+
+        $stt = 1;
+        foreach ($grouped->sortKeys() as $maHh => $group) {
+            $totalYrd = $group->sum('yrd');
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
+            $colors = $group->pluck('color')->unique()->filter()->implode(', ');
+
+            LenhSanXuatItem::create([
+                'lenh_san_xuat_id' => $lenh->id,
+                'lenh_child'       => $lenhSo . '/' . $stt,
+                'ma_hh'            => $maHh,
+                'ten_hh'           => $hangHoa?->ten_hh ?? '',
+                'mau'              => $colors,
+                'tong_yrd'         => $totalYrd,
+                'sl_can_sx'        => round($totalYrd * (1 + $pctHaoHut / 100), 2),
+                'da_len_lenh'      => false,
+                'stt'              => $stt,
+            ]);
+            $stt++;
+        }
+
+        return $lenh;
     }
 
     /**

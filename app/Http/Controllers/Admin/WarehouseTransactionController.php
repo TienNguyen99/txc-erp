@@ -30,6 +30,8 @@ class WarehouseTransactionController extends Controller
             ->when($request->cong_doan, fn($q, $cd) => $q->where('cong_doan', $cd))
             ->latest()->paginate(15)->withQueryString();
 
+        return view('admin.warehouse-transactions.index', compact('data'));
+
         // ═══ SOẠN HÀNG: Phân theo tracking_number (lô giao) ═══
         // Danh sách tracking_number có sẵn (chưa giao hết)
         $deliveredStages = OrderTracking::deliveredStages();
@@ -58,6 +60,9 @@ class WarehouseTransactionController extends Controller
         $availableTrackings = $lotSummaries
             ->filter(fn($lot) => (int) $lot->open_items > 0)
             ->pluck('tracking_number')
+            ->merge($missingXuatKhoByLot->keys())
+            ->unique()
+            ->sort()
             ->values();
 
         $lotStats = (object) [
@@ -317,8 +322,141 @@ class WarehouseTransactionController extends Controller
         });
 
         return redirect()
-            ->route('admin.warehouse-transactions.index', $trackingFilter ? ['tracking_filter' => $trackingFilter] : [])
+            ->route('admin.warehouse-transactions.soan-hang', $trackingFilter ? ['tracking_filter' => $trackingFilter] : [])
             ->with('success', "Đã đồng bộ {$created} dòng XUATKHO cho các order đã shipped.");
+    }
+
+    public function soanHang(Request $request)
+    {
+        $deliveredStages = OrderTracking::deliveredStages();
+        $deliveredPlaceholders = implode(',', array_fill(0, count($deliveredStages), '?'));
+
+        $lotSummaries = OrderTracking::query()
+            ->join('orders', 'order_tracking.order_id', '=', 'orders.id')
+            ->whereNotNull('order_tracking.tracking_number')
+            ->whereNotNull('orders.ma_hh')
+            ->where('orders.ma_hh', '!=', '')
+            ->select('order_tracking.tracking_number')
+            ->selectRaw('COUNT(*) as total_items')
+            ->selectRaw(
+                "SUM(CASE WHEN orders.status != ? AND order_tracking.cong_doan NOT IN ({$deliveredPlaceholders}) THEN 1 ELSE 0 END) as open_items",
+                array_merge(['shipped'], $deliveredStages)
+            )
+            ->groupBy('order_tracking.tracking_number')
+            ->orderBy('order_tracking.tracking_number')
+            ->get();
+
+        $missingXuatKhoTrackings = $this->missingXuatKhoShippedTrackings();
+        $missingXuatKhoByLot = $missingXuatKhoTrackings->groupBy('tracking_number')->map->count();
+        $availableTrackings = $lotSummaries
+            ->filter(fn($lot) => (int) $lot->open_items > 0)
+            ->pluck('tracking_number')
+            ->merge($missingXuatKhoByLot->keys())
+            ->unique()
+            ->sort()
+            ->values();
+
+        $lotStats = (object) [
+            'total_lots' => $lotSummaries->count(),
+            'open_lots' => $lotSummaries->filter(fn($lot) => (int) $lot->open_items > 0)->count(),
+            'shipped_lots' => $lotSummaries->filter(fn($lot) => (int) $lot->open_items === 0)->count(),
+            'missing_xuat_kho' => $missingXuatKhoTrackings->count(),
+        ];
+
+        $selectedTracking = $request->input('tracking_filter', '');
+        $trackings = OrderTracking::with('order')
+            ->whereNotIn('cong_doan', $deliveredStages)
+            ->whereHas('order', fn($q) => $q->where('status', '!=', 'shipped')
+                ->whereNotNull('ma_hh')->where('ma_hh', '!=', ''))
+            ->when($selectedTracking, fn($q) => $q->where('tracking_number', $selectedTracking))
+            ->get();
+
+        $selectedLotSummary = $selectedTracking ? $lotSummaries->firstWhere('tracking_number', $selectedTracking) : null;
+        $selectedLotMissingXuatKho = $selectedTracking ? (int) ($missingXuatKhoByLot[$selectedTracking] ?? 0) : 0;
+
+        $allMaHh = $trackings->map(fn($t) => $t->order->ma_hh)->unique();
+        $tonKhoMap = [];
+        foreach ($allMaHh as $maHh) {
+            $nhap = WarehouseTransaction::where('ma_hh', $maHh)->nhapKho()->sum('so_luong');
+            $xuat = WarehouseTransaction::where('ma_hh', $maHh)->xuatKho()->sum('so_luong');
+            $tonKhoMap[$maHh] = $nhap - $xuat;
+        }
+
+        $dangSxMap = [];
+        foreach ($allMaHh as $maHh) {
+            $dangSxMap[$maHh] = ProductionReport::where('size', $maHh)
+                ->where('cong_doan', '!=', 'ÄÃ£ nháº­p kho')
+                ->sum('sl_dat');
+        }
+
+        $soanHangRaw = $trackings->sortBy([
+            fn($a, $b) => strcmp($a->order->ma_hh ?? '', $b->order->ma_hh ?? ''),
+            fn($a, $b) => strcmp($a->order->fty_po ?? '', $b->order->fty_po ?? ''),
+        ])->map(function ($tracking) use ($tonKhoMap, $dangSxMap) {
+            $order = $tracking->order;
+            $maHh = $order->ma_hh;
+            $canXuat = $tracking->sl_don_hang ?? $order->yrd ?? 0;
+            $hangHoa = DanhMucHangHoa::where('ma_hh', $maHh)->first();
+
+            return (object) [
+                'tracking_id' => $tracking->id,
+                'ma_hh' => $maHh,
+                'ten_hh' => $hangHoa?->ten_hh ?? '',
+                'pl_number' => $tracking->pl_number ?? $order->pl_number,
+                'job_no' => $order->job_no,
+                'fty_po' => $order->fty_po,
+                'im_number' => $order->im_number ?? '',
+                'mau' => $tracking->mau ?? $order->color,
+                'size' => $tracking->size,
+                'cong_doan' => $tracking->cong_doan,
+                'can_xuat' => $canXuat,
+                'ton_kho_tong' => $tonKhoMap[$maHh] ?? 0,
+                'dang_sx' => $dangSxMap[$maHh] ?? 0,
+                'sig_need_date' => $order->sig_need_date,
+            ];
+        })->values();
+
+        $tonConLaiMap = [];
+        $soanHang = $soanHangRaw->map(function ($row) use (&$tonConLaiMap) {
+            $maHh = $row->ma_hh;
+            if (!isset($tonConLaiMap[$maHh])) {
+                $tonConLaiMap[$maHh] = $row->ton_kho_tong;
+            }
+
+            $tonConLai = $tonConLaiMap[$maHh];
+            $canXuat = $row->can_xuat;
+            $capDuoc = min($canXuat, max(0, $tonConLai));
+            $thieu = max(0, $canXuat - $capDuoc);
+            $tonConLaiMap[$maHh] -= $capDuoc;
+            $trangThai = $capDuoc >= $canXuat
+                ? 'du'
+                : ($capDuoc > 0 ? 'thieu_1_phan' : ($row->dang_sx > 0 ? 'dang_sx' : 'thieu'));
+
+            $row->ton_con_lai = $tonConLai;
+            $row->cap_duoc = $capDuoc;
+            $row->thieu = $thieu;
+            $row->trang_thai = $trangThai;
+
+            return $row;
+        })->values();
+
+        $soanStats = (object) [
+            'tong_phieu' => $soanHang->count(),
+            'du_hang' => $soanHang->where('trang_thai', 'du')->count(),
+            'thieu_1_phan' => $soanHang->where('trang_thai', 'thieu_1_phan')->count(),
+            'dang_sx' => $soanHang->where('trang_thai', 'dang_sx')->count(),
+            'thieu_hang' => $soanHang->where('trang_thai', 'thieu')->count(),
+        ];
+
+        return view('admin.warehouse-transactions.soan-hang', compact(
+            'soanHang',
+            'soanStats',
+            'lotStats',
+            'selectedLotSummary',
+            'selectedLotMissingXuatKho',
+            'availableTrackings',
+            'selectedTracking'
+        ));
     }
 
     private function missingXuatKhoShippedTrackings(?string $trackingNumber = null)
@@ -515,10 +653,10 @@ class WarehouseTransactionController extends Controller
         $msg = "Đã tạo {$count} phiếu xuất kho.";
         if (count($errors) > 0) {
             $msg .= ' Lỗi: ' . implode('; ', array_slice($errors, 0, 5));
-            return redirect()->route('admin.warehouse-transactions.index')->with('warning', $msg);
+            return redirect()->route('admin.warehouse-transactions.soan-hang')->with('warning', $msg);
         }
 
-        return redirect()->route('admin.warehouse-transactions.index')
+        return redirect()->route('admin.warehouse-transactions.soan-hang')
             ->with('success', $msg);
     }
 

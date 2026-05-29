@@ -138,6 +138,7 @@ Route::middleware('auth')->group(function () {
                Route::get('warehouse-documents/{warehouseDocument}', [WarehouseDocumentController::class, 'show'])->name('warehouse-documents.show');
                Route::get('warehouse-documents/{warehouseDocument}/print', [WarehouseDocumentController::class, 'print'])->name('warehouse-documents.print');
                Route::get('warehouse-dashboard', [WarehouseTransactionController::class, 'dashboard'])->name('warehouse-transactions.dashboard');
+               Route::get('warehouse-transactions/soan-hang', [WarehouseTransactionController::class, 'soanHang'])->name('warehouse-transactions.soan-hang');
                Route::get('warehouse-transactions/export', [WarehouseTransactionController::class, 'export'])->name('warehouse-transactions.export')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/export-dashboard', [WarehouseTransactionController::class, 'exportInventoryDashboard'])->name('warehouse-transactions.export-dashboard')->middleware('permission:warehouse.export');
                Route::get('warehouse-transactions/template', [WarehouseTransactionController::class, 'template'])->name('warehouse-transactions.template');

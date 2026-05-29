@@ -19,7 +19,7 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
         return [
             'chart',
             'nhan_vien_id',
-            'khach_hang_id',
+            'ma_kh',
             'ma_hh',
             'quy_cach',
             'ten_hh',
@@ -50,7 +50,7 @@ class OrderExport implements FromCollection, WithHeadings, WithMapping
         return [
             $row->chart,
             $row->nhan_vien_id,
-            $row->khach_hang_id,
+            $row->khachHang?->ma_kh,
             $row->ma_hh,
             $row->quy_cach,
             $row->ten_hh,

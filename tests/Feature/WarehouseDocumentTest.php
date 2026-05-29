@@ -118,15 +118,15 @@ class WarehouseDocumentTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('admin.warehouse-transactions.index'))
+            ->get(route('admin.warehouse-transactions.soan-hang'))
             ->assertOk()
             ->assertSee('Lot shipped: 1', false)
-            ->assertSee('Thieu XUATKHO: 1', false)
+            ->assertSee('Thiếu XUATKHO: 1', false)
             ->assertSee('Tổng: 0', false);
 
         $this->actingAs($user)
             ->post(route('admin.warehouse-transactions.sync-shipped-xuat-kho'))
-            ->assertRedirect(route('admin.warehouse-transactions.index'));
+            ->assertRedirect(route('admin.warehouse-transactions.soan-hang'));
 
         $this->assertDatabaseHas('warehouse_transactions', [
             'cong_doan' => 'XUATKHO',
@@ -135,6 +135,53 @@ class WarehouseDocumentTest extends TestCase
             'so_luong' => 50,
         ]);
         $this->assertSame(OrderTracking::STAGE_XUAT_KHO, OrderTracking::first()->fresh()->cong_doan);
+    }
+
+    public function test_missing_xuatkho_sync_button_shows_even_when_other_lots_are_open(): void
+    {
+        $user = $this->warehouseUser();
+
+        $openOrder = Order::create([
+            'job_no' => 'JOB-OPEN-001',
+            'pl_number' => 'PL-OPEN-001',
+            'ma_hh' => 'HH-OPEN',
+            'yrd' => 20,
+            'status' => 'pending',
+        ]);
+
+        OrderTracking::create([
+            'order_id' => $openOrder->id,
+            'tracking_number' => 'OT-OPEN-001',
+            'pl_number' => 'PL-OPEN-001',
+            'size' => 'HH-OPEN',
+            'cong_doan' => 'Cho san xuat',
+            'sl_don_hang' => 20,
+        ]);
+
+        $shippedOrder = Order::create([
+            'job_no' => 'JOB-SHIPPED-002',
+            'pl_number' => 'PL-SHIPPED-002',
+            'ma_hh' => 'HH-SHIPPED-002',
+            'yrd' => 50,
+            'status' => 'shipped',
+        ]);
+
+        OrderTracking::create([
+            'order_id' => $shippedOrder->id,
+            'tracking_number' => 'OT-SHIPPED-002',
+            'pl_number' => 'PL-SHIPPED-002',
+            'size' => 'HH-SHIPPED-002',
+            'cong_doan' => 'shipped',
+            'ngay_xe_lay_hang' => '2026-05-21',
+            'sl_don_hang' => 50,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.warehouse-transactions.soan-hang'))
+            ->assertOk()
+            ->assertSee('Thiếu XUATKHO: 1', false)
+            ->assertSee('Đồng bộ XUATKHO', false)
+            ->assertSee('OT-SHIPPED-002', false);
     }
 
     private function warehouseUser(): User

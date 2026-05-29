@@ -14,7 +14,7 @@ class OtherCustomerOrderTemplateExport implements FromArray, WithHeadings, WithS
         return [
             'chart',
             'nhan_vien_id',
-            'khach_hang_id',
+            'ma_kh',
             'ma_hh',
             'quy_cach',
             'ten_hh',
@@ -46,7 +46,7 @@ class OtherCustomerOrderTemplateExport implements FromArray, WithHeadings, WithS
             [
                 '310613-AW25',
                 '',
-                1,
+                'SAMDANG',
                 '9810030133',
                 'Quan cuon',
                 'DAY RAI SILICONE 2 DUONG (SOI RECYCLE)',

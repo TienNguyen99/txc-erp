@@ -6,11 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'TEXENCO ERP') }}</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    </noscript>
     <style>
         :root {
             --primary: #f7941d;
@@ -810,6 +818,114 @@
             color: #b91c1c !important;
         }
 
+        #app-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at top, rgba(var(--primary-rgb), .14), transparent 32%),
+                rgba(253, 248, 243, .82);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .18s ease, visibility .18s ease;
+        }
+
+        body.app-is-loading #app-loader {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .app-loader-card {
+            width: min(320px, calc(100vw - 48px));
+            padding: 22px 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, .76);
+            background: rgba(255, 255, 255, .82);
+            box-shadow: 0 24px 80px rgba(15, 23, 42, .16);
+        }
+
+        .app-loader-mark {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 12px 28px rgba(var(--primary-rgb), .32);
+        }
+
+        .app-loader-mark::before {
+            content: '';
+            position: absolute;
+            inset: 9px;
+            border: 3px solid rgba(255, 255, 255, .92);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: appLoaderSpin .78s linear infinite;
+        }
+
+        .app-loader-title {
+            margin: 0;
+            color: #0f172a;
+            font-size: .92rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .app-loader-subtitle {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: .78rem;
+            text-align: center;
+        }
+
+        .app-loader-bar {
+            position: relative;
+            height: 4px;
+            margin-top: 16px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #ffead0;
+        }
+
+        .app-loader-bar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            width: 42%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: appLoaderSweep 1.05s ease-in-out infinite;
+        }
+
+        @keyframes appLoaderSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes appLoaderSweep {
+            0% {
+                transform: translateX(-110%);
+            }
+
+            100% {
+                transform: translateX(260%);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .app-loader-mark::before,
+            .app-loader-bar::after {
+                animation: none;
+            }
+        }
+
         @media (max-width: 991px) {
             :root {
                 --sidebar-w: 286px;
@@ -828,7 +944,16 @@
     @yield('css')
 </head>
 
-<body>
+<body class="app-is-loading">
+
+    <div id="app-loader" aria-live="polite" aria-label="Đang tải">
+        <div class="app-loader-card">
+            <div class="app-loader-mark" aria-hidden="true"></div>
+            <p class="app-loader-title">Đang xử lý</p>
+            <p class="app-loader-subtitle">TEXENCO ERP</p>
+            <div class="app-loader-bar" aria-hidden="true"></div>
+        </div>
+    </div>
 
     {{-- Sidebar overlay (mobile) --}}
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -837,7 +962,7 @@
     <aside id="sidebar">
         {{-- Brand --}}
         <a href="{{ route('admin.dashboard') }}" class="sidebar-brand">
-            <img src="{{ asset('storage/logo-texenco.png') }}" alt="Texenco" class="sidebar-brand-logo">
+            <img src="{{ asset('storage/logo-texenco-sidebar.png') }}" alt="Texenco" class="sidebar-brand-logo" width="168" height="72" fetchpriority="high" decoding="async">
         </a>
 
         {{-- MAIN --}}
@@ -920,8 +1045,12 @@
                         <i class="fa-solid fa-chart-column"></i><span class="nav-label">Dashboard kho</span>
                     </a>
                     <a href="{{ route('admin.warehouse-transactions.index') }}"
-                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.*') && ! request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.index') ? 'active' : '' }}">
                         <i class="fa-solid fa-warehouse"></i><span class="nav-label">Giao dịch kho</span>
+                    </a>
+                    <a href="{{ route('admin.warehouse-transactions.soan-hang') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.soan-hang') ? 'active' : '' }}">
+                        <i class="fa-solid fa-dolly-flatbed"></i><span class="nav-label">Soạn hàng</span>
                     </a>
                     <a href="{{ route('admin.warehouse-documents.index') }}"
                         class="nav-item-sb {{ request()->routeIs('admin.warehouse-documents.*') ? 'active' : '' }}">
@@ -1131,6 +1260,72 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 
     <script>
+        const AppLoader = (() => {
+            let timer = null;
+            const fileResponsePattern = /(^|\/)(export|template|download)(\/|$|-)/i;
+
+            const isFileResponseUrl = url => fileResponsePattern.test(url.pathname);
+
+            const show = (delay = 120) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => document.body.classList.add('app-is-loading'), delay);
+            };
+
+            const hide = () => {
+                clearTimeout(timer);
+                document.body.classList.remove('app-is-loading');
+            };
+
+            window.addEventListener('load', hide);
+            window.addEventListener('pageshow', hide);
+
+            document.addEventListener('click', event => {
+                const link = event.target.closest?.('a[href]');
+                if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                const href = link.getAttribute('href') || '';
+                const url = new URL(link.href, window.location.href);
+                const samePageHash = url.pathname === window.location.pathname && url.search === window.location.search && url.hash;
+
+                if (
+                    link.target === '_blank' ||
+                    link.hasAttribute('download') ||
+                    link.dataset.noLoader !== undefined ||
+                    link.dataset.bsToggle ||
+                    isFileResponseUrl(url) ||
+                    href.startsWith('#') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:') ||
+                    samePageHash
+                ) {
+                    return;
+                }
+
+                show();
+            }, true);
+
+            document.addEventListener('submit', event => {
+                const form = event.target;
+                const actionUrl = new URL(form.action || window.location.href, window.location.href);
+                if (
+                    event.defaultPrevented ||
+                    form.dataset.noLoader !== undefined ||
+                    form.target === '_blank' ||
+                    isFileResponseUrl(actionUrl) ||
+                    (typeof form.checkValidity === 'function' && !form.checkValidity())
+                ) {
+                    return;
+                }
+
+                show(80);
+            }, true);
+
+            return { show, hide };
+        })();
+
         // Sidebar toggle
         function toggleSidebar() {
             const isMobile = window.innerWidth < 992;

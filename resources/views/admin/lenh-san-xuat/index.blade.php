@@ -57,6 +57,11 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0" style="font-size:.8rem">Dan Chart hang loat</label>
+                    <textarea name="chart_bulk" class="form-control form-control-sm" rows="1"
+                        placeholder="Moi dong 1 Chart, hoac cach nhau bang dau phay">{{ request('chart_bulk') }}</textarea>
+                </div>
                 <div class="col-auto d-flex align-items-end">
                     <button class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-search me-1"></i>Lọc</button>
                     <a href="{{ route('admin.lenh-san-xuat.index') }}" class="btn btn-outline-secondary btn-sm ms-1">
@@ -66,7 +71,55 @@
             </form>
 
             {{-- ═══ TẠO LỆNH MỚI TỪ CHART ═══ --}}
+            <div class="border rounded p-3 mb-3 bg-white">
+                <form method="POST" action="{{ route('admin.lenh-san-xuat.store') }}" class="row g-2 align-items-end">
+                    @csrf
+                    <div class="col-md-6">
+                        <label class="form-label mb-1 fw-semibold" style="font-size:.85rem">
+                            <i class="fa-solid fa-layer-group text-primary me-1"></i>Tao lenh SX tu danh sach Chart
+                        </label>
+                        <textarea name="chart_bulk" class="form-control form-control-sm" rows="2"
+                            placeholder="Dan danh sach Chart vao day, moi dong 1 Chart hoac cach nhau bang dau phay"></textarea>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label mb-0" style="font-size:.8rem">% Hao hut</label>
+                        <input type="number" name="pct_hao_hut" value="10" min="0" max="100"
+                            step="0.5" class="form-control form-control-sm" style="width:90px">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                            onclick="return confirm('Tao lenh SX cho danh sach Chart da dan?')">
+                            <i class="fa-solid fa-plus me-1"></i>Tao hang loat
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             @if (!empty($chartFilter))
+                <div class="border rounded p-3 mb-3 bg-white">
+                    <form method="POST" action="{{ route('admin.lenh-san-xuat.store') }}"
+                        class="d-flex flex-wrap align-items-end gap-2">
+                        @csrf
+                        @foreach ($chartFilter as $chart)
+                            <input type="hidden" name="chart[]" value="{{ $chart }}">
+                        @endforeach
+                        <div>
+                            <div class="fw-semibold">
+                                <i class="fa-solid fa-layer-group text-primary me-1"></i>Tao hang loat {{ count($chartFilter) }} Chart dang loc
+                            </div>
+                            <div class="text-muted small">Dung sau khi import nhieu data khach khac, khong can bam tung Chart.</div>
+                        </div>
+                        <div class="ms-auto">
+                            <label class="form-label mb-0" style="font-size:.8rem">% Hao hut</label>
+                            <input type="number" name="pct_hao_hut" value="10" min="0" max="100"
+                                step="0.5" class="form-control form-control-sm" style="width:90px">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm"
+                            onclick="return confirm('Tao lenh SX cho tat ca Chart dang loc?')">
+                            <i class="fa-solid fa-plus me-1"></i>Tao lenh SX hang loat
+                        </button>
+                    </form>
+                </div>
                 @foreach ($chartFilter as $chart)
                     @php
                         $lenhs = \App\Models\LenhSanXuat::where('chart', $chart)->get();

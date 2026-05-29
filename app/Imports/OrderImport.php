@@ -55,7 +55,7 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         }
         $this->seenKeys[$rowKey] = $excelRow->getIndex();
 
-        $customerValue = $this->cleanString($this->value($row, 'khach_hang_id', 'khach_hang', 'customer', 'ma_kh'));
+        $customerValue = $this->cleanString($this->value($row, 'ma_kh', 'khach_hang', 'customer', 'khach_hang_id'));
         $khachHangId = $customerValue !== '' ? $this->resolveCustomerId($customerValue) : null;
         $staffValue = $this->cleanString($this->value($row, 'nhan_vien_id', 'nhan_vien_theo'));
         $nhanVienId = $staffValue !== '' ? $this->resolveUserId($staffValue) : null;
@@ -289,7 +289,7 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'job_no' => 'required|string',
+            'job_no' => 'nullable|string',
             'status' => 'nullable|in:pending,in_production,done,shipped',
         ];
     }
