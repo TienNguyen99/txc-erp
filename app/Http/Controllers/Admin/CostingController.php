@@ -113,7 +113,7 @@ class CostingController extends Controller
             ->get()
             ->groupBy('ma_hh')
             ->map(function ($rows, $maHh) use ($exchangeRate) {
-                $qty = $rows->sum(fn($r) => (float) ($r->da_nhan > 0 ? $r->da_nhan : $r->so_luong));
+                $qty = $rows->sum(fn($r) => (float) ($r->da_nhan > 0 ? $r->da_nhan : $r->so_luong) * (float) ($r->purchase_to_base_factor ?: 1));
                 $value = $rows->sum(fn($r) => (float) ($r->da_nhan > 0 ? $r->da_nhan : $r->so_luong) * (float) $r->don_gia * $exchangeRate);
 
                 return [
@@ -130,7 +130,7 @@ class CostingController extends Controller
             })
             ->get()
             ->mapWithKeys(function ($hh) use ($exchangeRate) {
-                $unit = (float) ($hh->gia_nvl ?: $hh->don_gia);
+                $unit = (float) ($hh->gia_nvl ?: $hh->don_gia) / max((float) ($hh->purchase_to_base_factor ?: 1), 0.000001);
                 return [$hh->ma_hh => [
                     'ma_hh' => $hh->ma_hh,
                     'qty' => 0,

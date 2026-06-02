@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
+use App\Models\UnitOfMeasure;
 use App\Imports\DanhMucHangHoaImport;
 use App\Exports\DanhMucHangHoaExport;
 use App\Exports\DanhMucHangHoaTemplateExport;
@@ -41,7 +42,8 @@ class DanhMucHangHoaController extends Controller
 
     public function create()
     {
-        return view('admin.hang-hoa.form');
+        $units = UnitOfMeasure::where('active', true)->orderBy('dimension')->orderBy('code')->get();
+        return view('admin.hang-hoa.form', compact('units'));
     }
 
     public function store(Request $request)
@@ -54,7 +56,9 @@ class DanhMucHangHoaController extends Controller
             'mau'      => 'nullable|string',
             'kich_co'  => 'nullable|string',
             'nhom_hh'  => 'nullable|string',
-            'don_vi'   => 'nullable|string',
+            'base_uom_id' => 'nullable|exists:units_of_measure,id',
+            'purchase_uom_id' => 'nullable|exists:units_of_measure,id',
+            'purchase_to_base_factor' => 'nullable|numeric|min:0.000001',
             'don_gia'          => 'nullable|numeric|min:0',
             'quy_cach'         => 'nullable|string',
             'yards_per_roll'   => 'nullable|numeric|min:0',
@@ -74,6 +78,9 @@ class DanhMucHangHoaController extends Controller
             $validated['hinh_anh'] = $request->file('hinh_anh')->store('hang-hoa', 'public');
         }
 
+        $validated['don_vi'] = isset($validated['base_uom_id'])
+            ? UnitOfMeasure::find($validated['base_uom_id'])?->code
+            : $request->input('don_vi');
         $validated['active'] = $request->has('active');
         DanhMucHangHoa::create($validated);
         return redirect()->route('admin.hang-hoa.index')->with('success', 'Thêm hàng hóa thành công.');
@@ -83,8 +90,9 @@ class DanhMucHangHoaController extends Controller
     {
         $prevHangHoaId = DanhMucHangHoa::where('id', '<', $hangHoa->id)->max('id');
         $nextHangHoaId = DanhMucHangHoa::where('id', '>', $hangHoa->id)->min('id');
+        $units = UnitOfMeasure::where('active', true)->orderBy('dimension')->orderBy('code')->get();
 
-        return view('admin.hang-hoa.form', compact('hangHoa', 'prevHangHoaId', 'nextHangHoaId'));
+        return view('admin.hang-hoa.form', compact('hangHoa', 'prevHangHoaId', 'nextHangHoaId', 'units'));
     }
 
     public function update(Request $request, DanhMucHangHoa $hangHoa)
@@ -97,7 +105,9 @@ class DanhMucHangHoaController extends Controller
             'mau'      => 'nullable|string',
             'kich_co'  => 'nullable|string',
             'nhom_hh'  => 'nullable|string',
-            'don_vi'   => 'nullable|string',
+            'base_uom_id' => 'nullable|exists:units_of_measure,id',
+            'purchase_uom_id' => 'nullable|exists:units_of_measure,id',
+            'purchase_to_base_factor' => 'nullable|numeric|min:0.000001',
             'don_gia'          => 'nullable|numeric|min:0',
             'quy_cach'         => 'nullable|string',
             'yards_per_roll'   => 'nullable|numeric|min:0',
@@ -117,6 +127,9 @@ class DanhMucHangHoaController extends Controller
             $validated['hinh_anh'] = $request->file('hinh_anh')->store('hang-hoa', 'public');
         }
 
+        $validated['don_vi'] = isset($validated['base_uom_id'])
+            ? UnitOfMeasure::find($validated['base_uom_id'])?->code
+            : $request->input('don_vi');
         $validated['active'] = $request->has('active');
         $hangHoa->update($validated);
 

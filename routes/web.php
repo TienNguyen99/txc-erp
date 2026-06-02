@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\WarehouseDocumentController;
 use App\Http\Controllers\Admin\CostingController;
 use App\Http\Controllers\Admin\StandardCostSheetController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
+use App\Http\Controllers\Admin\UnitOfMeasureController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
 use App\Http\Controllers\Admin\QuyTrinhSanXuatController;
@@ -176,6 +177,9 @@ Route::middleware('auth')->group(function () {
                Route::get('hang-hoa/export', [DanhMucHangHoaController::class, 'export'])->name('hang-hoa.export')->middleware('permission:catalog.export');
                Route::get('hang-hoa/template', [DanhMucHangHoaController::class, 'template'])->name('hang-hoa.template');
                Route::resource('hang-hoa', DanhMucHangHoaController::class)->parameters(['hang-hoa' => 'hangHoa']);
+               Route::resource('units-of-measure', UnitOfMeasureController::class)
+                    ->parameters(['units-of-measure' => 'unitOfMeasure'])
+                    ->only(['index', 'store', 'update']);
                
                Route::get('khach-hang/get-groups', [DanhMucKhachHangController::class, 'getGroups'])->name('khach-hang.get-groups');
                Route::post('khach-hang/save-groups', [DanhMucKhachHangController::class, 'saveGroups'])->name('khach-hang.save-groups');

@@ -1083,14 +1083,18 @@
             <div class="sidebar-section">
                 <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
                     data-bs-target="#sidebarCatalog"
-                    aria-expanded="{{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.units-of-measure.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'true' : 'false' }}">
                     Danh mục <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div id="sidebarCatalog"
-                    class="collapse {{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'show' : '' }}">
+                    class="collapse {{ request()->routeIs('admin.hang-hoa.*') || request()->routeIs('admin.units-of-measure.*') || request()->routeIs('admin.khach-hang.*') || request()->routeIs('admin.nha-cung-cap.*') || request()->routeIs('admin.purchase-orders.*') ? 'show' : '' }}">
                     <a href="{{ route('admin.hang-hoa.index') }}"
                         class="nav-item-sb {{ request()->routeIs('admin.hang-hoa.*') ? 'active' : '' }}">
                         <i class="fa-solid fa-box-open"></i><span class="nav-label">Hàng hóa</span>
+                    </a>
+                    <a href="{{ route('admin.units-of-measure.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.units-of-measure.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-scale-balanced"></i><span class="nav-label">Đơn vị tính</span>
                     </a>
                     <a href="{{ route('admin.khach-hang.index') }}"
                         class="nav-item-sb {{ request()->routeIs('admin.khach-hang.*') ? 'active' : '' }}">
@@ -1270,7 +1274,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 
     <script>
-        const AppLoader = (() => {
+        window.AppLoader = (() => {
             let timer = null;
             const fileResponsePattern = /(^|\/)(export|template|download)(\/|$|-)/i;
 
@@ -1319,18 +1323,20 @@
 
             document.addEventListener('submit', event => {
                 const form = event.target;
-                const actionUrl = new URL(form.action || window.location.href, window.location.href);
-                if (
-                    event.defaultPrevented ||
-                    form.dataset.noLoader !== undefined ||
-                    form.target === '_blank' ||
-                    isFileResponseUrl(actionUrl) ||
-                    (typeof form.checkValidity === 'function' && !form.checkValidity())
-                ) {
-                    return;
-                }
+                queueMicrotask(() => {
+                    const actionUrl = new URL(form.action || window.location.href, window.location.href);
+                    if (
+                        event.defaultPrevented ||
+                        form.dataset.noLoader !== undefined ||
+                        form.target === '_blank' ||
+                        isFileResponseUrl(actionUrl) ||
+                        (typeof form.checkValidity === 'function' && !form.checkValidity())
+                    ) {
+                        return;
+                    }
 
-                show(80);
+                    show(80);
+                });
             }, true);
 
             return { show, hide };

@@ -45,6 +45,19 @@
             <div class="col-md-3"><div class="cost-summary"><div class="cost-muted">Lợi nhuận / SP</div><strong class="{{ $calculation['profit_vnd'] >= 0 ? 'text-success' : 'text-danger' }}">{{ number_format($calculation['profit_vnd'], 2) }} đ</strong><div class="cost-muted">Biên {{ number_format($calculation['margin_pct'], 2) }}% · Markup {{ number_format($calculation['markup_pct'], 2) }}%</div></div></div>
         </div>
 
+        <div class="card-page mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div><h5 class="fw-bold mb-1"><i class="fa-solid fa-tags text-primary me-2"></i>Đề xuất giá bán</h5><div class="cost-muted">Đã tính ngược các khoản theo giá bán và làm tròn lên theo cấu hình.</div></div>
+                <span class="badge bg-light text-dark border">Biên mục tiêu {{ number_format((float) $standardCostSheet->target_margin_pct, 2) }}%</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-3"><div class="cost-summary"><div class="cost-muted">Giá hòa vốn chưa VAT</div><strong>{{ number_format($calculation['break_even_price_vnd'], 2) }} đ</strong></div></div>
+                <div class="col-md-3"><div class="cost-summary border-primary"><div class="cost-muted">Giá đề xuất chưa VAT</div><strong class="text-primary">{{ number_format($calculation['suggested_price_vnd'], 2) }} đ</strong><div class="cost-muted">Biên thực tế sau làm tròn {{ number_format($calculation['suggested_margin_pct'], 2) }}%</div></div></div>
+                <div class="col-md-3"><div class="cost-summary"><div class="cost-muted">Giá báo khách gồm VAT {{ number_format((float) $standardCostSheet->vat_pct, 2) }}%</div><strong class="text-success">{{ number_format($calculation['quote_price_vnd'], 2) }} đ</strong></div></div>
+                <div class="col-md-3"><div class="cost-summary"><div class="cost-muted">Lợi nhuận dự kiến / SP</div><strong class="text-success">{{ number_format($calculation['suggested_profit_vnd'], 2) }} đ</strong></div></div>
+            </div>
+        </div>
+
         <div class="card-page p-0 mb-3">
             <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                 <div><h5 class="fw-bold mb-0">Chi tiết cấu thành giá vốn</h5><div class="cost-muted">Mọi dòng đều quy đổi về chi phí cho 1 đơn vị thành phẩm.</div></div>
@@ -102,7 +115,7 @@
                                             <i class="fa-solid fa-plus me-1"></i>Thêm NVL mới
                                         </button>
                                     </div>
-                                    <select name="item_id" id="cost-item" class="form-select"><option value="">Nhập thủ công...</option>@foreach ($materials as $material)<option value="{{ $material->id }}" data-code="{{ $material->ma_hh }}" data-name="{{ $material->ten_hh }}" data-unit="{{ $material->don_vi }}" data-price="{{ (float) ($material->gia_nvl ?: $material->don_gia) }}">{{ $material->ma_hh }} - {{ $material->ten_hh }}</option>@endforeach</select>
+                                    <select name="item_id" id="cost-item" class="form-select"><option value="">Nhập thủ công...</option>@foreach ($materials as $material)<option value="{{ $material->id }}" data-code="{{ $material->ma_hh }}" data-name="{{ $material->ten_hh }}" data-unit="{{ $material->baseUom?->code ?: $material->don_vi }}" data-price="{{ $material->gia_nvl ? $material->base_unit_cost_vnd : (float) $material->don_gia }}">{{ $material->ma_hh }} - {{ $material->ten_hh }}</option>@endforeach</select>
                                 </div>
                                 <div class="col-md-4"><label class="form-label">Mã / ký hiệu</label><input name="code" id="cost-code" class="form-control"></div>
                                 <div class="col-md-8"><label class="form-label">Tên hạng mục</label><input name="name" id="cost-name" class="form-control" required></div>
@@ -128,6 +141,9 @@
                                 <div class="col-md-6"><label class="form-label">Ngày hiệu lực</label><input type="date" name="effective_date" value="{{ $standardCostSheet->effective_date->toDateString() }}" class="form-control" required></div>
                                 <div class="col-md-6"><label class="form-label">Sản lượng chuẩn</label><input type="number" step="0.0001" min="0.0001" name="standard_output_qty" value="{{ $standardCostSheet->standard_output_qty }}" class="form-control" required></div>
                                 <div class="col-md-6"><label class="form-label">Giá bán dự kiến</label><input type="number" step="0.01" min="0" name="sale_price_vnd" value="{{ $standardCostSheet->sale_price_vnd }}" class="form-control"></div>
+                                <div class="col-md-4"><label class="form-label">Biên lợi nhuận mục tiêu %</label><input type="number" step="0.01" min="0" max="95" name="target_margin_pct" value="{{ $standardCostSheet->target_margin_pct }}" class="form-control"></div>
+                                <div class="col-md-4"><label class="form-label">VAT %</label><input type="number" step="0.01" min="0" max="100" name="vat_pct" value="{{ $standardCostSheet->vat_pct }}" class="form-control"></div>
+                                <div class="col-md-4"><label class="form-label">Làm tròn giá lên</label><input type="number" step="1" min="1" name="price_rounding_vnd" value="{{ $standardCostSheet->price_rounding_vnd }}" class="form-control"></div>
                                 @foreach (['bank_interest' => 'Lãi ngân hàng', 'commission' => 'Hoa hồng', 'management' => 'Chi phí quản lý'] as $field => $label)
                                     <div class="col-md-6"><label class="form-label">{{ $label }} %</label><input type="number" step="0.0001" min="0" max="100" name="{{ $field }}_pct" value="{{ $standardCostSheet->{$field.'_pct'} }}" class="form-control"></div>
                                     <div class="col-md-6"><label class="form-label">Cơ sở tính</label><select name="{{ $field }}_basis" class="form-select">@foreach (\App\Models\StandardCostSheet::BASES as $key => $basis)<option value="{{ $key }}" @selected($standardCostSheet->{$field.'_basis'} === $key)>{{ $basis }}</option>@endforeach</select></div>
@@ -147,7 +163,7 @@
         <div class="modal fade" id="quickItemModal" tabindex="-1" aria-labelledby="quickItemModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form id="quick-item-form">
+                    <form id="quick-item-form" data-no-loader>
                         <div class="modal-header">
                             <div>
                                 <h5 class="modal-title fw-bold" id="quickItemModalLabel">Thêm nhanh nguyên vật liệu</h5>
@@ -160,7 +176,7 @@
                             <div class="row g-2">
                                 <div class="col-md-5">
                                     <label class="form-label">Mã NVL <span class="text-danger">*</span></label>
-                                    <input name="ma_hh" class="form-control" pattern="[A-Za-z0-9_-]+" required placeholder="VD: SOI-POLY-75">
+                                    <input name="ma_hh" class="form-control" pattern="[-A-Za-z0-9_]+" required placeholder="VD: SOI-POLY-75">
                                 </div>
                                 <div class="col-md-7">
                                     <label class="form-label">Tên NVL <span class="text-danger">*</span></label>
@@ -171,12 +187,27 @@
                                     <input name="nhom_hh" class="form-control" value="Nguyên vật liệu">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">ĐVT nhập kho</label>
-                                    <input name="don_vi" class="form-control" placeholder="KG, gam, mét...">
+                                    <label class="form-label">ĐVT tồn kho <span class="text-danger">*</span></label>
+                                    <select name="base_uom_id" id="quick-base-uom" class="form-select" required>
+                                        @foreach ($units as $unit)<option value="{{ $unit->id }}" data-dimension="{{ $unit->dimension }}" data-factor="{{ $unit->factor_to_base }}">{{ $unit->code }} - {{ $unit->name }}</option>@endforeach
+                                    </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Giá NVL / ĐVT</label>
+                                    <label class="form-label">ĐVT mua <span class="text-danger">*</span></label>
+                                    <select name="purchase_uom_id" id="quick-purchase-uom" class="form-select" required>
+                                        @foreach ($units as $unit)<option value="{{ $unit->id }}" data-dimension="{{ $unit->dimension }}" data-factor="{{ $unit->factor_to_base }}">{{ $unit->code }} - {{ $unit->name }}</option>@endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">1 ĐVT mua = bao nhiêu ĐVT tồn</label>
+                                    <input type="number" step="0.000001" min="0.000001" name="purchase_to_base_factor" id="quick-conversion-factor" class="form-control" value="1" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Giá NVL / ĐVT mua</label>
                                     <input type="number" step="0.0001" min="0" name="gia_nvl" class="form-control" value="0">
+                                </div>
+                                <div class="col-md-8 d-flex align-items-end">
+                                    <div class="alert alert-info py-2 px-3 mb-0 w-100 small" id="quick-conversion-preview"></div>
                                 </div>
                             </div>
                         </div>
@@ -235,13 +266,13 @@
                         code: created.ma_hh,
                         name: created.ten_hh,
                         unit: created.don_vi || '',
-                        price: created.gia_nvl || 0,
+                        price: created.base_unit_cost_vnd || 0,
                     });
                     itemSelect.setValue(String(created.id));
                     document.getElementById('cost-code').value = created.ma_hh;
                     document.getElementById('cost-name').value = created.ten_hh;
                     document.getElementById('cost-unit').value = created.don_vi || '';
-                    document.getElementById('cost-price').value = created.gia_nvl || 0;
+                    document.getElementById('cost-price').value = created.base_unit_cost_vnd || 0;
                     bootstrap.Modal.getOrCreateInstance(document.getElementById('quickItemModal')).hide();
                     quickForm.reset();
                 } catch (payload) {
@@ -250,8 +281,31 @@
                     errors.classList.remove('d-none');
                 } finally {
                     submit.disabled = false;
+                    window.AppLoader?.hide();
                 }
             });
+
+            const baseUom = document.getElementById('quick-base-uom');
+            const purchaseUom = document.getElementById('quick-purchase-uom');
+            const conversionFactor = document.getElementById('quick-conversion-factor');
+            const preview = document.getElementById('quick-conversion-preview');
+            const suggestConversionFactor = () => {
+                const base = baseUom.options[baseUom.selectedIndex];
+                const purchase = purchaseUom.options[purchaseUom.selectedIndex];
+                if (base?.dataset.dimension && base.dataset.dimension === purchase?.dataset.dimension) {
+                    conversionFactor.value = Number(purchase.dataset.factor || 1) / Number(base.dataset.factor || 1);
+                }
+                updateConversionPreview();
+            };
+            const updateConversionPreview = () => {
+                const base = baseUom.options[baseUom.selectedIndex]?.text.split(' - ')[0] || '';
+                const purchase = purchaseUom.options[purchaseUom.selectedIndex]?.text.split(' - ')[0] || '';
+                const factor = Number(conversionFactor.value || 1);
+                preview.textContent = `Quy đổi: 1 ${purchase} = ${factor.toLocaleString('vi-VN')} ${base}. Giá vốn vật tư sẽ tính theo ${base}.`;
+            };
+            [baseUom, purchaseUom].forEach(input => input?.addEventListener('change', suggestConversionFactor));
+            conversionFactor?.addEventListener('input', updateConversionPreview);
+            updateConversionPreview();
         });
     </script>
 @endsection

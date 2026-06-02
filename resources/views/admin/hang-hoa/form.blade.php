@@ -37,7 +37,7 @@
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Mã HH <span class="text-danger">*</span></label>
                         <input type="text" name="ma_hh" class="form-control @error('ma_hh') is-invalid @enderror"
-                            value="{{ old('ma_hh', $hangHoa->ma_hh ?? '') }}" pattern="[A-Za-z0-9_-]+"
+                            value="{{ old('ma_hh', $hangHoa->ma_hh ?? '') }}" pattern="[-A-Za-z0-9_]+"
                             title="Chi cho phep chu, so, dau gach ngang (-) va gach duoi (_)." required>
                         @error('ma_hh')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -67,9 +67,13 @@
                             value="{{ old('nhom_hh', $hangHoa->nhom_hh ?? '') }}" placeholder="Vải, Phụ kiện...">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold">Đơn vị tính</label>
-                        <input type="text" name="don_vi" class="form-control"
-                            value="{{ old('don_vi', $hangHoa->don_vi ?? '') }}" placeholder="yard, mét, cái...">
+                        <label class="form-label fw-semibold">ĐVT tồn kho chuẩn</label>
+                        <select name="base_uom_id" id="base-uom" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            @foreach ($units as $unit)
+                                <option value="{{ $unit->id }}" data-dimension="{{ $unit->dimension }}" data-factor="{{ $unit->factor_to_base }}" @selected(old('base_uom_id', $hangHoa->base_uom_id ?? '') == $unit->id)>{{ $unit->code }} - {{ $unit->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Đơn giá</label>
@@ -162,19 +166,36 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Giá NVL (VNĐ/đơn vị)
+                                <div class="col-md-3">
+                                    <label class="form-label">ĐVT mua mặc định</label>
+                                    <select name="purchase_uom_id" id="purchase-uom" class="form-select form-select-sm">
+                                        <option value="">-- Chọn --</option>
+                                        @foreach ($units as $unit)
+                                            <option value="{{ $unit->id }}" data-dimension="{{ $unit->dimension }}" data-factor="{{ $unit->factor_to_base }}" @selected(old('purchase_uom_id', $hangHoa->purchase_uom_id ?? '') == $unit->id)>{{ $unit->code }} - {{ $unit->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Hệ số quy đổi</label>
+                                    <input type="number" step="0.000001" min="0.000001" name="purchase_to_base_factor" id="purchase-factor" class="form-control form-control-sm"
+                                        value="{{ old('purchase_to_base_factor', $hangHoa->purchase_to_base_factor ?? 1) }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Giá NVL (VNĐ/ĐVT mua)
                                         <small class="text-muted">— dùng tính chi phí SX</small>
                                     </label>
                                     <input type="number" step="1" min="0" name="gia_nvl" class="form-control form-control-sm"
                                         value="{{ old('gia_nvl', $hangHoa->gia_nvl ?? 0) }}" placeholder="0">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label">Tồn kho tối thiểu
                                         <small class="text-muted">— cảnh báo khi dưới mức này</small>
                                     </label>
                                     <input type="number" min="0" name="ton_toi_thieu" class="form-control form-control-sm"
                                         value="{{ old('ton_toi_thieu', $hangHoa->ton_toi_thieu ?? 0) }}" placeholder="0">
+                                </div>
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 px-3 mb-0 small" id="uom-preview">Chọn đơn vị để xem quy đổi.</div>
                                 </div>
                             </div>
                         </div>
@@ -286,6 +307,30 @@
                     }
                 }
             });
+
+            const baseUom = document.getElementById('base-uom');
+            const purchaseUom = document.getElementById('purchase-uom');
+            const factor = document.getElementById('purchase-factor');
+            const uomPreview = document.getElementById('uom-preview');
+            const suggestUomFactor = () => {
+                const base = baseUom.options[baseUom.selectedIndex];
+                const purchase = purchaseUom.options[purchaseUom.selectedIndex];
+                if (base?.dataset.dimension && base.dataset.dimension === purchase?.dataset.dimension) {
+                    factor.value = Number(purchase.dataset.factor || 1) / Number(base.dataset.factor || 1);
+                }
+                updateUomPreview();
+            };
+            const updateUomPreview = () => {
+                const base = baseUom.options[baseUom.selectedIndex]?.text.split(' - ')[0] || '';
+                const purchase = purchaseUom.options[purchaseUom.selectedIndex]?.text.split(' - ')[0] || '';
+                const ratio = Number(factor.value || 1);
+                uomPreview.textContent = base && purchase
+                    ? `Quy đổi nhập kho: 1 ${purchase} = ${ratio.toLocaleString('vi-VN')} ${base}. Bảng giá vốn dùng đơn giá theo ${base}.`
+                    : 'Chọn đơn vị để xem quy đổi.';
+            };
+            [baseUom, purchaseUom].forEach(input => input?.addEventListener('change', suggestUomFactor));
+            factor?.addEventListener('input', updateUomPreview);
+            updateUomPreview();
         })();
     </script>
 @endsection

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\DanhMucHangHoa;
 use App\Models\StandardCostSheet;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Services\StandardCostSheetService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,6 +30,9 @@ class StandardCostSheetTest extends TestCase
                 'effective_date' => '2026-06-02',
                 'standard_output_qty' => 1000,
                 'sale_price_vnd' => 1000,
+                'target_margin_pct' => 30,
+                'vat_pct' => 10,
+                'price_rounding_vnd' => 10,
             ])
             ->assertRedirect();
 
@@ -77,6 +81,9 @@ class StandardCostSheetTest extends TestCase
         $this->assertSame(225.0, $calculation['production_cost_vnd']);
         $this->assertSame(393.5, $calculation['total_cost_vnd']);
         $this->assertSame(606.5, $calculation['profit_vnd']);
+        $this->assertSame(330.0, $calculation['break_even_price_vnd']);
+        $this->assertSame(490.0, $calculation['suggested_price_vnd']);
+        $this->assertSame(540.0, $calculation['quote_price_vnd']);
 
         $this->actingAs($user)
             ->post(route('admin.standard-cost-sheets.activate', $sheet))
@@ -93,18 +100,24 @@ class StandardCostSheetTest extends TestCase
     public function test_manager_can_quick_create_material_from_cost_sheet(): void
     {
         $user = $this->warehouseManager();
+        $gram = UnitOfMeasure::where('code', 'G')->firstOrFail();
+        $kilogram = UnitOfMeasure::where('code', 'KG')->firstOrFail();
 
         $this->actingAs($user)
             ->postJson(route('admin.standard-cost-sheets.quick-create-item'), [
                 'ma_hh' => ' SOI - POLY - 75 ',
                 'ten_hh' => 'Soi poly 75',
                 'nhom_hh' => 'Nguyen vat lieu',
-                'don_vi' => 'KG',
+                'base_uom_id' => $gram->id,
+                'purchase_uom_id' => $kilogram->id,
+                'purchase_to_base_factor' => 1000,
                 'gia_nvl' => 80000,
             ])
             ->assertCreated()
             ->assertJsonPath('item.ma_hh', 'SOI-POLY-75')
-            ->assertJsonPath('item.gia_nvl', 80000);
+            ->assertJsonPath('item.gia_nvl', 80000)
+            ->assertJsonPath('item.don_vi', 'G')
+            ->assertJsonPath('item.base_unit_cost_vnd', 80);
 
         $this->assertDatabaseHas('danh_muc_hang_hoa', [
             'ma_hh' => 'SOI-POLY-75',

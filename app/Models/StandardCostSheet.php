@@ -20,7 +20,8 @@ class StandardCostSheet extends Model
 
     protected $fillable = [
         'product_id', 'version', 'effective_date', 'status', 'standard_output_qty',
-        'sale_price_vnd', 'bank_interest_pct', 'bank_interest_basis',
+        'sale_price_vnd', 'target_margin_pct', 'vat_pct', 'price_rounding_vnd',
+        'bank_interest_pct', 'bank_interest_basis',
         'commission_pct', 'commission_basis', 'management_pct', 'management_basis',
         'transport_cost_vnd', 'note', 'created_by_id',
     ];
@@ -29,6 +30,9 @@ class StandardCostSheet extends Model
         'effective_date' => 'date',
         'standard_output_qty' => 'decimal:4',
         'sale_price_vnd' => 'decimal:4',
+        'target_margin_pct' => 'decimal:4',
+        'vat_pct' => 'decimal:4',
+        'price_rounding_vnd' => 'decimal:4',
         'bank_interest_pct' => 'decimal:4',
         'commission_pct' => 'decimal:4',
         'management_pct' => 'decimal:4',

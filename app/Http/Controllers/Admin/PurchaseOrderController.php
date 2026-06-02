@@ -29,7 +29,7 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $nccList = NhaCungCap::where('active', true)->orderBy('ten_ncc')->get();
-        $nvlList = DanhMucHangHoa::orderBy('ma_hh')->get(['id', 'ma_hh', 'ten_hh', 'don_vi', 'gia_nvl']);
+        $nvlList = $this->purchaseMaterials();
         $soPo    = PurchaseOrder::generateSoPo();
         return view('admin.purchase-orders.form', compact('nccList', 'nvlList', 'soPo'));
     }
@@ -58,11 +58,14 @@ class PurchaseOrderController extends Controller
         ]);
 
         foreach ($request->items as $item) {
-            $hh = DanhMucHangHoa::where('ma_hh', $item['ma_hh'])->first();
+            $hh = DanhMucHangHoa::with(['baseUom', 'purchaseUom'])->where('ma_hh', $item['ma_hh'])->first();
             $po->items()->create([
                 'ma_hh'    => $item['ma_hh'],
                 'ten_hh'   => $hh?->ten_hh ?? $item['ten_hh'] ?? '',
-                'don_vi'   => $hh?->don_vi ?? 'Yard',
+                'don_vi'   => $hh?->purchaseUom?->code ?? $hh?->don_vi ?? 'YARD',
+                'base_uom_id' => $hh?->base_uom_id,
+                'purchase_uom_id' => $hh?->purchase_uom_id,
+                'purchase_to_base_factor' => $hh?->purchase_to_base_factor ?: 1,
                 'so_luong' => $item['so_luong'],
                 'don_gia'  => $item['don_gia'] ?? 0,
                 'ghi_chu'  => $item['ghi_chu'] ?? null,
@@ -75,7 +78,7 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load('items.hangHoa', 'nhaCungCap', 'createdBy');
+        $purchaseOrder->load('items.hangHoa', 'items.baseUom', 'nhaCungCap', 'createdBy');
         return view('admin.purchase-orders.show', compact('purchaseOrder'));
     }
 
@@ -94,8 +97,8 @@ class PurchaseOrderController extends Controller
                     'cong_doan' => 'NHAPKHO',
                     'ma_hh' => $item->ma_hh,
                     'ngay' => now()->toDateString(),
-                    'so_luong' => $item->so_luong,
-                    'price_usd' => $item->don_gia ?? 0,
+                    'so_luong' => $item->base_quantity,
+                    'price_usd' => (float) ($item->don_gia ?? 0) / max((float) ($item->purchase_to_base_factor ?: 1), 0.000001),
                     'exchange_rate' => $exchangeRate,
                     'lenh_sx' => $purchaseOrder->so_po,
                     'note' => "Nhập NVL theo PO: {$purchaseOrder->so_po}",
@@ -126,11 +129,12 @@ class PurchaseOrderController extends Controller
         $nvlThieu = DanhMucHangHoa::whereRaw('ton_toi_thieu > 0')->get()->map(function ($hh) {
             $tonKho = WarehouseTransaction::where('ma_hh', $hh->ma_hh)->nhapKho()->sum('so_luong')
                     - WarehouseTransaction::where('ma_hh', $hh->ma_hh)->xuatKho()->sum('so_luong');
-            $canMua = max(0, $hh->ton_toi_thieu - $tonKho);
+            $purchaseFactor = max((float) ($hh->purchase_to_base_factor ?: 1), 0.000001);
+            $canMua = max(0, $hh->ton_toi_thieu - $tonKho) / $purchaseFactor;
             return [
                 'ma_hh'    => $hh->ma_hh,
                 'ten_hh'   => $hh->ten_hh,
-                'don_vi'   => $hh->don_vi ?? 'Yard',
+                'don_vi'   => $hh->purchaseUom?->code ?? $hh->don_vi ?? 'YARD',
                 'ton_kho'  => $tonKho,
                 'toi_thieu'=> $hh->ton_toi_thieu,
                 'can_mua'  => $canMua,
@@ -138,8 +142,15 @@ class PurchaseOrderController extends Controller
             ];
         })->filter(fn($x) => $x['can_mua'] > 0)->values();
 
-        $nvlList = DanhMucHangHoa::orderBy('ma_hh')->get(['id', 'ma_hh', 'ten_hh', 'don_vi', 'gia_nvl']);
+        $nvlList = $this->purchaseMaterials();
 
         return view('admin.purchase-orders.form', compact('nccList', 'nvlList', 'soPo', 'nvlThieu'));
+    }
+
+    private function purchaseMaterials()
+    {
+        return DanhMucHangHoa::with(['baseUom:id,code', 'purchaseUom:id,code'])
+            ->orderBy('ma_hh')
+            ->get(['id', 'ma_hh', 'ten_hh', 'don_vi', 'gia_nvl', 'base_uom_id', 'purchase_uom_id', 'purchase_to_base_factor']);
     }
 }

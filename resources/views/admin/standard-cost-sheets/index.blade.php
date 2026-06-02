@@ -88,6 +88,10 @@
                                     <label class="form-label">Giá bán dự kiến</label>
                                     <input type="number" step="0.01" min="0" name="sale_price_vnd" value="{{ old('sale_price_vnd', 0) }}" class="form-control">
                                 </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Biên lợi nhuận mục tiêu %</label>
+                                    <input type="number" step="0.01" min="0" max="95" name="target_margin_pct" value="{{ old('target_margin_pct', 30) }}" class="form-control">
+                                </div>
                             </div>
                             <div class="mb-3 mt-3">
                                 <label class="form-label">Ghi chú</label>

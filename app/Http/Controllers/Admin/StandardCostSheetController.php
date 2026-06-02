@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DanhMucHangHoa;
 use App\Models\StandardCostLine;
 use App\Models\StandardCostSheet;
+use App\Models\UnitOfMeasure;
 use App\Services\StandardCostSheetService;
 use App\Support\ItemCode;
 use Illuminate\Http\Request;
@@ -51,6 +52,9 @@ class StandardCostSheetController extends Controller
             'effective_date' => ['required', 'date'],
             'standard_output_qty' => ['required', 'numeric', 'min:0.0001'],
             'sale_price_vnd' => ['nullable', 'numeric', 'min:0'],
+            'target_margin_pct' => ['nullable', 'numeric', 'min:0', 'max:95'],
+            'vat_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'price_rounding_vnd' => ['nullable', 'numeric', 'min:1'],
             'note' => ['nullable', 'string'],
         ]);
         $validated['created_by_id'] = $request->user()?->id;
@@ -69,9 +73,11 @@ class StandardCostSheetController extends Controller
             ->where('active', true)
             ->whereKeyNot($standardCostSheet->product_id)
             ->orderBy('ma_hh')
-            ->get(['id', 'ma_hh', 'ten_hh', 'don_vi', 'gia_nvl', 'don_gia']);
+            ->with('baseUom')
+            ->get(['id', 'ma_hh', 'ten_hh', 'don_vi', 'gia_nvl', 'don_gia', 'base_uom_id', 'purchase_to_base_factor']);
+        $units = UnitOfMeasure::where('active', true)->orderBy('dimension')->orderBy('code')->get();
 
-        return view('admin.standard-cost-sheets.show', compact('standardCostSheet', 'calculation', 'materials'));
+        return view('admin.standard-cost-sheets.show', compact('standardCostSheet', 'calculation', 'materials', 'units'));
     }
 
     public function update(Request $request, StandardCostSheet $standardCostSheet)
@@ -81,6 +87,9 @@ class StandardCostSheetController extends Controller
             'effective_date' => ['required', 'date'],
             'standard_output_qty' => ['required', 'numeric', 'min:0.0001'],
             'sale_price_vnd' => ['nullable', 'numeric', 'min:0'],
+            'target_margin_pct' => ['nullable', 'numeric', 'min:0', 'max:95'],
+            'vat_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'price_rounding_vnd' => ['nullable', 'numeric', 'min:1'],
             'bank_interest_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'bank_interest_basis' => ['required', Rule::in(array_keys(StandardCostSheet::BASES))],
             'commission_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -135,12 +144,15 @@ class StandardCostSheetController extends Controller
             'ma_hh' => ['required', 'string', 'regex:' . ItemCode::VALIDATION_REGEX, 'unique:danh_muc_hang_hoa,ma_hh'],
             'ten_hh' => ['required', 'string', 'max:255'],
             'nhom_hh' => ['nullable', 'string', 'max:255'],
-            'don_vi' => ['nullable', 'string', 'max:50'],
+            'base_uom_id' => ['required', 'exists:units_of_measure,id'],
+            'purchase_uom_id' => ['required', 'exists:units_of_measure,id'],
+            'purchase_to_base_factor' => ['required', 'numeric', 'min:0.000001'],
             'gia_nvl' => ['nullable', 'numeric', 'min:0'],
         ]);
+        $validated['don_vi'] = UnitOfMeasure::findOrFail($validated['base_uom_id'])->code;
         $validated['active'] = true;
 
-        $item = DanhMucHangHoa::create($validated);
+        $item = DanhMucHangHoa::create($validated)->load('baseUom', 'purchaseUom');
 
         return response()->json([
             'message' => 'Đã thêm hàng hóa vào danh mục.',
@@ -150,6 +162,8 @@ class StandardCostSheetController extends Controller
                 'ten_hh' => $item->ten_hh,
                 'don_vi' => $item->don_vi,
                 'gia_nvl' => (float) $item->gia_nvl,
+                'base_unit_cost_vnd' => $item->base_unit_cost_vnd,
+                'purchase_to_base_factor' => (float) $item->purchase_to_base_factor,
             ],
         ], 201);
     }

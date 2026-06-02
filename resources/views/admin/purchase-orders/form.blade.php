@@ -82,14 +82,14 @@
                                 <select name="items[0][ma_hh]" class="form-select form-select-sm ma-hh-select" required>
                                     <option value="">-- Chọn --</option>
                                     @foreach($nvlList as $hh)
-                                    <option value="{{ $hh->ma_hh }}" data-don-vi="{{ $hh->don_vi }}" data-don-gia="{{ $hh->gia_nvl ?? 0 }}">
+                                    <option value="{{ $hh->ma_hh }}" data-don-vi="{{ $hh->purchaseUom?->code ?? $hh->don_vi }}" data-don-gia="{{ $hh->gia_nvl ?? 0 }}" data-factor="{{ $hh->purchase_to_base_factor ?: 1 }}" data-base-unit="{{ $hh->baseUom?->code ?? $hh->don_vi }}">
                                         {{ $hh->ma_hh }} - {{ $hh->ten_hh }}
                                     </option>
                                     @endforeach
                                 </select>
                             </td>
                             <td><input type="text" name="items[0][ten_hh]" class="form-control form-control-sm ten-hh" placeholder="Tự động"></td>
-                            <td><input type="text" name="items[0][don_vi]" class="form-control form-control-sm don-vi" value="Yard"></td>
+                            <td><input type="text" name="items[0][don_vi]" class="form-control form-control-sm don-vi" value="YARD" readonly><div class="small text-muted conversion-note"></div></td>
                             <td><input type="number" name="items[0][so_luong]" class="form-control form-control-sm sl" step="0.01" min="0.01" required></td>
                             <td><input type="number" name="items[0][don_gia]" class="form-control form-control-sm don-gia" step="1" min="0" value="0"></td>
                             <td><span class="thanh-tien text-primary fw-semibold">0</span></td>
@@ -129,7 +129,7 @@
 
     function buildOptions(selected = '') {
         return nvlList.map(hh =>
-            `<option value="${hh.ma_hh}" data-don-vi="${hh.don_vi ?? 'Yard'}" data-don-gia="${hh.gia_nvl ?? 0}" ${hh.ma_hh === selected ? 'selected' : ''}>
+            `<option value="${hh.ma_hh}" data-don-vi="${hh.purchase_uom?.code ?? hh.don_vi ?? 'YARD'}" data-don-gia="${hh.gia_nvl ?? 0}" data-factor="${hh.purchase_to_base_factor ?? 1}" data-base-unit="${hh.base_uom?.code ?? hh.don_vi ?? ''}" ${hh.ma_hh === selected ? 'selected' : ''}>
                 ${hh.ma_hh} - ${hh.ten_hh}
             </option>`
         ).join('');
@@ -147,7 +147,7 @@
                 </select>
             </td>
             <td><input type="text" name="items[${idx}][ten_hh]" class="form-control form-control-sm ten-hh" value="${tenHh}" placeholder="Tự động"></td>
-            <td><input type="text" name="items[${idx}][don_vi]" class="form-control form-control-sm don-vi" value="Yard"></td>
+            <td><input type="text" name="items[${idx}][don_vi]" class="form-control form-control-sm don-vi" value="YARD" readonly><div class="small text-muted conversion-note"></div></td>
             <td><input type="number" name="items[${idx}][so_luong]" class="form-control form-control-sm sl" step="0.01" min="0.01" value="${soLuong}" required></td>
             <td><input type="number" name="items[${idx}][don_gia]" class="form-control form-control-sm don-gia" step="1" min="0" value="${donGia}"></td>
             <td><span class="thanh-tien text-primary fw-semibold">0</span></td>
@@ -181,7 +181,10 @@
     function bindRow(tr) {
         tr.querySelector('.ma-hh-select').addEventListener('change', function () {
             const opt = this.options[this.selectedIndex];
-            tr.querySelector('.don-vi').value = opt.dataset.donVi || 'Yard';
+            tr.querySelector('.don-vi').value = opt.dataset.donVi || 'YARD';
+            const factor = Number(opt.dataset.factor || 1);
+            const baseUnit = opt.dataset.baseUnit || opt.dataset.donVi || '';
+            tr.querySelector('.conversion-note').textContent = factor === 1 ? '' : `1 ${opt.dataset.donVi} = ${factor.toLocaleString('vi-VN')} ${baseUnit}`;
             tr.querySelector('.don-gia').value = opt.dataset.donGia || 0;
             // tên tự động
             const found = nvlList.find(h => h.ma_hh === this.value);
