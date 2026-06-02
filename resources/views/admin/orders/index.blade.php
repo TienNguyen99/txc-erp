@@ -66,6 +66,16 @@
                     </select>
                 </div>
                 <div class="col-auto">
+                    <select name="per_page" class="form-select form-select-sm" aria-label="Số dòng mỗi trang"
+                        onchange="this.form.submit()">
+                        @foreach ([25, 50, 100] as $size)
+                            <option value="{{ $size }}" {{ $data->perPage() === $size ? 'selected' : '' }}>
+                                {{ $size }} dòng
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
                     <button class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-search me-1"></i>Tìm</button>
                 </div>
                 <div class="col-auto">
@@ -158,7 +168,9 @@
             @if ($data->count())
                 <div class="row mt-3 mb-3">
                     <div class="col-md-5">
-                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-chart-pie me-1"></i>Tổng YRD theo Mã HH</h6>
+                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-chart-pie me-1"></i>Tổng YRD theo Mã HH
+                            <small class="text-muted fw-normal">(trang hiện tại)</small>
+                        </h6>
                         <table class="table table-sm table-bordered">
                             <thead class="table-light">
                                 <tr>
@@ -194,7 +206,12 @@
                 </div>
             @endif
 
-            {{ $data->links() }}
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                <small class="text-muted">
+                    Hiển thị {{ $data->firstItem() ?? 0 }}-{{ $data->lastItem() ?? 0 }} / {{ $data->total() }} đơn hàng
+                </small>
+                {{ $data->links() }}
+            </div>
         </div>
     </div>
 

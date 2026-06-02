@@ -41,7 +41,11 @@ class OrderController extends Controller
                   ->when($request->no_pl, fn($q) => $q->where(fn($q2) => $q2->whereNull('pl_number')->orWhere('pl_number', '')));
         }
 
-        $data = $query->latest()->paginate(1000)->withQueryString();
+        $perPage = in_array($request->integer('per_page'), [25, 50, 100], true)
+            ? $request->integer('per_page')
+            : 50;
+
+        $data = $query->latest()->paginate($perPage)->withQueryString();
         return view('admin.orders.index', compact('data', 'khachHangs', 'nhomHangs'));
     }
 

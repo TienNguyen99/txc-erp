@@ -20,7 +20,8 @@ class AiAssistantTest extends TestCase
             ->actingAs($user)
             ->get(route('admin.ai-assistant.index'))
             ->assertOk()
-            ->assertSee('AI Assistant');
+            ->assertSee('AI Assistant')
+            ->assertSee('aiWidgetTrigger');
     }
 
     public function test_admin_can_ask_ai_assistant_in_local_mode(): void

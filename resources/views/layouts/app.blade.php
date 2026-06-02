@@ -65,6 +65,7 @@
             flex-direction: column;
             z-index: 1040;
             transition: transform .25s ease;
+            will-change: transform;
             overflow-y: auto;
             overflow-x: hidden;
         }
@@ -125,7 +126,7 @@
             font-size: .83rem;
             font-weight: 500;
             text-decoration: none;
-            transition: all .15s;
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease;
             margin-bottom: 1px;
         }
 
@@ -171,7 +172,7 @@
             padding: 0 24px;
             gap: 12px;
             z-index: 1030;
-            transition: left .25s ease;
+            transition: none;
         }
 
         .topbar-toggle {
@@ -182,7 +183,7 @@
             font-size: 1rem;
             cursor: pointer;
             border-radius: 8px;
-            transition: all .15s;
+            transition: background-color .15s ease, color .15s ease;
         }
 
         .topbar-toggle:hover {
@@ -214,7 +215,7 @@
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            transition: all .15s;
+            transition: background-color .15s ease, color .15s ease;
             text-decoration: none;
             position: relative;
             font-size: .9rem;
@@ -243,7 +244,7 @@
             margin-left: var(--sidebar-w);
             padding-top: var(--header-h);
             min-height: 100vh;
-            transition: margin-left .25s ease;
+            transition: none;
         }
 
         .page-content {
@@ -347,7 +348,7 @@
             font-size: .82rem;
             border: none;
             line-height: 1.5;
-            transition: all .18s ease;
+            transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .12s ease;
             box-shadow: none;
         }
 
@@ -491,7 +492,7 @@
             border: 1.5px solid var(--border);
             padding: .5rem .85rem;
             font-size: .875rem;
-            transition: all .2s;
+            transition: border-color .2s ease, box-shadow .2s ease;
         }
 
         .form-control:focus,
@@ -757,8 +758,7 @@
 
         #topbar {
             height: var(--header-h);
-            background: rgba(255, 255, 255, .92);
-            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, .98);
             border-bottom: 1px solid rgba(226, 232, 240, .85);
             padding: 0 28px;
         }
@@ -824,10 +824,7 @@
             z-index: 3000;
             display: grid;
             place-items: center;
-            background:
-                radial-gradient(circle at top, rgba(var(--primary-rgb), .14), transparent 32%),
-                rgba(253, 248, 243, .82);
-            backdrop-filter: blur(10px);
+            background: rgba(253, 248, 243, .94);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -920,6 +917,12 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
+            #sidebar,
+            #app-loader,
+            .btn {
+                transition: none;
+            }
+
             .app-loader-mark::before,
             .app-loader-bar::after {
                 animation: none;
@@ -938,6 +941,184 @@
 
             .page-content {
                 padding: 16px;
+            }
+        }
+
+        .ai-widget-trigger {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 1060;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            min-height: 48px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            box-shadow: 0 14px 32px rgba(var(--primary-rgb), .28);
+            font-size: .84rem;
+            font-weight: 700;
+            transition: transform .16s ease, box-shadow .16s ease;
+        }
+
+        .ai-widget-trigger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 38px rgba(var(--primary-rgb), .34);
+        }
+
+        .ai-widget-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1058;
+            background: rgba(15, 23, 42, .22);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .16s ease, visibility .16s ease;
+        }
+
+        .ai-widget-dialog {
+            position: fixed;
+            right: 22px;
+            bottom: 82px;
+            z-index: 1059;
+            display: flex;
+            flex-direction: column;
+            width: min(390px, calc(100vw - 32px));
+            height: min(590px, calc(100vh - 112px));
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .2);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(12px) scale(.98);
+            transform-origin: bottom right;
+            transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+        }
+
+        body.ai-widget-open .ai-widget-dialog {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .ai-widget-header {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--border);
+            background: #fffaf4;
+        }
+
+        .ai-widget-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            background: rgba(var(--primary-rgb), .14);
+            color: var(--primary-dark);
+        }
+
+        .ai-widget-close {
+            width: 34px;
+            height: 34px;
+            margin-left: auto;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .ai-widget-close:hover {
+            background: rgba(100, 116, 139, .1);
+            color: var(--text);
+        }
+
+        .ai-widget-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            background: #fffdf9;
+        }
+
+        .ai-widget-message {
+            max-width: 88%;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: .83rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .ai-widget-message.user {
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .ai-widget-message.assistant {
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+            background: #fff;
+            color: var(--text);
+        }
+
+        .ai-widget-form {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .ai-widget-form textarea {
+            min-height: 42px;
+            max-height: 108px;
+            resize: none;
+        }
+
+        @media (max-width: 575px) {
+            body.ai-widget-open .ai-widget-backdrop {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            .ai-widget-trigger {
+                right: 14px;
+                bottom: 14px;
+                width: 48px;
+                padding: 0;
+                justify-content: center;
+            }
+
+            .ai-widget-trigger span {
+                display: none;
+            }
+
+            .ai-widget-dialog {
+                right: 12px;
+                bottom: 74px;
+                width: calc(100vw - 24px);
+                height: min(620px, calc(100vh - 92px));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ai-widget-trigger,
+            .ai-widget-backdrop,
+            .ai-widget-dialog {
+                transition: none;
             }
         }
     </style>
@@ -968,18 +1149,14 @@
         {{-- MAIN --}}
         <div class="sidebar-section">
             <button class="sidebar-section-label" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMain"
-                aria-expanded="{{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.ai-assistant.*') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'true' : 'false' }}">
+                aria-expanded="{{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'true' : 'false' }}">
                 Điều hành <i class="fa-solid fa-chevron-down"></i>
             </button>
             <div id="sidebarMain"
-                class="collapse {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.ai-assistant.*') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'show' : '' }}">
+                class="collapse {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.orders.*') || request()->routeIs('admin.order-tracking.*') ? 'show' : '' }}">
                 <a href="{{ route('admin.dashboard') }}"
                     class="nav-item-sb {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <i class="fa-solid fa-gauge-high"></i><span class="nav-label">Tổng quan</span>
-                </a>
-                <a href="{{ route('admin.ai-assistant.index') }}"
-                    class="nav-item-sb {{ request()->routeIs('admin.ai-assistant.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i><span class="nav-label">AI Assistant</span>
                 </a>
                 @can('orders.view')
                     <a href="{{ route('admin.orders.index') }}"
@@ -1186,7 +1363,7 @@
             {{-- User dropdown --}}
             <div class="dropdown">
                 <button class="d-flex align-items-center gap-2 border-0 bg-transparent"
-                    style="cursor:pointer;border-radius:10px;padding:4px 8px;transition:all .15s"
+                    style="cursor:pointer;border-radius:10px;padding:4px 8px"
                     data-bs-toggle="dropdown">
                     <div class="topbar-avatar">{{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}</div>
                     <span style="font-size:.83rem;font-weight:600;color:var(--text)" class="d-none d-md-inline">
@@ -1269,6 +1446,44 @@
         </footer>
     </main>
 
+    @hasanyrole('admin|manager')
+        <div id="aiWidgetBackdrop" class="ai-widget-backdrop" aria-hidden="true"></div>
+        <section id="aiWidgetDialog" class="ai-widget-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="aiWidgetTitle" aria-hidden="true">
+            <header class="ai-widget-header">
+                <div class="ai-widget-icon" aria-hidden="true">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <div id="aiWidgetTitle" class="fw-bold" style="font-size:.9rem">AI Assistant</div>
+                    <div class="text-muted" style="font-size:.72rem">Hỏi nhanh dữ liệu vận hành ERP</div>
+                </div>
+                <button id="aiWidgetClose" class="ai-widget-close" type="button" aria-label="Đóng AI Assistant">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </header>
+            <div id="aiWidgetMessages" class="ai-widget-messages" aria-live="polite"></div>
+            <form id="aiWidgetForm" class="ai-widget-form" data-no-loader>
+                <div class="d-flex gap-2 align-items-end">
+                    <textarea id="aiWidgetInput" class="form-control" rows="1" maxlength="2000"
+                        placeholder="Nhập câu hỏi..." aria-label="Câu hỏi cho AI Assistant"></textarea>
+                    <button id="aiWidgetSubmit" type="submit" class="btn btn-primary px-3" title="Gửi câu hỏi">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted" style="font-size:.68rem">Enter để gửi, Shift + Enter để xuống dòng</small>
+                    <a href="{{ route('admin.ai-assistant.index') }}" style="font-size:.72rem;color:var(--primary-dark)">Mở trang đầy đủ</a>
+                </div>
+            </form>
+        </section>
+        <button id="aiWidgetTrigger" class="ai-widget-trigger" type="button" aria-controls="aiWidgetDialog"
+            aria-expanded="false">
+            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+            <span>AI Assistant</span>
+        </button>
+    @endhasanyrole
+
     {{-- Scripts --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
@@ -1340,6 +1555,145 @@
             }, true);
 
             return { show, hide };
+        })();
+
+        (() => {
+            const storageKey = 'txc-ai-widget-history';
+            const trigger = document.getElementById('aiWidgetTrigger');
+            const backdrop = document.getElementById('aiWidgetBackdrop');
+            const dialog = document.getElementById('aiWidgetDialog');
+            const closeButton = document.getElementById('aiWidgetClose');
+            const messages = document.getElementById('aiWidgetMessages');
+            const form = document.getElementById('aiWidgetForm');
+            const input = document.getElementById('aiWidgetInput');
+            const submit = document.getElementById('aiWidgetSubmit');
+            let history = [];
+
+            if (!trigger) return;
+
+            const persistHistory = () => {
+                try {
+                    sessionStorage.setItem(storageKey, JSON.stringify(history.slice(-12)));
+                } catch (error) {}
+            };
+
+            const addMessage = (role, content, persist = true) => {
+                const bubble = document.createElement('div');
+                bubble.className = `ai-widget-message ${role}`;
+                bubble.textContent = content;
+                messages.appendChild(bubble);
+                messages.scrollTop = messages.scrollHeight;
+
+                if (persist) {
+                    history.push({ role, content });
+                    history = history.slice(-12);
+                    persistHistory();
+                }
+            };
+
+            const restoreHistory = () => {
+                try {
+                    const stored = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+                    history = Array.isArray(stored) ? stored.slice(-12) : [];
+                } catch (error) {
+                    history = [];
+                }
+
+                if (history.length === 0) {
+                    addMessage('assistant', 'Xin chào. Bạn cần kiểm tra nhanh đơn hàng, kho hay sản xuất?', false);
+                    return;
+                }
+
+                history.forEach(item => addMessage(item.role, item.content, false));
+            };
+
+            const setOpen = isOpen => {
+                document.body.classList.toggle('ai-widget-open', isOpen);
+                trigger.setAttribute('aria-expanded', String(isOpen));
+                dialog.setAttribute('aria-hidden', String(!isOpen));
+                backdrop.setAttribute('aria-hidden', String(!isOpen));
+
+                if (isOpen) {
+                    window.setTimeout(() => input.focus(), 0);
+                } else {
+                    trigger.focus();
+                }
+            };
+
+            const setLoading = isLoading => {
+                input.disabled = isLoading;
+                submit.disabled = isLoading;
+                submit.innerHTML = isLoading
+                    ? '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>'
+                    : '<i class="fa-solid fa-paper-plane"></i>';
+            };
+
+            const askAi = async message => {
+                setLoading(true);
+
+                try {
+                    const response = await fetch('{{ route('admin.ai-assistant.ask') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            message,
+                            history: history.slice(-9, -1)
+                        })
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Không gửi được câu hỏi.');
+                    }
+
+                    const suffix = payload.mode === 'local'
+                        ? '\n\n(Chế độ local: chưa cấu hình API key AI.)'
+                        : '';
+                    addMessage('assistant', payload.answer + suffix);
+                } catch (error) {
+                    addMessage('assistant', error.message || 'Có lỗi khi gọi AI Assistant.');
+                } finally {
+                    setLoading(false);
+                    input.focus();
+                }
+            };
+
+            trigger.addEventListener('click', () => {
+                setOpen(!document.body.classList.contains('ai-widget-open'));
+            });
+            backdrop.addEventListener('click', () => setOpen(false));
+            closeButton.addEventListener('click', () => setOpen(false));
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && document.body.classList.contains('ai-widget-open')) {
+                    setOpen(false);
+                }
+            });
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    form.requestSubmit();
+                }
+            });
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = `${Math.min(input.scrollHeight, 108)}px`;
+            });
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const message = input.value.trim();
+                if (!message || submit.disabled) return;
+
+                addMessage('user', message);
+                input.value = '';
+                input.style.height = 'auto';
+                askAi(message);
+            });
+
+            restoreHistory();
         })();
 
         // Sidebar toggle
