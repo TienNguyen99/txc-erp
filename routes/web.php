@@ -6,9 +6,11 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTrackingController;
 use App\Http\Controllers\Admin\ProductionReportController;
 use App\Http\Controllers\Admin\ProductionReceiptController;
+use App\Http\Controllers\Admin\ProductionDashboardController;
 use App\Http\Controllers\Admin\WarehouseTransactionController;
 use App\Http\Controllers\Admin\WarehouseDocumentController;
 use App\Http\Controllers\Admin\CostingController;
+use App\Http\Controllers\Admin\StandardCostSheetController;
 use App\Http\Controllers\Admin\DanhMucHangHoaController;
 use App\Http\Controllers\Admin\DanhMucKhachHangController;
 use App\Http\Controllers\Admin\LenhSanXuatController as AdminLenhSanXuatController;
@@ -118,6 +120,7 @@ Route::middleware('auth')->group(function () {
 
           // ── Production Reports ──
           Route::middleware('permission:production.view')->group(function () {
+               Route::get('production-dashboard', [ProductionDashboardController::class, 'index'])->name('production-dashboard.index');
                Route::get('production-reports/export', [ProductionReportController::class, 'export'])->name('production-reports.export')->middleware('permission:production.export');
                Route::post('production-reports/approve-selected', [ProductionReportController::class, 'approveSelected'])->name('production-reports.approve-selected')->middleware('permission:production.edit');
                Route::post('production-reports/{productionReport}/approve', [ProductionReportController::class, 'approve'])->name('production-reports.approve')->middleware('permission:production.edit');
@@ -133,6 +136,15 @@ Route::middleware('auth')->group(function () {
           Route::middleware('permission:warehouse.view')->group(function () {
                Route::get('costing', [CostingController::class, 'index'])->name('costing.index');
                Route::post('costing/overheads', [CostingController::class, 'storeOverhead'])->name('costing.overheads.store')->middleware('permission:warehouse.edit');
+               Route::get('standard-cost-sheets', [StandardCostSheetController::class, 'index'])->name('standard-cost-sheets.index');
+               Route::post('standard-cost-sheets', [StandardCostSheetController::class, 'store'])->name('standard-cost-sheets.store')->middleware('permission:warehouse.edit');
+               Route::get('standard-cost-sheets/{standardCostSheet}', [StandardCostSheetController::class, 'show'])->name('standard-cost-sheets.show');
+               Route::put('standard-cost-sheets/{standardCostSheet}', [StandardCostSheetController::class, 'update'])->name('standard-cost-sheets.update')->middleware('permission:warehouse.edit');
+               Route::post('standard-cost-sheets/{standardCostSheet}/activate', [StandardCostSheetController::class, 'activate'])->name('standard-cost-sheets.activate')->middleware('permission:warehouse.edit');
+               Route::post('standard-cost-sheets/{standardCostSheet}/lines', [StandardCostSheetController::class, 'storeLine'])->name('standard-cost-sheets.lines.store')->middleware('permission:warehouse.edit');
+               Route::post('standard-cost-sheets/quick-create-item', [StandardCostSheetController::class, 'quickCreateItem'])->name('standard-cost-sheets.quick-create-item')->middleware('permission:warehouse.edit');
+               Route::delete('standard-cost-sheets/{standardCostSheet}/lines/{line}', [StandardCostSheetController::class, 'destroyLine'])->name('standard-cost-sheets.lines.destroy')->middleware('permission:warehouse.edit');
+               Route::delete('standard-cost-sheets/{standardCostSheet}', [StandardCostSheetController::class, 'destroy'])->name('standard-cost-sheets.destroy')->middleware('permission:warehouse.edit');
                Route::get('warehouse-documents', [WarehouseDocumentController::class, 'index'])->name('warehouse-documents.index');
                Route::post('warehouse-documents/from-transactions', [WarehouseDocumentController::class, 'storeFromTransactions'])->name('warehouse-documents.from-transactions')->middleware('permission:warehouse.edit');
                Route::get('warehouse-documents/{warehouseDocument}', [WarehouseDocumentController::class, 'show'])->name('warehouse-documents.show');

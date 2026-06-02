@@ -1001,11 +1001,17 @@
             <div class="sidebar-section">
                 <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
                     data-bs-target="#sidebarProduction"
-                    aria-expanded="{{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-reports.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-dashboard.*') || request()->routeIs('admin.production-reports.*') ? 'true' : 'false' }}">
                     Sản xuất <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div id="sidebarProduction"
-                    class="collapse {{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-reports.*') ? 'show' : '' }}">
+                    class="collapse {{ request()->routeIs('admin.lenh-san-xuat.*') || request()->routeIs('admin.quy-trinh-san-xuat.*') || request()->routeIs('admin.dinh-muc-nvl.*') || request()->routeIs('admin.production-dashboard.*') || request()->routeIs('admin.production-reports.*') ? 'show' : '' }}">
+                    @can('production.view')
+                        <a href="{{ route('admin.production-dashboard.index') }}"
+                            class="nav-item-sb {{ request()->routeIs('admin.production-dashboard.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-chart-line"></i><span class="nav-label">Dashboard SX</span>
+                        </a>
+                    @endcan
                     @can('lenh_sx.view')
                         <a href="{{ route('admin.lenh-san-xuat.index') }}"
                             class="nav-item-sb {{ request()->routeIs('admin.lenh-san-xuat.*') ? 'active' : '' }}">
@@ -1035,11 +1041,11 @@
             <div class="sidebar-section">
                 <button class="sidebar-section-label" type="button" data-bs-toggle="collapse"
                     data-bs-target="#sidebarWarehouse"
-                    aria-expanded="{{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') || request()->routeIs('admin.standard-cost-sheets.*') ? 'true' : 'false' }}">
                     Kho <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div id="sidebarWarehouse"
-                    class="collapse {{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') ? 'show' : '' }}">
+                    class="collapse {{ request()->routeIs('admin.warehouse-transactions.*') || request()->routeIs('admin.warehouse-documents.*') || request()->routeIs('admin.costing.*') || request()->routeIs('admin.standard-cost-sheets.*') ? 'show' : '' }}">
                     <a href="{{ route('admin.warehouse-transactions.dashboard') }}"
                         class="nav-item-sb {{ request()->routeIs('admin.warehouse-transactions.dashboard') ? 'active' : '' }}">
                         <i class="fa-solid fa-chart-column"></i><span class="nav-label">Dashboard kho</span>
@@ -1063,6 +1069,10 @@
                     <a href="{{ route('admin.costing.index') }}"
                         class="nav-item-sb {{ request()->routeIs('admin.costing.*') ? 'active' : '' }}">
                         <i class="fa-solid fa-calculator"></i><span class="nav-label">Giá vốn</span>
+                    </a>
+                    <a href="{{ route('admin.standard-cost-sheets.index') }}"
+                        class="nav-item-sb {{ request()->routeIs('admin.standard-cost-sheets.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i><span class="nav-label">Định mức giá vốn</span>
                     </a>
                 </div>
             </div>

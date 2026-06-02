@@ -106,7 +106,7 @@ class OrderImport implements OnEachRow, WithHeadingRow, WithValidation
         $order->yrd = $this->toNumeric($this->value($row, 'yrd', 'quantity', 'so_luong', 'qty'));
         $order->can_giao_1 = $this->toNumeric($this->value($row, 'can_giao_1'));
         $order->can_giao_2 = $this->toNumeric($this->value($row, 'can_giao_2'));
-        $order->pl_number = $this->cleanString($this->value($row, 'pl_number', 'job_no')) ?: null;
+        $order->pl_number = $this->cleanString($this->value($row, 'pl_number')) ?: null;
         $order->tagtime_etc = $receivingDate ?: $this->toDate($this->value($row, 'tagtime_etc'));
         $order->sig_need_date = $customerNeedDate ?: $deliveryDate;
         $order->chart = $this->cleanString($this->value($row, 'chart', 'style')) ?: null;

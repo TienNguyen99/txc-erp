@@ -11,26 +11,22 @@ class OrderTemplateExport implements WithHeadings, WithStyles
     public function headings(): array
     {
         return [
-            'chart',
-            'nhan_vien_id',
-            'ma_kh',
-            'ma_hh',
-            'quy_cach',
-            'ten_hh',
-            'kich_co',
-            'color',
-            'unit',
-            'yrd',
-            'tagtime_etc',
-            'sig_need_date',
-            'noi_giao',
+            'khach_hang_id',
             'job_no',
             'fty_po',
             'im_number',
+            'color',
             'qty',
+            'unit',
+            'ma_hh',
+            'ten_hh',
+            'yrd',
             'can_giao_1',
             'can_giao_2',
             'pl_number',
+            'tagtime_etc',
+            'sig_need_date',
+            'chart',
             'price_usd_auto',
             'price_usd',
             'to_khai',
@@ -41,7 +37,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = 'Y';
+        $lastCol = 'U';
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
@@ -53,7 +49,7 @@ class OrderTemplateExport implements WithHeadings, WithStyles
         foreach (range('A', $lastCol) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        $sheet->getStyle('K2:L200')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+        $sheet->getStyle('N2:O200')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
 
         return [];
     }

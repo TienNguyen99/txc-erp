@@ -69,6 +69,37 @@ class DashboardMetricsService
         ];
     }
 
+    /**
+     * Dashboard chuyên biệt cho quản lý sản xuất.
+     *
+     * Chỉ dựng các khối vận hành cần thiết, tránh gọi finance, inventory và
+     * procurement của dashboard điều hành tổng để giữ thời gian phản hồi thấp.
+     */
+    public function buildProduction(array $inputFilters = []): array
+    {
+        $filters = $this->normalizeProductionFilters($inputFilters);
+        $currentStateFilters = array_replace($filters, ['date_from' => null, 'date_to' => null]);
+        [$lenhSxTracking, $lenhSxStats] = $this->buildLenhSanXuatTracking();
+        $productionOrdersNeedAttention = $lenhSxTracking
+            ->whereNotIn('trang_thai', ['done'])
+            ->take(10)
+            ->values();
+
+        return [
+            'filters' => $filters,
+            'summary' => $this->buildProductionSummary($filters),
+            'outputTrend' => $this->buildProductionOutputTrend($filters),
+            'stageOutput' => $this->buildProductionStageChart($filters),
+            'shiftOutput' => $this->buildProductionCaChart($filters),
+            'stageBacklog' => $this->buildWipBlock($currentStateFilters),
+            'productionOrdersNeedAttention' => $productionOrdersNeedAttention,
+            'materialShortages' => $this->buildBomMaterialShortages($filters),
+            'pendingReports' => $this->buildPendingProductionReports($filters),
+            'lenhSxTracking' => $lenhSxTracking,
+            'lenhSxStats' => $lenhSxStats,
+        ];
+    }
+
     private function normalizeFilters(array $input): array
     {
         $today = now()->toDateString();
@@ -81,6 +112,88 @@ class DashboardMetricsService
             'khach_hang_id' => $input['khach_hang_id'] ?? null,
             'nhom_hang' => $input['nhom_hang'] ?? null,
         ];
+    }
+
+    private function normalizeProductionFilters(array $input): array
+    {
+        return [
+            'date_from' => $input['date_from'] ?? now()->subDays(13)->toDateString(),
+            'date_to' => $input['date_to'] ?? now()->toDateString(),
+            'khach_hang_id' => null,
+            'nhom_hang' => $input['nhom_hang'] ?? null,
+        ];
+    }
+
+    private function buildProductionSummary(array $filters): array
+    {
+        $reportTotals = $this->productionQuery($filters)
+            ->selectRaw('COALESCE(SUM(sl_dat), 0) as output, COALESCE(SUM(sl_hu), 0) as defect')
+            ->first();
+
+        $statusCounts = $this->productionQuery($filters)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $totalProductionOrders = LenhSanXuat::query()
+            ->when($filters['nhom_hang'] ?? null, fn($q, $nhomHang) => $q->where('nhom_hh', 'like', $nhomHang . '%'))
+            ->count();
+
+        $activeItems = LenhSanXuatItem::query()
+            ->where('da_len_lenh', true)
+            ->when($filters['nhom_hang'] ?? null, fn($q, $nhomHang) => $q->where('ma_hh', 'like', $nhomHang . '%'))
+            ->count();
+
+        $output = (float) ($reportTotals->output ?? 0);
+        $defect = (float) ($reportTotals->defect ?? 0);
+
+        return [
+            'output' => $output,
+            'defect' => $defect,
+            'defect_rate' => $this->percentage($defect, $output + $defect, 2),
+            'pending_reports' => (int) ($statusCounts['pending'] ?? 0),
+            'approved_reports' => (int) ($statusCounts['approved'] ?? 0),
+            'total_production_orders' => $totalProductionOrders,
+            'active_items' => $activeItems,
+        ];
+    }
+
+    private function buildProductionOutputTrend(array $filters): Collection
+    {
+        $from = Carbon::parse($filters['date_from']);
+        $to = Carbon::parse($filters['date_to']);
+        $start = $from->copy()->max($to->copy()->subDays(13));
+        $dates = collect();
+
+        for ($date = $start->copy(); $date->lte($to); $date->addDay()) {
+            $dates->push($date->format('Y-m-d'));
+        }
+
+        $rows = $this->productionQuery($filters)
+            ->whereDate('ngay_sx', '>=', $start)
+            ->selectRaw('DATE(ngay_sx) as date, COALESCE(SUM(sl_dat), 0) as output, COALESCE(SUM(sl_hu), 0) as defect')
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+
+        return $dates->map(function (string $date) use ($rows) {
+            return [
+                'date' => Carbon::parse($date)->format('d/m'),
+                'output' => (float) ($rows[$date]->output ?? 0),
+                'defect' => (float) ($rows[$date]->defect ?? 0),
+            ];
+        })->values();
+    }
+
+    private function buildPendingProductionReports(array $filters): Collection
+    {
+        return $this->productionQuery($filters)
+            ->whereIn('status', ['pending', 'approved'])
+            ->select('id', 'ngay_sx', 'lenh_sx', 'cong_doan', 'ca', 'sl_dat', 'sl_hu', 'status')
+            ->latest('ngay_sx')
+            ->latest('id')
+            ->limit(8)
+            ->get();
     }
 
     private function buildOperationsDashboard(array $filters): array
@@ -227,8 +340,8 @@ class DashboardMetricsService
     private function trackingQuery(array $filters)
     {
         return OrderTracking::query()
-            ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when($filters['date_from'] ?? null, fn($q, $date) => $q->whereDate('order_tracking.created_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn($q, $date) => $q->whereDate('order_tracking.created_at', '<=', $date))
             ->when(($filters['khach_hang_id'] ?? null) || ($filters['nhom_hang'] ?? null), function ($q) use ($filters) {
                 $q->whereHas('order', function ($orderQ) use ($filters) {
                     $orderQ

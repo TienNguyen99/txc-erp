@@ -64,4 +64,9 @@ class DanhMucHangHoa extends Model
     {
         return $this->hasMany(DinhMucNvl::class, 'nguyen_lieu_id');
     }
+
+    public function standardCostSheets()
+    {
+        return $this->hasMany(StandardCostSheet::class, 'product_id');
+    }
 }
